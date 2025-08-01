@@ -9,14 +9,22 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.chang88s.foodraterts",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.chang88s.foodraterts",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -32,6 +40,20 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
+          "mediaLibraryPermission": "Allow $(PRODUCT_NAME) to access your media library.",
+          "storagePermission": "Allow $(PRODUCT_NAME) to access your storage.",
+          "filesPermission": "Allow $(PRODUCT_NAME) to access your files.",
+          "notificationsPermission": "Allow $(PRODUCT_NAME) to send you notifications.",
+          "locationPermission": "Allow $(PRODUCT_NAME) to access your location.",
+          "backgroundLocationPermission": "Allow $(PRODUCT_NAME) to access your location in the background",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera.",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
         }
       ]
     ],
