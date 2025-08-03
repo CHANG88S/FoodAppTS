@@ -34,7 +34,7 @@ export default function TabLayout() {
         >
             <Tabs.Screen name="home" />
             <Tabs.Screen name="search" />
-            <Tabs.Screen name="upload" />
+            <Tabs.Screen name="upload" options={{headerShown: false}} />
             <Tabs.Screen name="notification" />
             <Tabs.Screen name="profile" />
         </Tabs>

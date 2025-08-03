@@ -10,10 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.chang88s.foodraterts",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
+      "bundleIdentifier": "com.chang88s.foodraterts"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,10 +18,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.chang88s.foodraterts",
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+      "package": "com.chang88s.foodraterts"
     },
     "web": {
       "bundler": "metro",
@@ -45,7 +39,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",   
           "mediaLibraryPermission": "Allow $(PRODUCT_NAME) to access your media library.",
           "storagePermission": "Allow $(PRODUCT_NAME) to access your storage.",
           "filesPermission": "Allow $(PRODUCT_NAME) to access your files.",
