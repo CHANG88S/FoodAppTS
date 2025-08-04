@@ -1,39 +1,83 @@
-import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
-import { useState } from 'react';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, SafeAreaView } from 'react-native';
+import { useState, useLayoutEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
+import CircularProgress from 'react-native-circular-progress-indicator';
+import { AnimatedCircularProgress } from 'react-native-circular-progress';
 
 export default function Upload() {
+    const navigation = useNavigation();
     const router = useRouter();
     const [isModalVisible, setModalVisible] = useState(false);
 
     const handleLeave = () => {
-        setModalVisible(false); // First, close the modal
-        router.back();          // Then, navigate back to the previous screen
+        setModalVisible(false);
+        router.replace('/home'); // Replaces the current screen with the home screen
     };
 
-    return (
-        <View style={styles.root}>
-            <View style={styles.header}>
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerLeft: () => (
                 <TouchableOpacity onPress={() => setModalVisible(true)}>
-                    <Ionicons name="close" size={24} color="black" />
-                </TouchableOpacity>
-            </View>
+                    <Ionicons name="close" size={24} color="black" />       
+                </TouchableOpacity> 
+            ),
+        });
+    }, [navigation]);
 
+    return (
+        <SafeAreaView style={styles.root}>
+            
+            <View style = {styles.CircularProgressContainer}>
+                <CircularProgress
+                    radius = {50}
+                    value = {0}
+                    valueSuffix='⭐'
+                    inActiveStrokeOpacity='.75'
+                    padding = {10}
+                />
+                
+                <CircularProgress
+                    radius = {50}
+                    value = {0}
+                    valueSuffix='⭐'
+                    inActiveStrokeOpacity='.75'
+                    padding = {10}
+                />
+                <CircularProgress
+                    radius = {50}
+                    value = {10}
+                    valueSuffix='⭐'
+                    inActiveStrokeOpacity='.75'
+                    padding = {10}
+                />
+                <CircularProgress
+                    radius = {50}
+                    value = {10}
+                    valueSuffix='⭐'
+                    inActiveStrokeOpacity='.75'
+                    padding = {10}
+                />
+                
+            </View>
             <View style={styles.content}>
+                
+
                 <Text>This is the editing screen.</Text>
-                {/* Your editing content would go here */}
             </View>
 
             <Modal
                 visible={isModalVisible}
                 onRequestClose={() => setModalVisible(false)}
                 animationType="fade"
-                transparent={true}
+                transparent={false}
             >
+                {/* Back Button */}
                 <View style={styles.modalCenteredView}>
                     <View style={styles.modalView}>
-                        <Text style={styles.modalTitle}>Discard changes?</Text>
+                        <Text style={styles.modalTitle}>
+                            Discard changes?
+                        </Text>
                         <Text style={styles.modalText}>
                             Are you sure you want to leave? Your edits will not be saved.
                         </Text>
@@ -54,7 +98,7 @@ export default function Upload() {
                     </View>
                 </View>
             </Modal>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -62,22 +106,30 @@ const styles = StyleSheet.create({
     root: {
         flex: 1,
     },
-    header: {
+
+    CircularProgressContainer: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
+        margin: 11,
+        // alignContent: 'space-evenly',
         justifyContent: 'flex-start',
-        padding: 15,
+        gap: 5,
+        // paddingHorizontal: 20
     },
+
     content: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
+
     modalCenteredView: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.5)',
     },
+
     modalView: {
         margin: 20,
         backgroundColor: 'white',
@@ -93,20 +145,24 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 5,
     },
+
     modalTitle: {
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 10,
     },
+
     modalText: {
         marginBottom: 15,
         textAlign: 'center',
     },
+
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         width: '100%',
     },
+
     button: {
         borderRadius: 20,
         padding: 10,
@@ -114,12 +170,15 @@ const styles = StyleSheet.create({
         flex: 1,
         marginHorizontal: 5,
     },
+
     buttonLeave: {
         backgroundColor: 'red',
     },
+
     buttonContinue: {
-        backgroundColor: '#2196F3',
+        backgroundColor: 'blue',
     },
+
     textStyle: {
         color: 'white',
         fontWeight: 'bold',

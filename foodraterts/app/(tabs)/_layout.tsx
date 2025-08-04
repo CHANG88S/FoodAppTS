@@ -34,7 +34,13 @@ export default function TabLayout() {
         >
             <Tabs.Screen name="home" />
             <Tabs.Screen name="search" />
-            <Tabs.Screen name="upload" options={{headerShown: false}} />
+            <Tabs.Screen
+                name="upload"
+                options={{
+                    headerShown: false,               // Show the header to place the X button
+                    tabBarStyle: { display: 'none' }, // Hide the tab bar for this screen
+                }}
+            />
             <Tabs.Screen name="notification" />
             <Tabs.Screen name="profile" />
         </Tabs>
