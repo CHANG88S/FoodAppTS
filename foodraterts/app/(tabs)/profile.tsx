@@ -2,14 +2,22 @@ import { View, Text, StyleSheet, Image, Touchable, TouchableOpacity } from 'reac
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { useRouter, useNavigation } from 'expo-router';
 
 
 
 
 export default function Profile() {
 
+    const navigation = useNavigation();
+    const router = useRouter();
 
+    const handleLeave = () => {
+        setModalVisible(false);
+        router.replace('../index'); // Replaces the current screen with the login screen
+    };
     const [isModalVisible, setModalVisible] = useState(false);
+    
 
     return (
         <View style={styles.root}>
@@ -63,6 +71,140 @@ const uploadImage = async () => {
 //         throw error;
 //     }
 // }
+
+
+
+
+// BUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUH
+
+
+//     useLayoutEffect(() => {
+//         navigation.setOptions({
+//             headerLeft: () => (
+//                 <TouchableOpacity onPress={() => setModalVisible(true)}>
+//                     <Ionicons name="close" size={24} color="black" />       
+//                 </TouchableOpacity> 
+//             ),
+//         });
+//     }, [navigation]);
+
+//     return (
+//         <SafeAreaView style={styles.root}>
+            
+//             <View style={styles.content}>
+                
+
+//             <Text>This is the editing screen.</Text>
+//             </View>
+
+//             
+//                 {/* Back Button */}
+//                 <View style={styles.modalCenteredView}>
+//                     <View style={styles.modalView}>
+//                         <Text style={styles.modalTitle}>
+//                             Discard changes?
+//                         </Text>
+//                         <Text style={styles.modalText}>
+//                             Are you sure you want to leave? Your edits will not be saved.
+//                         </Text>
+//                         <View style={styles.buttonContainer}>
+//                             <TouchableOpacity
+//                                 style={[styles.button, styles.buttonLeave]}
+//                                 onPress={handleLeave}
+//                             >
+//                                 <Text style={styles.textStyle}>Leave</Text>
+//                             </TouchableOpacity>
+//                             <TouchableOpacity
+//                                 style={[styles.button, styles.buttonContinue]}
+//                                 onPress={() => setModalVisible(false)}
+//                             >
+//                                 <Text style={styles.textStyle}>Continue editing</Text>
+//                             </TouchableOpacity>
+//                         </View>
+//                     </View>
+//                 </View>
+//             </Modal>
+//         </SafeAreaView>
+//     );
+// }
+
+
+
+
+
+
+
+//     modalCenteredView: {
+//         flex: 1,
+//         justifyContent: 'center',
+//         alignItems: 'center',
+//         backgroundColor: 'rgba(0,0,0,0.5)',
+//     },
+
+//     modalView: {
+//         margin: 20,
+//         backgroundColor: 'white',
+//         borderRadius: 20,
+//         padding: 35,
+//         alignItems: 'center',
+//         shadowColor: '#000',
+//         shadowOffset: {
+//             width: 0,
+//             height: 2,
+//         },
+//         shadowOpacity: 0.25,
+//         shadowRadius: 4,
+//         elevation: 5,
+//     },
+
+//     modalTitle: {
+//         fontSize: 18,
+//         fontWeight: 'bold',
+//         marginBottom: 10,
+//     },
+
+//     modalText: {
+//         marginBottom: 15,
+//         textAlign: 'center',
+//     },
+
+//     buttonContainer: {
+//         flexDirection: 'row',
+//         justifyContent: 'space-between',
+//         width: '100%',
+//     },
+
+//     button: {
+//         borderRadius: 20,
+//         padding: 10,
+//         elevation: 2,
+//         flex: 1,
+//         marginHorizontal: 5,
+//     },
+
+//     buttonLeave: {
+//         backgroundColor: 'red',
+//     },
+
+//     buttonContinue: {
+//         backgroundColor: 'blue',
+//     },
+
+//     textStyle: {
+//         color: 'white',
+//         fontWeight: 'bold',
+//         textAlign: 'center',
+//     },
+// });
+
+// BUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUHBUH
+
+
+
+
+
+
+
 const styles = StyleSheet.create({
     root:{  
         flex: 1,
