@@ -92,7 +92,7 @@ export default function Upload() {
                                 style={[styles.button, styles.buttonContinue]}
                                 onPress={() => setModalVisible(false)}
                             >
-                                <Text style={styles.textStyle}>Continue editing</Text>
+                                <Text style={styles.textStyle}>Continue Editing</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
