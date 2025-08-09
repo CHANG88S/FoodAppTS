@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Image, Touchable, TouchableOpacity, Modal, SafeAreaView, Platform } from 'react-native';
+import { View, Text, StyleSheet, Image, Touchable, TouchableOpacity, Modal, SafeAreaView, Platform, Button } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,15 @@ export default function Profile() {
     const router = useRouter();
     const [isModalVisible, setModalVisible] = useState(false);
     
+    const pickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images', 'videos'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
 
     // const setupProfile = async () => {
     //     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -64,6 +73,10 @@ export default function Profile() {
                                 color="black"
                                 style={{ position: 'absolute', bottom: 10, right: 10 }}
                             />
+                                <Button title="Pick an image from camera roll" onPress={pickImage} />
+                            {Image && <Image 
+                                source={{ uri: '' }} 
+                                style={styles.image} />}
                         </TouchableOpacity>
                             
                     <Text style={styles.displayName}>
@@ -243,4 +256,4 @@ const styles = StyleSheet.create({
     },
 });
 
-// }
+}
