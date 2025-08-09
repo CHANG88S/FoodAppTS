@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, Image, Touchable, TouchableOpacity, Modal, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, Image, Touchable, TouchableOpacity, Modal, SafeAreaView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
 
@@ -10,12 +10,30 @@ export default function Profile() {
 
     const navigation = useNavigation();
     const router = useRouter();
+    const [isModalVisible, setModalVisible] = useState(false);
+    
+
+    // const setupProfile = async () => {
+    //     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    //     const [image, setImage] = useState(null);
+
+    //     useEffect(() => {
+    //         (async () => {
+    //             if (Platform.OS !== 'web') {
+    //                 const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    //                 if (status !== 'granted') {
+    //                     alert('Sorry, we need camera roll permissions to make this work!');
+    //                 }
+    //             }
+    //         })();
+    //     }, []);
+
 
     const handleLeave = () => {
         setModalVisible(false);
         router.replace('/'); // Replaces the current screen with the login screen
     };
-    const [isModalVisible, setModalVisible] = useState(false);
+    
     
     useLayoutEffect(() => {
             navigation.setOptions({
@@ -34,18 +52,18 @@ export default function Profile() {
 
     return (
         <SafeAreaView style={styles.root}>
-                    <Image
-                        source={{ uri: 'https://cdn.discordapp.com/attachments/1014354049333743626/1400724695866802246/Untitled.png?ex=688dae07&is=688c5c87&hm=e789a6023b4595f35753c5f68dd4b17b56c7a252c5c988f94b019273d1e9b0d5&' }} 
-                        style = {styles.image}>
-                    </Image>
+                    
                         <TouchableOpacity onPress={uploadImage}>
+                            <Image
+                                source={{ uri: 'https://cdn.discordapp.com/attachments/1014354049333743626/1400724695866802246/Untitled.png?ex=688dae07&is=688c5c87&hm=e789a6023b4595f35753c5f68dd4b17b56c7a252c5c988f94b019273d1e9b0d5&' }} 
+                            style = {styles.image}>
+                            </Image>
                             <MaterialCommunityIcons 
                                 Name="cameraOutline"
                                 size={30}
                                 color="black"
                                 style={{ position: 'absolute', bottom: 10, right: 10 }}
                             />
-                            
                         </TouchableOpacity>
                             
                     <Text style={styles.displayName}>
@@ -225,4 +243,4 @@ const styles = StyleSheet.create({
     },
 });
 
-
+// }

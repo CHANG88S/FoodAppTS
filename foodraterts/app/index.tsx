@@ -11,7 +11,7 @@ const index = () => {
       <Button title = "Register"/>        
     </Link>
     <Link href="../(tabs)/home" asChild>
-      {/* <Text>Welcome to FoodRaterTS!</Text> */}
+       {/* <Text>Welcome to FoodRaterTS!</Text> */}
       <Button title = "Login"/>        
     </Link>
   </View>
