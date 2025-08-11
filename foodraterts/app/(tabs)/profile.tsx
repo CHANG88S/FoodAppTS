@@ -11,31 +11,53 @@ export default function Profile() {
     const navigation = useNavigation();
     const router = useRouter();
     const [isModalVisible, setModalVisible] = useState(false);
+    const [image, setImage] = useState<string | null>(null);
     
     const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images', 'videos'],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+    
+    const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();     // Request media library permissions
+    const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+
+        if (libraryStatus !== 'granted' || cameraStatus !== 'granted') {
+            alert('Sorry, we need media library permissions to make this work!');   // Alert if permissions aren't granted
+            setModalVisible(false); // Close modal if permissions are not granted
+            return;
+        }
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images', 'videos'],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 1,
+        });
+            if (!result.canceled) {
+                setImage(result.assets[0].uri);
+            }
+    };
+
+    // const uploadImage = async () => {
+    //         try {
+    //             await ImagePicker.
+    //             requestMediaLibraryPermissionsAsync(), 
+    //             ImagePicker.requestCameraPermissionsAsync;
+    //             let result = await ImagePicker.launchImageLibraryAsync({
+    //         mediaTypes: ['images', 'videos'],
+    //         allowsEditing: true,
+    //         aspect: [4, 3],
+    //         quality: 1,
+    //     });
+    //             launchCameraAsync({
+    //                 cameraType: ImagePicker.CameraType.front,
+    //                 allowsEditing: true,
+    //                 aspect: [1, 1],
+    //                 quality: 1,
+    //             });
+    //         } catch (error) {
+    //             console.error("Error requesting permissions:", error);
+    //         }
 
 
-    // const setupProfile = async () => {
-    //     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    //     const [image, setImage] = useState(null);
 
-    //     useEffect(() => {
-    //         (async () => {
-    //             if (Platform.OS !== 'web') {
-    //                 const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    //                 if (status !== 'granted') {
-    //                     alert('Sorry, we need camera roll permissions to make this work!');
-    //                 }
-    //             }
-    //         })();
-    //     }, []);
+  
 
 
     const handleLeave = () => {
@@ -49,10 +71,10 @@ export default function Profile() {
                 headerRight: () => (
                     <TouchableOpacity onPress={() => setModalVisible(true)}>
                         <Ionicons 
-                        name="log-out-outline" 
-                        size={24} 
-                        color="black"
-                        marginRight= "15" />       
+                        name  = "log-out-outline" 
+                        size  = {24} 
+                        color = "black"
+                        style = {{marginRight: 15}} />       
                     </TouchableOpacity> 
                 ),
             });
@@ -61,21 +83,26 @@ export default function Profile() {
 
     return (
         <SafeAreaView style={styles.root}>
-      <TouchableOpacity onPress={pickImage}>
-        <Image
-          source={Image ? { uri: '' } : { uri: 'https://cdn.discordapp.com/attachments/1014354049333743626/1400724695866802246/Untitled.png' }}
-          style={styles.image}
-        />
-        <MaterialCommunityIcons 
-          name="camera-outline" // Correct prop name
-          size={30}
-          color="black"
-          style={{ position: 'absolute', bottom: 10, right: 10 }}
-        />
-      </TouchableOpacity>
-      
-      <Button title="Pick an image from camera roll" onPress={pickImage} />
-                            
+                    <TouchableOpacity onPress={pickImage}>
+                        <View style={styles.imageContainer}>
+                        <Image
+                        source={image ? { uri: image } : { uri: 'https://thumbs.dreamstime.com/b/culinary-symphony-blue-smoke-exquisite-food-photography-black-background-showcasing-gourmet-delights-captivating-363004972.jpg' }}
+                        style={styles.profileImage}
+                        />
+                        <Ionicons
+                        name="add-circle-outline" // Correct prop name
+                        size={30}
+                        color="black"
+                        style={[
+                            styles.cameraIcon,
+                            { position: 'absolute', bottom: 10, right: 10 }
+                        ]}
+                        />
+                        </View>
+                    </TouchableOpacity>
+                    
+                    {/* <Button title="Pick an image from camera roll" onPress={pickImage} /> */}
+
                     <Text style={styles.displayName}>
                         CHANG88S 
                     </Text>
@@ -122,22 +149,7 @@ export default function Profile() {
     );
 }
 
-const uploadImage = async () => {
-    try {
-        await ImagePicker.
-        requestMediaLibraryPermissionsAsync(), 
-        ImagePicker.requestCameraPermissionsAsync;
-        let result = await ImagePicker.
-        launchCameraAsync({
-            cameraType: ImagePicker.CameraType.front,
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 1,
-        });
-    } catch (error) {
-        console.error("Error requesting permissions:", error);
-    }
-}
+// 
 
 // const saveImage = async (image: any) => { 
 //     try {
@@ -149,7 +161,19 @@ const uploadImage = async () => {
 // 
 
 
-
+  // const setupProfile = async () => {
+    //     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    //     const [image, setImage] = useState(null);
+    //     useEffect(() => {
+    //         (async () => {
+    //             if (Platform.OS !== 'web') {
+    //                 const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    //                 if (status !== 'granted') {
+    //                     alert('Sorry, we need camera roll permissions to make this work!');
+    //                 }
+    //             }
+    //         })();
+    //     }, []);
 
 
 
@@ -167,20 +191,35 @@ const styles = StyleSheet.create({
         width: 320,
         height: 320,
     },
-    image: {
+
+    imageContainer:{
+        position: 'relative',
+        width: 105,                             // Place in relation to image border
+        height: 110,                            // Match image height
+        marginTop: 20,
+        marginLeft: 20,
+        
+    },
+
+    cameraIcon: {
+        backgroundColor: 'white',
+        borderRadius: 50,                       // Make it circular
+    },
+
+    profileImage: {
         width: 100,
         height: 100,
-        marginTop: 30,      // Margins only for image
-        marginLeft: 20,     // Same Comment
         borderColor: 'gray',
         borderWidth: 2,
-        borderRadius: 50,   // Half of width/height for a perfect circle
+        borderRadius: 50,                       // Half of width/height for a perfect circle
     },
+
     center: {
          flex: 4, 
          alignItems: 'center', 
          justifyContent: 'center' 
     },
+
     displayName: {
         fontSize: 18,
         fontWeight: 'bold',
@@ -189,7 +228,7 @@ const styles = StyleSheet.create({
         marginLeft: 20, // Align text with the image
     },
 
-        modalCenteredView: {
+    modalCenteredView: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
@@ -253,4 +292,4 @@ const styles = StyleSheet.create({
     },
 });
 
-}
+// }
