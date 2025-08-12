@@ -28,38 +28,40 @@ export default function Upload() {
     return (
         <SafeAreaView style={styles.root}>
             
-            <View style = {styles.CircularProgressContainer}>
-                <CircularProgress
+
+
+                <View style = {styles.CircularProgressContainer}>
+                {/* <CircularProgress
                     radius = {50}
                     value = {0}
                     valueSuffix='⭐'
                     inActiveStrokeOpacity='.75'
-                    padding = {10}
-                />
+                    padding = {8}
+                /> */}
                 
                 <CircularProgress
                     radius = {50}
                     value = {0}
                     valueSuffix='⭐'
                     inActiveStrokeOpacity='.75'
-                    padding = {10}
+                    padding = {8}
                 />
                 <CircularProgress
                     radius = {50}
                     value = {10}
                     valueSuffix='⭐'
                     inActiveStrokeOpacity='.75'
-                    padding = {10}
+                    padding = {8}
                 />
                 <CircularProgress
                     radius = {50}
                     value = {10}
                     valueSuffix='⭐'
                     inActiveStrokeOpacity='.75'
-                    padding = {10}
+                    padding = {8}
                 />
                 
-            </View>
+            </View> 
             <View style={styles.content}>
                 
 
@@ -70,7 +72,7 @@ export default function Upload() {
                 visible={isModalVisible}
                 onRequestClose={() => setModalVisible(false)}
                 animationType="fade"
-                transparent={false}
+                transparent={true}
             >
                 {/* Back Button */}
                 <View style={styles.modalCenteredView}>
@@ -110,10 +112,10 @@ const styles = StyleSheet.create({
     CircularProgressContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        margin: 11,
+        margin: 8,
         // alignContent: 'space-evenly',
         justifyContent: 'flex-start',
-        gap: 5,
+        gap: 8,
         // paddingHorizontal: 20
     },
 
@@ -134,7 +136,7 @@ const styles = StyleSheet.create({
         margin: 20,
         backgroundColor: 'white',
         borderRadius: 20,
-        padding: 35,
+        padding: 32,
         alignItems: 'center',
         shadowColor: '#000',
         shadowOffset: {
@@ -165,7 +167,7 @@ const styles = StyleSheet.create({
 
     button: {
         borderRadius: 20,
-        padding: 10,
+        padding: 8,
         elevation: 2,
         flex: 1,
         marginHorizontal: 5,

@@ -11,20 +11,19 @@ export default function Profile() {
     const navigation = useNavigation();
     const router = useRouter();
     const [isModalVisible, setModalVisible] = useState(false);
+    const [isProfileModal, setProfileModalVisible] = useState(false);
     const [image, setImage] = useState<string | null>(null);
+
     
     const pickImage = async () => {
-    
-    const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();     // Request media library permissions
-    const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
-
-        if (libraryStatus !== 'granted' || cameraStatus !== 'granted') {
-            alert('Sorry, we need media library permissions to make this work!');   // Alert if permissions aren't granted
-            setModalVisible(false); // Close modal if permissions are not granted
-            return;
+        const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();     // Request media library permissions
+            if (libraryStatus !== 'granted') {
+                alert('Sorry, we need media library permissions to make this work!');                  // Alert if permissions aren't granted
+                setProfileModalVisible(false);                                                         // Close modal if permissions are not granted
+                return;
         }
         let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images', 'videos'],
+            mediaTypes: ['images'],                                                                // Allow only images
             allowsEditing: true,
             aspect: [1, 1],
             quality: 1,
@@ -34,71 +33,129 @@ export default function Profile() {
             }
     };
 
-    // const uploadImage = async () => {
-    //         try {
-    //             await ImagePicker.
-    //             requestMediaLibraryPermissionsAsync(), 
-    //             ImagePicker.requestCameraPermissionsAsync;
-    //             let result = await ImagePicker.launchImageLibraryAsync({
-    //         mediaTypes: ['images', 'videos'],
-    //         allowsEditing: true,
-    //         aspect: [4, 3],
-    //         quality: 1,
-    //     });
-    //             launchCameraAsync({
-    //                 cameraType: ImagePicker.CameraType.front,
-    //                 allowsEditing: true,
-    //                 aspect: [1, 1],
-    //                 quality: 1,
-    //             });
-    //         } catch (error) {
-    //             console.error("Error requesting permissions:", error);
-    //         }
-
-
-
+    const takePhoto = async () => {
+        const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();            // Request camera permissions
+            if (cameraStatus !== 'granted') {
+            alert('Sorry, we need camera permissions to make this work!');
+            setProfileModalVisible(false);
+            return;
+        }
+        let result = await ImagePicker.launchCameraAsync({
+            cameraType: ImagePicker.CameraType.front,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 1,
+        });
+            if (!result.canceled) {
+                setImage(result.assets[0].uri);
+            }
+    };
   
-
-
     const handleLeave = () => {
         setModalVisible(false);
-        router.replace('/'); // Replaces the current screen with the login screen
+        router.replace('/');                    // Replaces the current screen with the login screen '/'goes back to the root
     };
-    
     
     useLayoutEffect(() => {
             navigation.setOptions({
-                headerRight: () => (
+                headerRight: () => (            // Log out button (in progress)
                     <TouchableOpacity onPress={() => setModalVisible(true)}>
                         <Ionicons 
                         name  = "log-out-outline" 
                         size  = {24} 
                         color = "black"
-                        style = {{marginRight: 15}} />       
+                        style = {{marginRight: 16}} />       
                     </TouchableOpacity> 
                 ),
             });
-        }, [navigation]);
+    }, [navigation]);
+
+
+
 
 
     return (
         <SafeAreaView style={styles.root}>
-                    <TouchableOpacity onPress={pickImage}>
-                        <View style={styles.imageContainer}>
-                        <Image
-                        source={image ? { uri: image } : { uri: 'https://thumbs.dreamstime.com/b/culinary-symphony-blue-smoke-exquisite-food-photography-black-background-showcasing-gourmet-delights-captivating-363004972.jpg' }}
-                        style={styles.profileImage}
-                        />
-                        <Ionicons
-                        name="add-circle-outline" // Correct prop name
-                        size={30}
-                        color="black"
-                        style={[
-                            styles.cameraIcon,
-                            { position: 'absolute', bottom: 10, right: 10 }
-                        ]}
-                        />
+            <Modal                                          // Modal to confirm sign out
+                visible={isModalVisible}
+                    onRequestClose={() => setModalVisible(false)}
+                    animationType="fade"
+                    transparent={true}
+            >                                    
+                <View style={styles.modalCenteredView}>
+                    <View style={styles.modalView}>
+                        <Text style={styles.modalTitle}>
+                            Sign Out?
+                        </Text>
+                        <Text style={styles.modalText}>
+                            Are you sure you want to log out?
+                        </Text>
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity
+                            style={[styles.button, styles.buttonLeave]}
+                            onPress={handleLeave}
+                            >
+                            <Text style={styles.textStyle}>Sign Out</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.button, styles.buttonContinue]}
+                            onPress={() => setModalVisible(false)}
+                            >
+                            <Text style={styles.textStyle}>Stay Signed In</Text>
+                        </TouchableOpacity>
+                    </View>
+                    </View>
+                </View>
+            </Modal>
+                    <TouchableOpacity onPress={setProfileModalVisible.bind(null, true)}>
+                        <Modal                                      // Modal to change profile picture
+                            visible={isProfileModal}
+                            onRequestClose={() => setProfileModalVisible(false)}
+                            animationType="fade"
+                            transparent={true}
+                        >
+                        <View style={styles.modalCenteredView}>
+                            <View style={styles.modalView}>
+                                <Text style={styles.modalTitle}>Change Profile Picture</Text>
+                                <View style={styles.buttonContainer}>
+                                    <TouchableOpacity //
+                                        style={[styles.button, styles.buttonLeave]}
+                                        onPress={() => setProfileModalVisible(false)}
+                                    >
+                                        <Text style={styles.textStyle}>Closes Modal</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.button, styles.buttonNeutral]}
+                                        onPress={pickImage}
+                                    >
+                                        <Text style={styles.textStyle}>Pick from Gallery</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.button, styles.buttonNeutral]}
+                                        onPress={takePhoto}
+                                    >
+                                        <Text style={styles.textStyle}>Take a Photo</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
                         </View>
+                        </Modal>
+                            <View style={styles.imageContainer}>
+                            <Image                                                // Default Profile Image
+                                source={image ? { uri: image } : { uri: 'https://thumbs.dreamstime.com/b/culinary-symphony-blue-smoke-exquisite-food-photography-black-background-showcasing-gourmet-delights-captivating-363004972.jpg' }}
+                                style={styles.profileImage}
+                            />
+                            <Ionicons
+                                name="add-circle-outline" // Correct prop name
+                                size={30}
+                                color="black"
+                                style={[
+                                styles.cameraIcon,
+                                { position: 'absolute', bottom: 8, right: 8 }
+                            ]}
+                            />
+                            </View>
+                        
                     </TouchableOpacity>
                     
                     {/* <Button title="Pick an image from camera roll" onPress={pickImage} /> */}
@@ -106,38 +163,7 @@ export default function Profile() {
                     <Text style={styles.displayName}>
                         CHANG88S 
                     </Text>
-                        <Modal
-                                    visible={isModalVisible}
-                                    onRequestClose={() => setModalVisible(false)}
-                                    animationType="fade"
-                                    transparent={false}
-                                >
-                                    {/* Back Button */}
-                                    <View style={styles.modalCenteredView}>
-                                        <View style={styles.modalView}>
-                                            <Text style={styles.modalTitle}>
-                                                Sign Out?
-                                            </Text>
-                                            <Text style={styles.modalText}>
-                                                Are you sure you want to log out?
-                                            </Text>
-                                            <View style={styles.buttonContainer}>
-                                                <TouchableOpacity
-                                                    style={[styles.button, styles.buttonLeave]}
-                                                    onPress={handleLeave}
-                                                >
-                                                    <Text style={styles.textStyle}>Sign Out</Text>
-                                                </TouchableOpacity>
-                                                <TouchableOpacity
-                                                    style={[styles.button, styles.buttonContinue]}
-                                                    onPress={() => setModalVisible(false)}
-                                                >
-                                                    <Text style={styles.textStyle}>Stay Signed In</Text>
-                                                </TouchableOpacity>
-                                            </View>
-                                        </View>
-                                    </View>
-                                </Modal>
+                    
                     <View 
                         style = {styles.center}>
                     <Text>Profile Screen</Text> 
@@ -285,6 +311,10 @@ const styles = StyleSheet.create({
         opacity: 0.,
     },
 
+    buttonNeutral:{
+        backgroundColor: 'lightgray',
+    },
+
     textStyle: {
         color: 'white',
         fontWeight: 'bold',
@@ -292,4 +322,4 @@ const styles = StyleSheet.create({
     },
 });
 
-// }
+
