@@ -1,14 +1,55 @@
-import { View, Text, StyleSheet, Modal, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, SafeAreaView, Image } from 'react-native';
 import { useState, useLayoutEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
 import CircularProgress from 'react-native-circular-progress-indicator';
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function Upload() {
     const navigation = useNavigation();
     const router = useRouter();
     const [isModalVisible, setModalVisible] = useState(false);
+    const [isProfileModal, setProfileModalVisible] = useState(false);
+    const [image, setImage] = useState<string | null>(null);
+
+
+    const pickImage = async () => {
+            const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();     // Request media library permissions
+                if (libraryStatus !== 'granted') {
+                    alert('Sorry, we need media library permissions to make this work!');                  // Alert if permissions aren't granted
+                    setProfileModalVisible(false);                                                         // Close modal if permissions are not granted
+                    return;
+            }
+            let result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],                                                                // Allow only images
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 1,
+            });
+                if (!result.canceled) {
+                    setImage(result.assets[0].uri);
+                }
+        };
+    
+        const takePhoto = async () => {
+            const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();            // Request camera permissions
+                if (cameraStatus !== 'granted') {
+                alert('Sorry, we need camera permissions to make this work!');
+                setProfileModalVisible(false);
+                return;
+            }
+            let result = await ImagePicker.launchCameraAsync({
+                cameraType: ImagePicker.CameraType.front,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 1,
+            });
+                if (!result.canceled) {
+                    setImage(result.assets[0].uri);
+                }
+        };
 
     const handleLeave = () => {
         setModalVisible(false);
@@ -27,17 +68,66 @@ export default function Upload() {
 
     return (
         <SafeAreaView style={styles.root}>
-            
+            <TouchableOpacity onPress={setProfileModalVisible.bind(null, true)}>
+                <Modal                                      // Modal to change profile picture
+                    visible={isProfileModal}
+                    onRequestClose={() => setProfileModalVisible(false)}
+                    animationType="fade"
+                    transparent={true}
+                    >
+                        <View style={styles.modalCenteredView}>
+                        <View style={styles.modalView}>
+                            <Text style={styles.modalTitle}>Upload an Image?</Text>
+                            <View style={styles.buttonContainer}>
+                                <TouchableOpacity //
+                                    style={[styles.button, styles.buttonLeave]}
+                                    onPress={() => setProfileModalVisible(false)}
+                                    >
+                                    <Text style={styles.textStyle}>Closes Modal</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.button, styles.buttonNeutral]}
+                                    onPress={pickImage}
+                                    >
+                                    <Text style={styles.textStyle}>Pick from Gallery</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.button, styles.buttonNeutral]}
+                                    onPress={takePhoto}
+                                    >
+                                    <Text style={styles.textStyle}>Take a Photo</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                        </View>
+                                
+                </Modal>
+                    <View style={styles.imageContainer}>
+                        <Image                                                // Default Profile Image
+                            source={image ? { uri: '' } : { uri: '' }}
+                            style={styles.profileImage}
+                            />
+                            <Ionicons
+                                name="add-circle-outline" // Correct prop name
+                                size={30}
+                                color="black"
+                                style={[
+                                styles.cameraIcon,
+                                { position: 'absolute', bottom: 8, right: 8 }]}
+                            />
+                    </View>
+                                    
+            </TouchableOpacity>
 
 
                 <View style = {styles.CircularProgressContainer}>
-                {/* <CircularProgress
+                <CircularProgress
                     radius = {50}
                     value = {0}
                     valueSuffix='⭐'
                     inActiveStrokeOpacity='.75'
                     padding = {8}
-                /> */}
+                />
                 
                 <CircularProgress
                     radius = {50}
@@ -67,7 +157,7 @@ export default function Upload() {
 
                 <Text>This is the editing screen.</Text>
             </View>
-
+        <GestureHandlerRootView style={{ flex: 1 }}>
             <Modal
                 visible={isModalVisible}
                 onRequestClose={() => setModalVisible(false)}
@@ -100,6 +190,8 @@ export default function Upload() {
                     </View>
                 </View>
             </Modal>
+                
+                </GestureHandlerRootView>
         </SafeAreaView>
     );
 }
@@ -186,4 +278,46 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
     },
+        imageContainer:{
+        position: 'relative',
+        width: 105,                             // Place in relation to image border
+        height: 110,                            // Match image height
+        marginTop: 20,
+        marginLeft: 20,
+        
+    },
+
+    cameraIcon: {
+        backgroundColor: 'white',
+        borderRadius: 50,                       // Make it circular
+    },
+
+    profileImage: {
+        width: 100,
+        height: 100,
+        borderColor: 'gray',
+        borderWidth: 2,
+        borderRadius: 50,                       // Half of width/height for a perfect circle
+    },
+
+    center: {
+         flex: 4, 
+         alignItems: 'center', 
+         justifyContent: 'center' 
+    },
+
+    displayName: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginTop: 8,
+        color: 'black',
+        marginLeft: 20, // Align text with the image
+    },
+
+    
+
+    buttonNeutral:{
+        backgroundColor: 'lightgray',
+    },
+
 });
