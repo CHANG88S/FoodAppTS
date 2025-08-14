@@ -90,24 +90,27 @@ export default function Profile() {
                         <Text style={styles.modalText}>
                             Are you sure you want to log out?
                         </Text>
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity
-                            style={[styles.button, styles.buttonLeave]}
-                            onPress={handleLeave}
-                            >
-                            <Text style={styles.textStyle}>Sign Out</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.button, styles.buttonContinue]}
-                            onPress={() => setModalVisible(false)}
-                            >
-                            <Text style={styles.textStyle}>Stay Signed In</Text>
-                        </TouchableOpacity>
-                    </View>
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity
+                                style={[styles.button, styles.buttonLeave]}
+                                onPress={handleLeave}
+                                >
+                                <Text style={styles.textStyle}>Sign Out</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.button, styles.buttonContinue]}
+                                onPress={() => setModalVisible(false)}
+                                >
+                                <Text style={styles.textStyle}>Stay Signed In</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </Modal>
-                    <TouchableOpacity onPress={setProfileModalVisible.bind(null, true)}>
+            <Text style={styles.displayName}>
+                        CHANG88S 
+                    </Text>
+                    <TouchableOpacity onPress={setProfileModalVisible.bind(null, true)} style={styles.centeredContent}>
                         <Modal                                      // Modal to change profile picture
                             visible={isProfileModal}
                             onRequestClose={() => setProfileModalVisible(false)}
@@ -160,9 +163,7 @@ export default function Profile() {
                     
                     {/* <Button title="Pick an image from camera roll" onPress={pickImage} /> */}
 
-                    <Text style={styles.displayName}>
-                        CHANG88S 
-                    </Text>
+                    
                     
                     <View 
                         style = {styles.center}>
@@ -207,10 +208,11 @@ export default function Profile() {
 
 
 const styles = StyleSheet.create({
-    root:{  
+    root: {  
         flex: 1,
         position: 'relative',
     },
+    
     container: {
         alignContent: 'flex-start',
         justifyContent: 'center',
@@ -218,12 +220,19 @@ const styles = StyleSheet.create({
         height: 320,
     },
 
+    centeredContent: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
     imageContainer:{
-        position: 'relative',
+        alignContent: 'center',
+        alignItems: 'center',
+        justifyContent: 'center',
         width: 105,                             // Place in relation to image border
         height: 110,                            // Match image height
-        marginTop: 20,
-        marginLeft: 20,
+        // marginTop: 20,
+        margin: 20,
         
     },
 

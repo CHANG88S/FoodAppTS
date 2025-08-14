@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Modal, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, SafeAreaView, Image, StyleSheet } from 'react-native';
 import { useState, useLayoutEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
@@ -13,6 +13,7 @@ export default function Upload() {
     const [isModalVisible, setModalVisible] = useState(false);
     const [isProfileModal, setProfileModalVisible] = useState(false);
     const [image, setImage] = useState<string | null>(null);
+
 
 
     const pickImage = async () => {
@@ -109,7 +110,7 @@ export default function Upload() {
                             />
                             <Ionicons
                                 name="add-circle-outline" // Correct prop name
-                                size={30}
+                                size={32}
                                 color="black"
                                 style={[
                                 styles.cameraIcon,
@@ -118,16 +119,11 @@ export default function Upload() {
                     </View>
                                     
             </TouchableOpacity>
-
-
-                <View style = {styles.CircularProgressContainer}>
-                <CircularProgress
-                    radius = {50}
-                    value = {0}
-                    valueSuffix='⭐'
-                    inActiveStrokeOpacity='.75'
-                    padding = {8}
-                />
+            <View style = {styles.container}>                        
+            <Text style={styles.title}>
+                How Would You Rate This Item? 
+            </Text>
+            
                 
                 <CircularProgress
                     radius = {50}
@@ -136,27 +132,24 @@ export default function Upload() {
                     inActiveStrokeOpacity='.75'
                     padding = {8}
                 />
-                <CircularProgress
-                    radius = {50}
-                    value = {10}
-                    valueSuffix='⭐'
-                    inActiveStrokeOpacity='.75'
-                    padding = {8}
-                />
-                <CircularProgress
-                    radius = {50}
-                    value = {10}
-                    valueSuffix='⭐'
-                    inActiveStrokeOpacity='.75'
-                    padding = {8}
-                />
-                
-            </View> 
-            <View style={styles.content}>
-                
-
-                <Text>This is the editing screen.</Text>
             </View>
+            {/* <View style = {styles.CircularProgressContainer}>
+                <CircularProgress
+                    radius = {50}
+                    value = {0}
+                    valueSuffix='⭐'
+                    inActiveStrokeOpacity='.75'
+                    padding = {8}
+                />
+                <CircularProgress
+                    radius = {50}
+                    value = {10}
+                    valueSuffix='⭐'
+                    inActiveStrokeOpacity='.75'
+                    padding = {8}
+                />
+                
+            </View>  */}
         <GestureHandlerRootView style={{ flex: 1 }}>
             <Modal
                 visible={isModalVisible}
@@ -196,19 +189,25 @@ export default function Upload() {
     );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create ({
     root: {
         flex: 1,
+        // backgroundColor: theme.colors.background, // Use theme color for background
     },
 
     CircularProgressContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         margin: 8,
-        // alignContent: 'space-evenly',
         justifyContent: 'flex-start',
         gap: 8,
-        // paddingHorizontal: 20
+        
+    },
+
+    container: {
+        fontSize: 8,
+        justifyContent: 'flex-start',
+        padding: 8,
     },
 
     content: {
@@ -216,6 +215,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+
+    title: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        margin: 8,
+        color: 'black',
+    },
+
 
     modalCenteredView: {
         flex: 1,
@@ -243,11 +250,11 @@ const styles = StyleSheet.create({
     modalTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 10,
+        marginBottom: 8,
     },
 
     modalText: {
-        marginBottom: 15,
+        marginBottom: 16,
         textAlign: 'center',
     },
 
@@ -262,7 +269,7 @@ const styles = StyleSheet.create({
         padding: 8,
         elevation: 2,
         flex: 1,
-        marginHorizontal: 5,
+        marginHorizontal: 4,
     },
 
     buttonLeave: {
@@ -278,12 +285,13 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
     },
-        imageContainer:{
+
+    imageContainer: {
         position: 'relative',
         width: 105,                             // Place in relation to image border
         height: 110,                            // Match image height
-        marginTop: 20,
-        marginLeft: 20,
+        marginTop: 32,
+        marginLeft: 8,
         
     },
 
@@ -306,14 +314,7 @@ const styles = StyleSheet.create({
          justifyContent: 'center' 
     },
 
-    displayName: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginTop: 8,
-        color: 'black',
-        marginLeft: 20, // Align text with the image
-    },
-
+    
     
 
     buttonNeutral:{
