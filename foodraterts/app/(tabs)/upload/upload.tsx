@@ -3,6 +3,7 @@ import { useState, useLayoutEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
 import CircularProgress from 'react-native-circular-progress-indicator';
+import LinearProgress from 'react-native-circular-progress-indicator';
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as ImagePicker from 'expo-image-picker';
@@ -13,15 +14,17 @@ export default function Upload() {
     const [isModalVisible, setModalVisible] = useState(false);
     const [isProfileModal, setProfileModalVisible] = useState(false);
     const [image, setImage] = useState<string | null>(null);
+    const progressValue = 7.5;
+    const formattedValue = progressValue.toFixed(1);
 
 
-
+    {/* Gallery Permissions */}
     const pickImage = async () => {
-            const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();     // Request media library permissions
-                if (libraryStatus !== 'granted') {
-                    alert('Sorry, we need media library permissions to make this work!');                  // Alert if permissions aren't granted
-                    setProfileModalVisible(false);                                                         // Close modal if permissions are not granted
-                    return;
+        const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();     // Request media library permissions
+            if (libraryStatus !== 'granted') {
+                alert('Sorry, we need media library permissions to make this work!');                  // Alert if permissions aren't granted
+                setProfileModalVisible(false);                                                         // Close modal if permissions are not granted
+            return;
             }
             let result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ['images'],                                                                // Allow only images
@@ -34,12 +37,13 @@ export default function Upload() {
                 }
         };
     
-        const takePhoto = async () => {
-            const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();            // Request camera permissions
-                if (cameraStatus !== 'granted') {
+    {/* Camera Permissions */}
+    const takePhoto = async () => {
+        const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();            // Request camera permissions
+            if (cameraStatus !== 'granted') {
                 alert('Sorry, we need camera permissions to make this work!');
                 setProfileModalVisible(false);
-                return;
+            return;
             }
             let result = await ImagePicker.launchCameraAsync({
                 cameraType: ImagePicker.CameraType.front,
@@ -52,6 +56,7 @@ export default function Upload() {
                 }
         };
 
+    {/* Exit to Home */}
     const handleLeave = () => {
         setModalVisible(false);
         router.replace('/home'); // Replaces the current screen with the home screen
@@ -114,7 +119,7 @@ export default function Upload() {
                                 color="black"
                                 style={[
                                 styles.cameraIcon,
-                                { position: 'absolute', bottom: 8, right: 8 }]}
+                                { position: 'absolute', bottom: 0, right: 8 }]}
                             />
                     </View>
                                     
@@ -125,13 +130,19 @@ export default function Upload() {
             </Text>
             
                 
-                <CircularProgress
-                    radius = {50}
-                    value = {0}
-                    valueSuffix='⭐'
-                    inActiveStrokeOpacity='.75'
-                    padding = {8}
-                />
+                    <View style={styles.circleContainer}>
+                    <CircularProgress
+                        radius={50}
+                        value={progressValue}
+                        maxValue={10}
+                        valueSuffix='⭐'
+                    />
+                    <Text style={styles.valueText}>{formattedValue}</Text>
+                    </View>
+            </View>
+
+            <View style={styles.descriptionContainer}>
+                <Text>Upload Screen</Text>
             </View>
             {/* <View style = {styles.CircularProgressContainer}>
                 <CircularProgress
@@ -195,6 +206,7 @@ const styles = StyleSheet.create ({
         // backgroundColor: theme.colors.background, // Use theme color for background
     },
 
+    // Styles for the circular progress container
     CircularProgressContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -204,10 +216,43 @@ const styles = StyleSheet.create ({
         
     },
 
+    circleContainer: {
+        position: 'relative',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+    },
+        valueText: {
+        position: 'absolute',
+        fontSize: 24,
+        fontWeight: 'bold',
+        
+    },
+
+    imageContainer: {
+        position: 'relative',
+        width: 100,                             // Place in relation to image border
+        height: 100,                            // Match image height
+        margin: 16,
+        // borderWidth: 1,
+        // borderColor: 'black',
+    },
+
     container: {
+        flex: .25,
+        fontSize: 8,
+        justifyContent: 'flex-start',
+        margin: 16,
+        borderWidth: 1,
+        borderColor: 'black',
+    },
+
+    descriptionContainer: {
+        flex: .25,
         fontSize: 8,
         justifyContent: 'flex-start',
         padding: 8,
+        borderWidth: 1,
+        borderColor: 'black',
     },
 
     content: {
@@ -222,7 +267,6 @@ const styles = StyleSheet.create ({
         margin: 8,
         color: 'black',
     },
-
 
     modalCenteredView: {
         flex: 1,
@@ -286,14 +330,7 @@ const styles = StyleSheet.create ({
         textAlign: 'center',
     },
 
-    imageContainer: {
-        position: 'relative',
-        width: 105,                             // Place in relation to image border
-        height: 110,                            // Match image height
-        marginTop: 32,
-        marginLeft: 8,
-        
-    },
+    
 
     cameraIcon: {
         backgroundColor: 'white',
@@ -309,13 +346,10 @@ const styles = StyleSheet.create ({
     },
 
     center: {
-         flex: 4, 
-         alignItems: 'center', 
-         justifyContent: 'center' 
+        flex: 4, 
+        alignItems: 'center', 
+        justifyContent: 'center' 
     },
-
-    
-    
 
     buttonNeutral:{
         backgroundColor: 'lightgray',

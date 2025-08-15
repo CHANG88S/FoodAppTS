@@ -32,17 +32,18 @@ export default function TabLayout() {
                 tabBarInactiveTintColor: "gray",
             })}
         >
-            <Tabs.Screen name="home" />
-            <Tabs.Screen name="search" />
+            <Tabs.Screen name="home" options={{ tabBarLabel: '',}}/>
+            <Tabs.Screen name="search" options={{ tabBarLabel: '',}}/>
             <Tabs.Screen
                 name="upload"
                 options={{
                     headerShown: false,               // Show the header to place the X button
                     tabBarStyle: { display: 'none' }, // Hide the tab bar for this screen
+                    tabBarLabel: '',                  // Hide the label for this tab
                 }}
             />
-            <Tabs.Screen name="notification" />
-            <Tabs.Screen name="profile" />
+            <Tabs.Screen name="notification" options={{ tabBarLabel: '',}}/>
+            <Tabs.Screen name="profile" options={{ tabBarLabel: '',}}/>
         </Tabs>
     );
 }
