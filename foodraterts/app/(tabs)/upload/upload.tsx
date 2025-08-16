@@ -81,30 +81,30 @@ export default function Upload() {
                     animationType="fade"
                     transparent={true}
                     >
-                        <View style={styles.modalCenteredView}>
-                        <View style={styles.modalView}>
-                            <Text style={styles.modalTitle}>Upload an Image?</Text>
-                            <View style={styles.buttonContainer}>
-                                <TouchableOpacity //
-                                    style={[styles.button, styles.buttonLeave]}
-                                    onPress={() => setProfileModalVisible(false)}
+                        <View style={styles.modalProfileView}>
+                            <View style={styles.profileModalView}>
+                                <Text style={styles.profileModalTitle}>Change Profile Picture</Text>
+                                <View style={styles.profileButtonContainer}>
+                                    <TouchableOpacity
+                                        style={[styles.profileButton, styles.buttonNeutral]}
+                                        onPress={pickImage}
                                     >
-                                    <Text style={styles.textStyle}>Closes Modal</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[styles.button, styles.buttonNeutral]}
-                                    onPress={pickImage}
+                                        <Text style={styles.closeTextStyle}>Pick from Gallery</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.profileButton, styles.buttonNeutral]}
+                                        onPress={takePhoto}
                                     >
-                                    <Text style={styles.textStyle}>Pick from Gallery</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[styles.button, styles.buttonNeutral]}
-                                    onPress={takePhoto}
+                                        <Text style={styles.closeTextStyle}>Take a Photo</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity //
+                                        style={[styles.profileButton, styles.buttonNeutral]}
+                                        onPress={() => setProfileModalVisible(false)}
                                     >
-                                    <Text style={styles.textStyle}>Take a Photo</Text>
-                                </TouchableOpacity>
+                                        <Text style={styles.closeTextStyle}>Close</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
-                        </View>
                         </View>
                                 
                 </Modal>
@@ -162,6 +162,9 @@ export default function Upload() {
                 
             </View>  */}
         <GestureHandlerRootView style={{ flex: 1 }}>
+
+
+        
             <Modal
                 visible={isModalVisible}
                 onRequestClose={() => setModalVisible(false)}
@@ -354,5 +357,67 @@ const styles = StyleSheet.create ({
     buttonNeutral:{
         backgroundColor: 'lightgray',
     },
+
+
+
+    // Gallery and Camera Menu at the bottom
+
+    modalProfileView: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        width: '100%',
+    },
+
+    profileModalView: {
+        backgroundColor: 'white',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        width: '100%', // Use full width of parent container
+        paddingHorizontal: 20, // Add horizontal padding
+        paddingVertical: 30, // Add vertical padding
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+
+    closeTextStyle: {
+        fontSize: 24,
+        color: 'white',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        // backgroundColor: 'gray',
+        justifyContent: 'space-evenly',
+        width: 'auto'
+    },
+
+    profileModalTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        textAlign: 'center'
+    },
+
+    profileButtonContainer: {
+        flexDirection: 'column',
+        width: '100%', // Ensure the buttons fill the container
+    },
+
+    profileButton: {
+        borderRadius: 20,
+        padding: 15,
+        elevation: 4,
+        marginBottom: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
+
+
 
 });

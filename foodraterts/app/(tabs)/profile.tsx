@@ -6,6 +6,7 @@ import { useRouter, useNavigation } from 'expo-router';
 
 
 
+
 export default function Profile() {
 
     const navigation = useNavigation();
@@ -83,22 +84,22 @@ export default function Profile() {
                     transparent={true}
             >                                    
                 <View style={styles.modalCenteredView}>
-                    <View style={styles.modalView}>
-                        <Text style={styles.modalTitle}>
+                    <View style={styles.logModalView}>
+                        <Text style={styles.logModalTitle}>
                             Sign Out?
                         </Text>
                         <Text style={styles.modalText}>
                             Are you sure you want to log out?
                         </Text>
-                        <View style={styles.buttonContainer}>
+                        <View style={styles.logButtonContainer}>
                             <TouchableOpacity
-                                style={[styles.button, styles.buttonLeave]}
+                                style={[styles.logButton, styles.buttonLeave]}
                                 onPress={handleLeave}
                                 >
                                 <Text style={styles.textStyle}>Sign Out</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.button, styles.buttonContinue]}
+                                style={[styles.logButton, styles.buttonContinue]}
                                 onPress={() => setModalVisible(false)}
                                 >
                                 <Text style={styles.textStyle}>Stay Signed In</Text>
@@ -107,9 +108,9 @@ export default function Profile() {
                     </View>
                 </View>
             </Modal>
-            <Text style={styles.displayName}>
-                        CHANG88S 
-                    </Text>
+                <Text style={styles.displayName}>
+                    CHANG88S 
+                </Text>
                     <TouchableOpacity onPress={setProfileModalVisible.bind(null, true)} style={styles.centeredContent}>
                         <Modal                                      // Modal to change profile picture
                             visible={isProfileModal}
@@ -117,27 +118,27 @@ export default function Profile() {
                             animationType="fade"
                             transparent={true}
                         >
-                        <View style={styles.modalCenteredView}>
-                            <View style={styles.modalView}>
-                                <Text style={styles.modalTitle}>Change Profile Picture</Text>
-                                <View style={styles.buttonContainer}>
-                                    <TouchableOpacity //
-                                        style={[styles.button, styles.buttonLeave]}
-                                        onPress={() => setProfileModalVisible(false)}
-                                    >
-                                        <Text style={styles.textStyle}>Closes Modal</Text>
-                                    </TouchableOpacity>
+                        <View style={styles.modalProfileView}>
+                            <View style={styles.profileModalView}>
+                                <Text style={styles.profileModalTitle}>Change Profile Picture</Text>
+                                <View style={styles.profileButtonContainer}>
                                     <TouchableOpacity
-                                        style={[styles.button, styles.buttonNeutral]}
+                                        style={[styles.profileButton, styles.buttonNeutral]}
                                         onPress={pickImage}
                                     >
-                                        <Text style={styles.textStyle}>Pick from Gallery</Text>
+                                        <Text style={styles.closeTextStyle}>Pick from Gallery</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
-                                        style={[styles.button, styles.buttonNeutral]}
+                                        style={[styles.profileButton, styles.buttonNeutral]}
                                         onPress={takePhoto}
                                     >
-                                        <Text style={styles.textStyle}>Take a Photo</Text>
+                                        <Text style={styles.closeTextStyle}>Take a Photo</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity //
+                                        style={[styles.profileButton, styles.buttonNeutral]}
+                                        onPress={() => setProfileModalVisible(false)}
+                                    >
+                                        <Text style={styles.closeTextStyle}>Close</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -270,7 +271,15 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.5)',
     },
 
-    modalView: {
+    modalProfileView: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        width: '100%',
+    },
+
+    logModalView: {
         margin: 20,
         backgroundColor: 'white',
         borderRadius: 20,
@@ -286,10 +295,33 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
 
-    modalTitle: {
+    profileModalView: {
+        backgroundColor: 'white',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        width: '100%', // Use full width of parent container
+        paddingHorizontal: 20, // Add horizontal padding
+        paddingVertical: 30, // Add vertical padding
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+
+    logModalTitle: {
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 10,
+    },
+
+    profileModalTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        textAlign: 'center'
     },
 
     modalText: {
@@ -297,18 +329,32 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 
-    buttonContainer: {
+    logButtonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         width: '100%',
     },
 
-    button: {
+    profileButtonContainer: {
+        flexDirection: 'column',
+        width: '100%', // Ensure the buttons fill the container
+    },
+
+    logButton: {
         borderRadius: 20,
         padding: 10,
         elevation: 2,
         flex: 1,
         marginHorizontal: 5,
+    },
+
+    profileButton: {
+        borderRadius: 20,
+        padding: 15,
+        elevation: 4,
+        marginBottom: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 
     buttonLeave: {
@@ -328,6 +374,18 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         textAlign: 'center',
+        fontSize: 20,
+    },
+
+    closeTextStyle: {
+        fontSize: 24,
+        color: 'white',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        // backgroundColor: 'gray',
+        justifyContent: 'space-evenly',
+        width: 'auto'
+        
     },
 });
 
