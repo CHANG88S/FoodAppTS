@@ -1,10 +1,8 @@
-import { View, Text, Modal, TouchableOpacity, SafeAreaView, Image, StyleSheet } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, SafeAreaView, Image, StyleSheet, TextInput, } from 'react-native';
 import { useState, useLayoutEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
 import CircularProgress from 'react-native-circular-progress-indicator';
-import LinearProgress from 'react-native-circular-progress-indicator';
-import { AnimatedCircularProgress } from 'react-native-circular-progress';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -14,8 +12,9 @@ export default function Upload() {
     const [isModalVisible, setModalVisible] = useState(false);
     const [isProfileModal, setProfileModalVisible] = useState(false);
     const [image, setImage] = useState<string | null>(null);
-    const progressValue = 7.5;
-    const formattedValue = progressValue.toFixed(1);
+    const [text, setText] = useState('');
+    const [charCount, setCharCount] = useState(0);
+
 
 
     {/* Gallery Permissions */}
@@ -128,21 +127,37 @@ export default function Upload() {
             <Text style={styles.title}>
                 How Would You Rate This Item? 
             </Text>
-            
                 
-                    <View style={styles.circleContainer}>
+                <View style={styles.circleContainer}>
                     <CircularProgress
                         radius={50}
-                        value={progressValue}
+                        value={5}
                         maxValue={10}
                         valueSuffix='⭐'
                     />
-                    <Text style={styles.valueText}>{formattedValue}</Text>
-                    </View>
+                    <Text style={styles.valueText}></Text>
+                </View>
             </View>
 
             <View style={styles.descriptionContainer}>
-                <Text>Upload Screen</Text>
+                {/* <Text style = {{
+                    padding: 4,
+                    fontSize: 12,
+                    fontWeight: 'bold'
+                    }}> */}
+                <Text style = {styles.title}>
+                Any adjustments to your order?
+                </Text>
+                    <TextInput 
+                        placeholder='"E.g: I ordered my drink with 50% sweetness, 50% ice "'
+                        style = {styles.textInput}
+                        multiline = {true}
+                        maxLength={250}
+                        onChangeText={(newText) => {
+                            setText(newText);
+                            setCharCount(newText.length);
+                        }}>
+                    </TextInput>   
             </View>
             {/* <View style = {styles.CircularProgressContainer}>
                 <CircularProgress
@@ -250,7 +265,7 @@ const styles = StyleSheet.create ({
     },
 
     descriptionContainer: {
-        flex: .25,
+        flex: .5,
         fontSize: 8,
         justifyContent: 'flex-start',
         padding: 8,
@@ -417,7 +432,16 @@ const styles = StyleSheet.create ({
         alignItems: 'center',
     },
 
-
+    textInput: {
+        height: 100,
+        margin: 0,
+        borderWidth: 1,
+        borderColor: 'black',
+        paddingTop: 12,
+        borderRadius: 10,
+        textAlignVertical: 'top',
+        
+    },
 
 
 });
