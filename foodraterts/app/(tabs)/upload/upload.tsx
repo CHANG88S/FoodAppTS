@@ -5,6 +5,8 @@ import { useRouter, useNavigation } from 'expo-router';
 import CircularProgress from 'react-native-circular-progress-indicator';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as ImagePicker from 'expo-image-picker';
+import React from 'react';
+import Slider from '@react-native-community/slider';
 
 export default function Upload() {
     const navigation = useNavigation();
@@ -13,8 +15,11 @@ export default function Upload() {
     const [isProfileModal, setProfileModalVisible] = useState(false);
     const [image, setImage] = useState<string | null>(null);
     const [text, setText] = useState('');
-    const [charCount, setCharCount] = useState(0);
+    const [charCount, setCharCount] = React.useState(0);
+    const [input, setInput] = React.useState("");
+    const [sliderState, setSliderState] = React.useState<number>(0);
 
+    console.log(input);
 
 
     {/* Gallery Permissions */}
@@ -149,15 +154,39 @@ export default function Upload() {
                 Any adjustments to your order?
                 </Text>
                     <TextInput 
-                        placeholder='"E.g: I ordered my drink with 50% sweetness, 50% ice "'
+                        placeholder='"E.g: I ordered my drink with 50% sweetness, 50% ice."'
                         style = {styles.textInput}
                         multiline = {true}
                         maxLength={250}
+                        keyboardAppearance='dark'
                         onChangeText={(newText) => {
                             setText(newText);
                             setCharCount(newText.length);
-                        }}>
-                    </TextInput>   
+                        }}
+                        onSubmitEditing={() =>{
+                            alert('Your message is: ${input}')
+                            setInput("");
+                        }}
+                        // value={input} // will edit later
+                        > 
+                    </TextInput>
+                    <Text style = {{textAlign: 'right'}}> (newText)</Text> {/* will eventually be a character count*/}
+            </View>
+            <View style = {styles.sliderContainer}>
+                <Slider 
+                    style={{width: '100%', height: 20}}
+                    minimumValue = {0}
+                    maximumValue = {5}
+                    step = {.5}
+                    minimumTrackTintColor = "#6c3b3bff"
+                    maximumTrackTintColor = "#999999"
+                    value = {sliderState}
+                    onValueChange={(value) => setSliderState (value)}
+                ></Slider>
+                <Text style = {{ fontSize: 12, fontWeight: 'bold' }}> {sliderState} </Text>
+
+
+                
             </View>
             {/* <View style = {styles.CircularProgressContainer}>
                 <CircularProgress
@@ -239,7 +268,8 @@ const styles = StyleSheet.create ({
         justifyContent: 'center',
         alignItems: 'flex-start',
     },
-        valueText: {
+    
+    valueText: {
         position: 'absolute',
         fontSize: 24,
         fontWeight: 'bold',
@@ -256,7 +286,7 @@ const styles = StyleSheet.create ({
     },
 
     container: {
-        flex: .25,
+        flex: .5,
         fontSize: 8,
         justifyContent: 'flex-start',
         margin: 16,
@@ -272,6 +302,19 @@ const styles = StyleSheet.create ({
         borderWidth: 1,
         borderColor: 'black',
     },
+
+    sliderContainer: {
+        width: '90%',
+        // height: '10%',
+        // flex: .5,
+        alignSelf: 'center',
+        fontSize: 8,
+        justifyContent: 'flex-start',
+        margin: 12,
+        borderWidth: 1,
+        borderColor: 'black',
+    },
+
 
     content: {
         flex: 1,

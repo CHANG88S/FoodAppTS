@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     },
 
     displayName: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
         marginTop: 8,
         color: 'black',
@@ -271,13 +271,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.5)',
     },
 
-    modalProfileView: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        width: '100%',
-    },
+    
 
     logModalView: {
         margin: 20,
@@ -293,6 +287,63 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 4,
         elevation: 5,
+    },
+
+    
+
+    logModalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+
+    modalText: {
+        marginBottom: 15,
+        textAlign: 'center',
+    },
+
+    logButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+
+    logButton: {
+        borderRadius: 20,
+        padding: 10,
+        elevation: 2,
+        flex: 1,
+        marginHorizontal: 5,
+    },
+
+    buttonLeave: {
+        backgroundColor: '#b01212',
+    },
+
+    buttonContinue: {
+        backgroundColor: '#4371bd',
+        opacity: 1,
+    },
+
+    buttonNeutral:{
+        backgroundColor: 'lightgray',
+    },
+
+    textStyle: {
+        color: 'white',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        fontSize: 20,
+    },
+
+    // Gallery and Camera Menu at the bottom
+
+    modalProfileView: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        width: '100%',
     },
 
     profileModalView: {
@@ -311,10 +362,14 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
 
-    logModalTitle: {
-        fontSize: 18,
+    closeTextStyle: {
+        fontSize: 24,
+        color: 'white',
         fontWeight: 'bold',
-        marginBottom: 10,
+        textAlign: 'center',
+        // backgroundColor: 'gray',
+        justifyContent: 'space-evenly',
+        width: 'auto'
     },
 
     profileModalTitle: {
@@ -324,28 +379,9 @@ const styles = StyleSheet.create({
         textAlign: 'center'
     },
 
-    modalText: {
-        marginBottom: 15,
-        textAlign: 'center',
-    },
-
-    logButtonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-    },
-
     profileButtonContainer: {
         flexDirection: 'column',
         width: '100%', // Ensure the buttons fill the container
-    },
-
-    logButton: {
-        borderRadius: 20,
-        padding: 10,
-        elevation: 2,
-        flex: 1,
-        marginHorizontal: 5,
     },
 
     profileButton: {
@@ -357,36 +393,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
 
-    buttonLeave: {
-        backgroundColor: 'red',
-    },
-
-    buttonContinue: {
-        backgroundColor: 'blue',
-        opacity: 0.,
-    },
-
-    buttonNeutral:{
-        backgroundColor: 'lightgray',
-    },
-
-    textStyle: {
-        color: 'white',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        fontSize: 20,
-    },
-
-    closeTextStyle: {
-        fontSize: 24,
-        color: 'white',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        // backgroundColor: 'gray',
-        justifyContent: 'space-evenly',
-        width: 'auto'
-        
-    },
 });
 
 
