@@ -34,16 +34,19 @@ export default function TabLayout() {
         >
             <Tabs.Screen name="home" options={{ tabBarLabel: '',}}/>
             <Tabs.Screen name="search" options={{ tabBarLabel: '',}}/>
-            <Tabs.Screen
-                name="upload"
-                options={{
+            <Tabs.Screen name="upload"
+                    options={{
                     headerShown: false,               // Show the header to place the X button
                     tabBarStyle: { display: 'none' }, // Hide the tab bar for this screen
                     tabBarLabel: '',                  // Hide the label for this tab
                 }}
             />
             <Tabs.Screen name="notification" options={{ tabBarLabel: '',}}/>
-            <Tabs.Screen name="profile" options={{ tabBarLabel: '',}}/>
+            <Tabs.Screen name="profile" 
+                    options={{
+                    headerShown: false,               // Show the header to place the X button
+                    tabBarLabel: '',                  // Hide the label for this tab
+                }}/>
         </Tabs>
     );
 }
