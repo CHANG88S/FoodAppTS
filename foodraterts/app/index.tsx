@@ -4,7 +4,7 @@ import { Button, View } from "react-native";
 const index = () => {  
   // return <Redirect href="/(tabs)/home" />;
   return (
-  <View  
+    <View  
     style =  {{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
     <Link href="../register" asChild>
       {/* <Text>Welcome to FoodRaterTS!</Text> */}

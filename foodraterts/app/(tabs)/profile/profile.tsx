@@ -2,7 +2,9 @@ import { View, Text, StyleSheet, Image, Touchable, TouchableOpacity, Modal, Safe
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import { useRouter, useNavigation } from 'expo-router';
+import { useRouter, useNavigation, Stack, } from 'expo-router';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Drawer } from 'expo-router/drawer'
 
 
 
@@ -58,17 +60,28 @@ export default function Profile() {
     };
     
     useLayoutEffect(() => {
-            navigation.setOptions({
-                headerRight: () => (            // Log out button (in progress)
+        navigation.setOptions({
+            headerRight: () => (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <TouchableOpacity onPress={() => navigation.openDrawer()}>
+                        <Ionicons
+                            name="menu-outline"
+                            size={24}
+                            color="black"
+                            style={{ marginRight: 16 }}
+                        />
+                    </TouchableOpacity>
                     <TouchableOpacity onPress={() => setModalVisible(true)}>
-                        <Ionicons 
-                        name  = "log-out-outline" 
-                        size  = {24} 
-                        color = "black"
-                        style = {{marginRight: 16}} />       
-                    </TouchableOpacity> 
-                ),
-            });
+                        <Ionicons
+                            name="log-out-outline"
+                            size={24}
+                            color="black"
+                            style={{ marginRight: 16 }}
+                        />
+                    </TouchableOpacity>
+                </View>
+            ),
+        });
     }, [navigation]);
 
 
@@ -163,8 +176,6 @@ export default function Profile() {
                     </TouchableOpacity>
                     
                     {/* <Button title="Pick an image from camera roll" onPress={pickImage} /> */}
-
-                    
                     
                     <View 
                         style = {styles.center}>
