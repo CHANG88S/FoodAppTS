@@ -1,29 +1,15 @@
-import { Drawer } from "expo-router/drawer";
-import { Ionicons } from "@expo/vector-icons";
+import { Stack } from "expo-router";
 
-export default function RootLayout() {
+export default function RootLayout () {
+
+    const isLogin = true;
+
     return (
-        <Drawer screenOptions={{ headerShown: false }}
-                drawerPosition= "right">
-            <Drawer.Screen 
-                name="(tabs)" // This routes to your existing tab navigator
-                options={{ 
-                    title: 'Main App',
-                    drawerIcon: ({ color, size }) => (
-                        <Ionicons name="apps-outline" size={size} color={color} />
-                    ),
-                }}
-            />
-            {/* You can add more drawer screens here, like profileSettings */}
-            <Drawer.Screen
-                name="profileSettings"
-                options={{
-                    title: 'Settings',
-                    drawerIcon: ({ color, size }) => (
-                        <Ionicons name="settings-outline" size={size} color={color} />
-                    ),
-                }}
-            />
-        </Drawer>
-    );
-}
+        <Stack>
+          <Stack.Screen 
+          name = "(tabs)" // having (tabs) in the name allows it not to be displayed in the header
+          options=
+            {{ headerShown: false }}/>
+        </Stack>
+        )
+    }
