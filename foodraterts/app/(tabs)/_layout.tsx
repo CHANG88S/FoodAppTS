@@ -45,7 +45,7 @@ export default function TabLayout() {
             <Tabs.Screen name="notification" options={{ tabBarLabel: '',}}/>
             <Tabs.Screen name="profile" 
                     options={{
-                    headerShown: false,               // Show the header to place the X button
+                    headerShown: true,               // Show the header to place the X button
                     tabBarLabel: '',                  // Hide the label for this tab
                 }}/>
         </Tabs>

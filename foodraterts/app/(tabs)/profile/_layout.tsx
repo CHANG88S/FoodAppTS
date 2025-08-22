@@ -14,7 +14,7 @@ export default function ProfileLayout() {
                         <Ionicons name="apps-outline" size={size} color={color} />
                     ),
                 }}
-            />
+            />a
             {/* You can add more drawer screens here, like profileSettings */}
             <Drawer.Screen
                 name="profileSettings"
