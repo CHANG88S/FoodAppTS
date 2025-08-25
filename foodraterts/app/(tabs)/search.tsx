@@ -1,4 +1,5 @@
 import { View, Text } from 'react-native';
+import foodCategories from '@/data/categories'
 
 export default function Search() {
     return (

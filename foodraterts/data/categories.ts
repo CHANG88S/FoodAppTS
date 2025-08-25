@@ -21,5 +21,6 @@ const foodCategories = [
         
     },
 
-
+    
 ]
+export default foodCategories;
