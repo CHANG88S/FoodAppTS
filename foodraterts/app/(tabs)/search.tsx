@@ -1,5 +1,5 @@
 import { View, Text } from 'react-native';
-import CategoryButtons from '@/components/categoryButtons';
+import CategoryButtons from '@/components/CategoryButtons';
 
 export default function Search() {
     return (

@@ -170,7 +170,7 @@ export default function Upload() {
                         // value={input} // will edit later
                         > 
                     </TextInput>
-                    <Text style = {{textAlign: 'right'}}> (newText)</Text> {/* will eventually be a character count*/}
+                    <Text style = {{textAlign: 'right'}}></Text> {/* will eventually be a character count*/}
             </View>
             <View style = {styles.sliderContainer}>
                 <Slider 

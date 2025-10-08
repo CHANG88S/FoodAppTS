@@ -16,7 +16,7 @@ const CategoryButtons = () => {
             <MaterialCommunityIcons 
               name = {item.iconName as any}
               size = {16}
-              color = 'black' />
+              color = 'black' />  
             <Text>{item.title}</Text>
           </TouchableOpacity>
         ))}
