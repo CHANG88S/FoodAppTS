@@ -233,8 +233,8 @@ const styles = StyleSheet.create({
     },
 
     centeredContent: {
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
     },
 
     imageContainer:{
@@ -259,6 +259,7 @@ const styles = StyleSheet.create({
         borderColor: 'gray',
         borderWidth: 2,
         borderRadius: 50,                       // Half of width/height for a perfect circle
+    
     },
 
     center: {
@@ -273,6 +274,7 @@ const styles = StyleSheet.create({
         marginTop: 8,
         color: 'black',
         marginLeft: 20, // Align text with the image
+        textAlign: 'left',
     },
 
     modalCenteredView: {
