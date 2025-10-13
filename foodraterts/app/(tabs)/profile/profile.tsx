@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
         width: 105,                             // Place in relation to image border
         height: 110,                            // Match image height
         // marginTop: 20,
-        margin: 20,
+        margin: 16,
         
     },
 
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     displayName: {
         fontSize: 16,
         fontWeight: 'bold',
-        marginTop: 8,
+        marginTop: 16,
         color: 'black',
         marginLeft: 20, // Align text with the image
         textAlign: 'left',

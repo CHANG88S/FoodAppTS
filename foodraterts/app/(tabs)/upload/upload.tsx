@@ -174,7 +174,7 @@ export default function Upload() {
             </View>
             <View style = {styles.sliderContainer}>
                 <Text style = {styles.title}>
-                Any adjustments to your order?
+                Rate this!
                 </Text>
                 <Slider 
                     style={{width: '100%', height: 20}}
