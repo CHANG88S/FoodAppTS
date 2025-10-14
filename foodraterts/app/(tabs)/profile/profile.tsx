@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, Image, Touchable, TouchableOpacity, Modal, SafeAreaView, Platform, Button } from 'react-native';
+import RatingMenu from '../../../components/RatingMenu';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -179,8 +180,14 @@ export default function Profile() {
                     
                     <View 
                         style = {styles.center}>
-                    <Text>Profile Screen</Text> 
-                    
+                    <Text>Profile Screen</Text>
+
+                    {/* Rating menu example - tap Rate to pick a rating */}
+                    <RatingMenu onSelect={(opt) => {
+                        console.log('selected rating', opt.value);
+                        // TODO: call an API or update state with the selected rating
+                    }} />
+
                     </View>
                     
                     

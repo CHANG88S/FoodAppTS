@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
 import Slider from '@react-native-community/slider';
+import RatingMenu from '../../../components/RatingMenu';
 
 export default function Upload() {
     const navigation = useNavigation();
@@ -18,6 +19,9 @@ export default function Upload() {
     const [charCount, setCharCount] = React.useState(0);
     const [input, setInput] = React.useState("");
     const [sliderState, setSliderState] = React.useState<number>(0);
+    const [criteriaList, setCriteriaList] = React.useState<any[]>([]);
+    const [showAddModal, setShowAddModal] = React.useState<boolean>(false);
+    const [newCriterionName, setNewCriterionName] = React.useState<string>('');
 
     console.log(input);
 
@@ -172,25 +176,97 @@ export default function Upload() {
                     </TextInput>
                     <Text style = {{textAlign: 'right'}}></Text> {/* will eventually be a character count*/}
             </View>
-            <View style = {styles.sliderContainer}>
-                <Text style = {styles.title}>
-                Rate this!
-                </Text>
-                <Slider 
-                    style={{width: '100%', height: 20}}
-                    minimumValue = {0}
-                    maximumValue = {5}
-                    step = {.25}
-                    minimumTrackTintColor = "#6c3b3bff"
-                    maximumTrackTintColor = "#999999"
-                    value = {sliderState}
-                    onValueChange={(value) => setSliderState (value)}
-                ></Slider>
-                <Text style = {{ fontSize: 12, fontWeight: 'bold' }}> {sliderState} </Text>
+                        <View style = {styles.sliderContainer}>
+                                <Text style = {styles.title}>
+                                Rate this!
+                                </Text>
+                                <Slider 
+                                        style={{width: '100%', height: 20}}
+                                        minimumValue = {0}
+                                        maximumValue = {5}
+                                        step = {.5}
+                                        minimumTrackTintColor = "#6c3b3bff"
+                                        maximumTrackTintColor = "#999999"
+                                        value = {sliderState}
+                                        onValueChange={(value) => setSliderState (value)}
+                                />
+                                <Text style = {{ fontSize: 12, fontWeight: 'bold' }}> {sliderState} </Text>
 
+                                {/* dynamic criteria list + add button */}
+                                                <View style={styles.criteriaHeader}>
+                                                    <Text style={styles.title}>Criteria</Text>
+                                                    <TouchableOpacity
+                                                        onPress={() => setShowAddModal(true)}
+                                                        style={styles.addButton}
+                                                    >
+                                                        <Ionicons name="add-circle-outline" size={28} color="#007AFF" />
+                                                    </TouchableOpacity>
+                                                </View>
 
-                
-            </View>
+                                                {/* Add modal: choose predefined criterion or custom name */}
+                                                <Modal visible={showAddModal} transparent animationType="slide" onRequestClose={() => setShowAddModal(false)}>
+                                                    <View style={styles.addModalCenteredView}>
+                                                        <View style={styles.addModalView}>
+                                                            <Text style={[styles.title, { marginBottom: 8 }]}>Add Rating Criteria</Text>
+                                                            {['Sweetness', 'Ice', 'Spice', 'Temperature', 'Salt'].map((name) => (
+                                                                <TouchableOpacity
+                                                                    key={name}
+                                                                    style={styles.addOption}
+                                                                    onPress={() => {
+                                                                        const id = Date.now().toString() + name;
+                                                                        setCriteriaList(prev => [...prev, { id, name, value: 0 }]);
+                                                                        setShowAddModal(false);
+                                                                        setNewCriterionName('');
+                                                                    }}
+                                                                >
+                                                                    <Text style={styles.addOptionText}>{name}</Text>
+                                                                </TouchableOpacity>
+                                                            ))}
+
+                                                            <Text style={{ marginTop: 12 }}>Or create custom:</Text>
+                                                            <TextInput
+                                                                placeholder="Custom name"
+                                                                value={newCriterionName}
+                                                                onChangeText={setNewCriterionName}
+                                                                style={styles.addInput}
+                                                            />
+                                                            <View style={{ flexDirection: 'row', marginTop: 8 }}>
+                                                                <TouchableOpacity
+                                                                    style={[styles.button, { flex: 1, marginRight: 8 }]}
+                                                                    onPress={() => {
+                                                                        if (newCriterionName.trim().length === 0) return;
+                                                                        const id = Date.now().toString() + newCriterionName;
+                                                                        setCriteriaList(prev => [...prev, { id, name: newCriterionName.trim(), value: 0 }]);
+                                                                        setNewCriterionName('');
+                                                                        setShowAddModal(false);
+                                                                    }}
+                                                                >
+                                                                    <Text style={styles.textStyle}>Add</Text>
+                                                                </TouchableOpacity>
+                                                                <TouchableOpacity
+                                                                    style={[styles.button, { flex: 1, backgroundColor: '#888' }]}
+                                                                    onPress={() => { setShowAddModal(false); setNewCriterionName(''); }}
+                                                                >
+                                                                    <Text style={styles.textStyle}>Cancel</Text>
+                                                                </TouchableOpacity>
+                                                            </View>
+                                                        </View>
+                                                    </View>
+                                                </Modal>
+
+                                                {criteriaList.map((c) => (
+                                    <View key={c.id} style={styles.criterionRow}>
+                                        <RatingMenu
+                                            buttonTitle={`${c.name}: ${c.value || '-'}`}
+                                            onSelect={(opt) => setCriteriaList(prev => prev.map(item => item.id === c.id ? { ...item, value: opt.value ?? opt.id } : item))}
+                                        />
+                                        <TouchableOpacity onPress={() => setCriteriaList(prev => prev.filter(item => item.id !== c.id))} style={styles.removeButton}>
+                                            <Ionicons name="trash-outline" size={20} color="#b01212" />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+
+                        </View>
             {/* <View style = {styles.CircularProgressContainer}>
                 <CircularProgress
                     radius = {50}
@@ -316,6 +392,63 @@ const styles = StyleSheet.create ({
         margin: 12,
         borderWidth: 1,
         borderColor: 'black',
+    },
+
+    criteriaHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 12,
+    },
+
+    addButton: {
+        padding: 4,
+    },
+
+    criterionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 8,
+    },
+
+    removeButton: {
+        marginLeft: 8,
+        padding: 6,
+    },
+
+    addModalCenteredView: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.4)',
+    },
+
+    addModalView: {
+        width: '90%',
+        backgroundColor: 'white',
+        borderRadius: 12,
+        padding: 16,
+        alignItems: 'stretch',
+    },
+
+    addOption: {
+        paddingVertical: 12,
+        paddingHorizontal: 8,
+        borderBottomWidth: 1,
+        borderColor: '#eee',
+    },
+
+    addOptionText: {
+        fontSize: 16,
+    },
+
+    addInput: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        padding: 8,
+        borderRadius: 8,
+        marginTop: 8,
     },
 
 
