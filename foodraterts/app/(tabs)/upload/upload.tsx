@@ -208,7 +208,11 @@ export default function Upload() {
                                                     <View style={styles.addModalCenteredView}>
                                                         <View style={styles.addModalView}>
                                                             <Text style={[styles.title, { marginBottom: 8 }]}>Add Rating Criteria</Text>
-                                                            {['Sweetness', 'Ice', 'Spice', 'Temperature', 'Salt'].map((name) => (
+                                                            {
+                                                            ['Sweetness', 'Ice', 'Spice', 'Temperature', 'Salt'
+                                                            , 'Portion Size', 'Presentation', 'Freshness', 'Texture', 'Value for Money'
+                                                            ]
+                                                            .map((name) => (
                                                                 <TouchableOpacity
                                                                     key={name}
                                                                     style={styles.addOption}
