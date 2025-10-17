@@ -180,7 +180,7 @@ export default function Upload() {
                                 <Text style = {styles.title}>
                                 Rate this!
                                 </Text>
-                                <Slider 
+                                {/* <Slider 
                                         style={{width: '100%', height: 20}}
                                         minimumValue = {0}
                                         maximumValue = {5}
@@ -190,7 +190,7 @@ export default function Upload() {
                                         value = {sliderState}
                                         onValueChange={(value) => setSliderState (value)}
                                 />
-                                <Text style = {{ fontSize: 12, fontWeight: 'bold' }}> {sliderState} </Text>
+                                <Text style = {{ fontSize: 12, fontWeight: 'bold' }}> {sliderState} </Text> */}
 
                                 {/* dynamic criteria list + add button */}
                                                 <View style={styles.criteriaHeader}>
