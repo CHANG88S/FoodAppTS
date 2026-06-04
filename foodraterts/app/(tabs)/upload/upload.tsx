@@ -25,12 +25,9 @@ interface Criterion {
 }
 
 const PREDEFINED_CRITERIA = [
-    'Accuracy',
-    'Freshness',
+    'Consistency',
     'Portion Size',
     'Presentation',
-    'Sweetness',
-    'Texture',
     'Value for Money'
 ];
 
