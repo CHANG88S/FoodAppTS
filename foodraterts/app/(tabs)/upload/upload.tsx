@@ -184,7 +184,7 @@ export default function Upload() {
                             })}
                         </View>
                         <Text style={styles.scoreTextSubtitle}>
-                            Score: {manualOverallScore.toFixed(1)} / 5.0
+                            Stars: {manualOverallScore.toFixed(1)} / 5.0
                         </Text>
                     </View>
 

@@ -70,18 +70,19 @@ export default function Profile() {
     const [milkPref, setMilkPref] = useState<string>('Oat Milk');
 
     const getSweetnessLabel = (val: number) => {
-        if (val === 0) return '0% (Unsweetened)';
-        if (val <= 0.3) return '30% (Low Sweet)';
-        if (val <= 0.5) return '50% (Less Sweet)';
-        if (val <= 0.7) return '70% (Half Sweet)';
-        return '100% (Regular Sweet)';
+        if (val === 0)   return  '0% (No Sugar)';
+        if (val <= 0.35) return '25% (Light Sugar)';
+        if (val <= 0.50) return '50% (Half Sugar)';
+        if (val <= 0.75) return '75% (Less Sugar)';
+        return '100% (Regular Sugar)';
     };
 
     const getIceLabel = (val: number) => {
         if (val === 0) return 'No Ice';
-        if (val <= 0.4) return 'Less Ice';
-        if (val <= 0.7) return 'Regular Ice';
-        return 'Extra Ice';
+        if (val <= 0.25) return 'Light Ice';
+        if (val <= 0.5) return 'Half Ice';
+        if (val <= 0.75) return 'Less Ice';
+        return 'Regular Ice';
     };
 
     const pickImage = async () => {

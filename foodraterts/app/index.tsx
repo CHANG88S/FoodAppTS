@@ -1,107 +1,168 @@
-import { Link, Redirect } from "expo-router";
-import { Button, View } from "react-native";
-import { auth } from "../firebaseconfig";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
-import { router } from "expo-router";
-import { StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { StyleSheet, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
+import { Link, useRouter } from "expo-router";
+// Use the official Convex Auth hook for React Native clients
+import { useAuthActions } from "@convex-dev/auth/react";
 
-const index = () => {  
+const LoginIndex = () => {  
+  const router = useRouter();
+  const { signIn } = useAuthActions(); // Convex hook handles both signing in AND signing up
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  
- const signIn = async () => {
+  const [loading, setLoading] = useState(false);
+
+  // Handle User Sign In with Convex Auth
+  const handleSignIn = async () => {
+    if (!email || !password) return Alert.alert("Error", "Please fill out all fields.");
+    
+    setLoading(true);
     try {
-      const user = await signInWithEmailAndPassword(auth, email, password)
-      if (user) router.replace('/(tabs)/home');
+      // Convex Auth uses standard provider strings. "password" is for traditional email/pass
+      await signIn("password", { email, password, flow: "signIn" });
+      router.replace('/(tabs)/home');
     } catch (error: any) {
-      console.log(error)
-      alert('Sign in failed: ' + error.message);
+      console.error(error);
+      Alert.alert('Sign In Failed', error.message || 'Invalid email or password.');
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  const signUp = async () => {
+  // Handle User Registration with Convex Auth
+  const handleSignUp = async () => {
+    if (!email || !password) return Alert.alert("Error", "Please fill out all fields.");
+
+    setLoading(true);
     try {
-      const user = await createUserWithEmailAndPassword(auth, email, password)
-      if (user) router.replace('/(tabs)/home');
+      // Swapping the flow string to "signUp" tells Convex to generate a new user document
+      await signIn("password", { email, password, flow: "signUp" });
+      
+      Alert.alert(
+        'Account Created!', 
+        'Welcome to FoodRater!',
+        [{ text: 'Get Started', onPress: () => router.replace('/(tabs)/home') }]
+      );
     } catch (error: any) {
-      console.log(error)
-      alert('Sign in failed: ' + error.message);
+      console.error(error);
+      Alert.alert('Registration Failed', error.message || 'Could not create account.');
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-
-  // return <Redirect href="/(tabs)/home" />;
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-      <TextInput style={styles.textInput} placeholder="email" value={email} onChangeText={setEmail} />
-      <TextInput style={styles.textInput} placeholder="password" value={password} onChangeText={setPassword} secureTextEntry/>
-      <TouchableOpacity style={styles.button} onPress={signIn}>
-        <Text style={styles.text}>Login</Text>
+      <Text style={styles.title}>FoodRater</Text>
+      
+      <TextInput 
+        style={styles.textInput} 
+        placeholder="Email" 
+        value={email} 
+        onChangeText={setEmail} 
+        autoCapitalize="none"
+        keyboardType="email-address"
+        editable={!loading}
+      />
+      
+      <TextInput 
+        style={styles.textInput} 
+        placeholder="Password" 
+        value={password} 
+        onChangeText={setPassword} 
+        secureTextEntry
+        autoCapitalize="none"
+        editable={!loading}
+      />
+      
+      <TouchableOpacity 
+        style={[styles.button, loading && styles.disabledButton]} 
+        onPress={handleSignIn}
+        disabled={loading}
+      >
+        <Text style={styles.text}>{loading ? "Connecting..." : "Login"}</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={signUp}>
+      
+      <TouchableOpacity 
+        style={[styles.button, styles.signUpButton, loading && styles.disabledButton]} 
+        onPress={handleSignUp}
+        disabled={loading}
+      >
         <Text style={styles.text}>Make Account</Text>
       </TouchableOpacity>
-      <Link href="../(tabs)/home" asChild>
-       {/* <Text>Welcome to FoodRaterTS!</Text> */}
-      <Button title = "skip"/>        
-    </Link>
+      
+      <Link href="/(tabs)/home" style={styles.skipText}>
+        Skip for now
+      </Link>
     </SafeAreaView>
-    
-  )
-}
+  );
+};
 
-export default index
+export default LoginIndex;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FAFAFA', // A softer white for a modern, minimalist background
+    backgroundColor: '#FAFAFA', 
   },
   title: {
-    fontSize: 28, // A bit larger for a more striking appearance
-    fontWeight: '800', // Extra bold for emphasis
-    marginBottom: 40, // Increased space for a more airy, open feel
-    color: '#1A237E', // A deep indigo for a sophisticated, modern look
+    fontSize: 32, 
+    fontWeight: '800', 
+    marginBottom: 40, 
+    color: '#6c3b3b', 
+    letterSpacing: 0.5,
   },
   textInput: {
-    height: 50, // Standard height for elegance and simplicity
-    width: '90%', // Full width for a more expansive feel
-    backgroundColor: '#FFFFFF', // Pure white for contrast against the container
-    borderColor: '#E8EAF6', // A very light indigo border for subtle contrast
+    height: 50, 
+    width: '90%', 
+    backgroundColor: '#FFFFFF', 
+    borderColor: '#E8EAF6', 
     borderWidth: 2,
-    borderRadius: 15, // Softly rounded corners for a modern, friendly touch
-    marginVertical: 15,
-    paddingHorizontal: 25, // Generous padding for ease of text entry
-    fontSize: 16, // Comfortable reading size
-    color: '#3C4858', // A dark gray for readability with a hint of warmth
-    shadowColor: '#9E9E9E', // A medium gray shadow for depth
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4, // Slightly elevated for a subtle 3D effect
+    borderRadius: 15, 
+    marginVertical: 10,
+    paddingHorizontal: 20, 
+    fontSize: 16, 
+    color: '#3C4858', 
+    shadowColor: '#9E9E9E', 
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2, 
   },
   button: {
     width: '90%',
-    marginVertical: 15,
-    backgroundColor: '#5C6BC0', // A lighter indigo to complement the title color
-    padding: 20,
-    borderRadius: 15, // Matching rounded corners for consistency
+    marginVertical: 10,
+    backgroundColor: '#6c3b3b', 
+    padding: 16,
+    borderRadius: 15, 
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#5C6BC0', // Shadow color to match the button for a cohesive look
+    shadowColor: '#6c3b3b', 
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 5,
-    elevation: 5,
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  signUpButton: {
+    backgroundColor: '#4B5563', 
+    shadowColor: '#4B5563',
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
   text: {
-    color: '#FFFFFF', // Maintained white for clear visibility
-    fontSize: 18, // Slightly larger for emphasis
-    fontWeight: '600', // Semi-bold for a balanced weight
+    color: '#FFFFFF', 
+    fontSize: 16, 
+    fontWeight: '600', 
+  },
+  skipText: {
+    marginTop: 20,
+    color: '#9CA3AF',
+    fontSize: 14,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   }
 });

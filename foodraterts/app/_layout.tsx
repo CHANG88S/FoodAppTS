@@ -1,19 +1,21 @@
+import { ConvexReactClient } from "convex/react";
+// 1. Swap the import to use the official Auth Provider wrapper
+import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { Stack } from "expo-router";
+import React from "react";
 
-export default function RootLayout () {
+const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
+  unsavedChangesWarning: false,
+});
 
-    const isLogin = true;
-
-    return (
-        <Stack>
-          <Stack.Screen 
-          name = "index" 
-          options = 
-          {{ headerShown: false }} />
-          <Stack.Screen 
-          name = "(tabs)" // having (tabs) in the name allows it not to be displayed in the header
-          options=
-            {{ headerShown: false }}/>
-        </Stack>
-    );
-};
+export default function RootLayout() {
+  return (
+    // 2. Change ConvexProvider to ConvexAuthProvider
+    <ConvexAuthProvider client={convex}>
+      <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      </Stack>
+    </ConvexAuthProvider>
+  );
+}
