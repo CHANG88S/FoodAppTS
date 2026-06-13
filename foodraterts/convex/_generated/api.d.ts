@@ -9,7 +9,10 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as items from "../items.js";
 import type * as query from "../query.js";
+import type * as restaurants from "../restaurants.js";
+import type * as review from "../review.js";
 
 import type {
   ApiFromModules,
@@ -19,7 +22,10 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  items: typeof items;
   query: typeof query;
+  restaurants: typeof restaurants;
+  review: typeof review;
 }>;
 
 /**

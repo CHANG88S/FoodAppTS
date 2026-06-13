@@ -22,7 +22,7 @@ export const submitItemReview = mutation({
     let item = await ctx.db
       .query("menuItems")
       .withIndex("by_placeId", (q) => q.eq("placeId", args.placeId))
-      .filter((q) => q.eq(q.field("name"), args.itemName))
+      .filter((q) => q.eq(q.field("itemName"), args.itemName))
       .unique();
 
     // 2. If it's a completely new item, insert it into the directory
