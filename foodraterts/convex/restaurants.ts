@@ -1,29 +1,39 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
 
-// 🔥 FIX 1: Added this query so your Home.tsx tab can fetch your 20 boba shops!
-export const listAllRestaurants = query({
-  args: {},
-  handler: async (ctx) => {
-    return await ctx.db.query("restaurants").collect();
+/**
+ * 1. EXACT MATCH LOOKUP
+ * Returns a single restaurant document matching the exact capitalization and text.
+ */
+export const getRestaurantByName = query({
+  args: { name: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("restaurants")
+      .withIndex("by_restaurantName", (q) => q.eq("restaurantName", args.name))
+      .unique(); // Grabs the single unique entry
   },
 });
 
-// Your existing details query (Perfect as written!)
-export const getRestaurantDetails = query({
-  args: { restaurantId: v.id("restaurants") },
+/**
+ * 2. FUZZY SEARCH BAR LOOKUP
+ * Returns an array of restaurants that match a partial text entry.
+ */
+export const searchRestaurantsByName = query({
+  args: { searchTerm: v.string() },
   handler: async (ctx, args) => {
-    const restaurant = await ctx.db.get(args.restaurantId);
-    if (!restaurant) return null;
+    if (args.searchTerm.trim() === "") {
+      return await ctx.db.query("restaurants").collect(); // Return everything if search empty
+    }
 
-    const menuItems = await ctx.db
-      .query("menuItems")
-      .withIndex("by_restaurantId", (q) => q.eq("restaurantId", args.restaurantId))
+    // Filters down the table list matching partial text entries natively
+    return await ctx.db
+      .query("restaurants")
+      .withIndex("by_restaurantName", (q) =>
+        q
+          .gte("restaurantName", args.searchTerm)
+          .lte("restaurantName", args.searchTerm + "\uffff")
+      )
       .collect();
-
-    return {
-      ...restaurant,
-      menuItems,
-    };
   },
 });
