@@ -99,7 +99,7 @@ export default function Home() {
       <View style={styles.cardContent}>
         <Text style={styles.itemName}>{item.itemName}</Text>
         <Text style={styles.restaurantSubName}>🏢 From {item.restaurantName}</Text>
-        <Text style={styles.priceTag}>${item.price?.toFixed(2) || "0.00"}</Text>
+        {/* <Text style={styles.priceTag}>${item.price?.toFixed(2) || "0.00"}</Text> */}
       </View>
     </TouchableOpacity>
   );

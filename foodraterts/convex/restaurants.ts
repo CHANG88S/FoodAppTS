@@ -1,39 +1,65 @@
-import { v } from "convex/values";
 import { query } from "./_generated/server";
+import { v } from "convex/values";
 
 /**
- * 1. EXACT MATCH LOOKUP
- * Returns a single restaurant document matching the exact capitalization and text.
+ * 1. LIST ALL RESTAURANTS - Returns all restaurants for home screen display
  */
-export const getRestaurantByName = query({
-  args: { name: v.string() },
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("restaurants")
-      .withIndex("by_restaurantName", (q) => q.eq("restaurantName", args.name))
-      .unique(); // Grabs the single unique entry
+export const listAllRestaurants = query({
+  args: {}, 
+  handler: async (ctx) => {
+    return await ctx.db.query("restaurants").collect();
   },
 });
 
 /**
- * 2. FUZZY SEARCH BAR LOOKUP
- * Returns an array of restaurants that match a partial text entry.
+ * 2. EXACT MATCH LOOKUP - Find a restaurant by exact name match for detail pages
+ */
+export const getRestaurantByName = query({
+  args: { name: v.string() }, 
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("restaurants")
+      .withIndex("by_restaurantName", (q) => q.eq("restaurantName", args.name))
+      .unique(); 
+  },
+});
+
+/**
+ * 3. SIMPLE SEARCH - Case-insensitive filter on restaurant names
  */
 export const searchRestaurantsByName = query({
   args: { searchTerm: v.string() },
   handler: async (ctx, args) => {
-    if (args.searchTerm.trim() === "") {
-      return await ctx.db.query("restaurants").collect(); // Return everything if search empty
+    if (!args.searchTerm || !args.searchTerm.trim()) {
+      return await ctx.db.query("restaurants").collect(); 
     }
 
-    // Filters down the table list matching partial text entries natively
-    return await ctx.db
-      .query("restaurants")
-      .withIndex("by_restaurantName", (q) =>
-        q
-          .gte("restaurantName", args.searchTerm)
-          .lte("restaurantName", args.searchTerm + "\uffff")
-      )
-      .collect();
+    const lowerSearch = args.searchTerm.toLowerCase().trim();
+    const allRestaurants = await ctx.db.query("restaurants").collect();
+
+    // Filter in JS for true case-insensitive substring matching
+    return allRestaurants
+      .filter((r) => r.restaurantName.toLowerCase().includes(lowerSearch))
+      .slice(0, 15);
+  },
+});
+
+/**
+ * 4. PREFIX SEARCH ALL RESTAURANTS - Case insensitive prefix matching
+ */
+export const searchAllByName = query({
+  args: { namePattern: v.string() }, 
+  handler: async (ctx, args) => {
+    if (!args.namePattern || !args.namePattern.trim()) {
+      return await ctx.db.query("restaurants").collect();
+    }
+
+    const pattern = args.namePattern.toLowerCase().trim(); 
+    const allRestaurants = await ctx.db.query("restaurants").collect();
+
+    // Mimics the 'pattern%' behavior securely using .startsWith()
+    return allRestaurants
+      .filter((r) => r.restaurantName.toLowerCase().startsWith(pattern))
+      .slice(0, 25);
   },
 });
