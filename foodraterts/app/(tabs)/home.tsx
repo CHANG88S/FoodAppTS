@@ -124,7 +124,7 @@ export default function Home() {
         <Ionicons name="search-outline" size={20} color="#9CA3AF" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search boba shops or items (Oolong, Milk Tea)..."
+          placeholder="Search places or items (Oolong, Milk Tea)..."
           placeholderTextColor="#9CA3AF"
           value={searchQuery}
           onChangeText={setSearchQuery}

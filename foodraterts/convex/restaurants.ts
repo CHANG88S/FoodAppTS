@@ -63,3 +63,28 @@ export const searchAllByName = query({
       .slice(0, 25);
   },
 });
+
+/**
+ * 🔥 5. GET RESTAURANT DETAILS & MENU ITEMS (ADDED)
+ * Fetches the core restaurant data and cross-references its linked items from your database
+ */
+export const getRestaurantDetails = query({
+  args: { restaurantId: v.id("restaurants") },
+  handler: async (ctx, args) => {
+    // Fetch the restaurant metadata by its direct Document ID
+    const restaurant = await ctx.db.get(args.restaurantId);
+    if (!restaurant) return null;
+
+    // Fast indexed query to grab all drinks/dishes matching this restaurantId
+    const menuItems = await ctx.db
+      .query("menuItems")
+      .withIndex("by_restaurantId", (q) => q.eq("restaurantId", args.restaurantId))
+      .collect();
+
+    // Stitch them into a single unified object for your layout grid to ingest smoothly
+    return {
+      ...restaurant,
+      menuItems,
+    };
+  },
+});
