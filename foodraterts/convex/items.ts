@@ -41,3 +41,15 @@ export const addMenuItem = mutation({
     return newItemId;
   },
 });
+
+export const createItemReview = mutation({
+  args: {
+    itemId: v.id("menuItems"),
+    overallRating: v.number(),
+    notes: v.string(),
+    userId: v.string(), 
+  },
+  handler: async (ctx, args) => {
+    // ... your insertion logic
+  }
+});

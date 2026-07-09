@@ -28,21 +28,27 @@ export default function Home() {
 
   // 2. BUILD THE UNIFIED SEARCH FEED ARRAY
   const getUnifiedFeed = () => {
-    // STATE A: Not searching? Show the core master directory of 20 spots
+    // Flag all restaurant items upfront so they always map via the correct card layout structure
+    const flaggedRestaurants = restaurants?.map((shop: any) => ({ 
+      ...shop, 
+      isRestaurantCard: true 
+    })) || [];
+
+    // STATE A: Not searching? Show the core master directory of spots
     if (!isSearching) {
-      return restaurants?.filter((shop: any) => {
+      return flaggedRestaurants.filter((shop: any) => {
         if (selectedCategory === "All") return true;
         return shop.category?.toLowerCase().includes(selectedCategory.toLowerCase());
-      }) || [];
+      });
     }
 
     // STATE B: Active searching? Combine restaurant name matches and item name matches
-    const matchingShops = restaurants?.filter((shop: any) => {
+    const matchingShops = flaggedRestaurants.filter((shop: any) => {
       const matchesSearch = shop.restaurantName?.toLowerCase().includes(searchQuery.toLowerCase());
       if (!matchesSearch) return false;
       if (selectedCategory === "All") return true;
       return shop.category?.toLowerCase().includes(selectedCategory.toLowerCase());
-    }).map((shop: any) => ({ ...shop, isRestaurantCard: true })) || []; // Flag to use Card A UI
+    });
 
     const matchingItems = itemSearchResults?.filter((item: any) => {
       if (selectedCategory === "All") return true;
@@ -99,7 +105,6 @@ export default function Home() {
       <View style={styles.cardContent}>
         <Text style={styles.itemName}>{item.itemName}</Text>
         <Text style={styles.restaurantSubName}>🏢 From {item.restaurantName}</Text>
-        {/* <Text style={styles.priceTag}>${item.price?.toFixed(2) || "0.00"}</Text> */}
       </View>
     </TouchableOpacity>
   );
@@ -171,7 +176,13 @@ export default function Home() {
         <FlatList
           data={unifiedData}
           keyExtractor={(item) => item._id}
-          renderItem={({ item }) => item.isRestaurantCard ? renderRestaurantItem(item) : renderItemSearchItem(item)}
+          renderItem={({ item }) => {
+            // Tight check constraint layer: if flagged OR possesses restaurant metadata only, use Card A
+            if (item.isRestaurantCard || (item.restaurantName && !item.itemName)) {
+              return renderRestaurantItem(item);
+            }
+            return renderItemSearchItem(item);
+          }}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
@@ -331,12 +342,6 @@ const styles = StyleSheet.create({
     fontSize: 12, 
     color: "#9CA3AF", 
     marginTop: 2,
-  },
-  priceTag: { 
-    fontSize: 14, 
-    fontWeight: "600", 
-    color: "#6c3b3b", 
-    marginTop: 4,
   },
   loadingContainer: { 
     flex: 1, 

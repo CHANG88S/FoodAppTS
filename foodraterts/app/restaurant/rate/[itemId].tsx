@@ -11,10 +11,14 @@ import {
     ScrollView,
     Alert,
     Dimensions,
+    ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useNavigation } from 'expo-router';
+import { useRouter, useNavigation, useLocalSearchParams } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 import * as ImagePicker from 'expo-image-picker';
 import RatingMenu from '../../../components/RatingMenu';
 
@@ -31,26 +35,27 @@ const PREDEFINED_CRITERIA = [
     'Value for Money'
 ];
 
-// Get screen height to optimize layout spacing boundaries
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 export default function Upload() {
     const navigation = useNavigation();
     const router = useRouter();
     
-    // UI Modals
+    // Ingest parameters from the navigation route object
+    const { id, itemId } = useLocalSearchParams();
+    
+    const createReview = useMutation(api.items.createItemReview);
+    
     const [isDiscardModalVisible, setDiscardModalVisible] = useState(false);
     const [isProfileModal, setProfileModalVisible] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
 
-    // Form Data States
     const [image, setImage] = useState<string | null>(null);
     const [adjustmentText, setAdjustmentText] = useState('');
     const [newCriterionName, setNewCriterionName] = useState('');
     const [criteriaList, setCriteriaList] = useState<Criterion[]>([]);
-    
-    // Manual Overall Score Tracking (Supports half-stars)
     const [manualOverallScore, setManualOverallScore] = useState<number>(5.0);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const pickImage = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -91,14 +96,43 @@ export default function Upload() {
 
     const handleLeave = () => {
         setDiscardModalVisible(false);
-        router.replace('/home');
+        router.back();
     };
 
+    const handleFormSubmit = async () => {
+        if (!itemId) {
+            Alert.alert("Error", "Missing menu item identifier context.");
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            await createReview({
+                itemId: itemId as Id<"menuItems">,
+                overallRating: manualOverallScore,
+                notes: adjustmentText.trim(),
+                userId: "local_user_1", 
+            });
+
+            Alert.alert('Review Added 🎉', 'Your rating data was saved successfully!', [
+                { text: 'OK', onPress: () => router.back() }
+            ]);
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Submission Error', 'Failed to save your review configurations.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Keeps the header container active for the 'X' button, but leaves the layout title blank
     useLayoutEffect(() => {
         navigation.setOptions({
+            headerShown: true,
+            headerTitle: '', 
             headerLeft: () => (
                 <TouchableOpacity onPress={() => setDiscardModalVisible(true)} style={{ marginLeft: 16 }}>
-                    <Ionicons name="close" size={24} color="black" />
+                    <Ionicons name="close" size={24} color="#1F2937" />
                 </TouchableOpacity>
             ),
         });
@@ -116,20 +150,23 @@ export default function Upload() {
         setShowAddModal(false);
     };
 
-    // Determine padding scaling dynamically based on count to crunch size downwards
     const getDynamicRowStyles = () => {
         const totalItems = criteriaList.length;
         if (totalItems <= 3) return { paddingVertical: 10, marginVertical: 6 };
         if (totalItems <= 5) return { paddingVertical: 6, marginVertical: 4 };
-        return { paddingVertical: 3, marginVertical: 2 }; // Extreme shrink to enforce one-screen constraints
+        return { paddingVertical: 3, marginVertical: 2 }; 
     };
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             <SafeAreaView style={styles.root}>
-                {/* Fixed container structure instead of loose scroll blocks ensures single screen locks */}
-                <View style={styles.mainLayoutContent}>
-                    
+                
+                {/* Scrollable Form Content */}
+                <ScrollView 
+                    style={{ flex: 1 }} 
+                    contentContainerStyle={styles.mainLayoutContent}
+                    showsVerticalScrollIndicator={false}
+                >
                     {/* Item Image Upload Frame */}
                     <View style={styles.centerImageWrapper}>
                         <TouchableOpacity onPress={() => setProfileModalVisible(true)} style={styles.imageContainer}>
@@ -137,12 +174,9 @@ export default function Upload() {
                                 source={image ? { uri: image } : { uri: 'https://thumbs.dreamstime.com/b/culinary-symphony-blue-smoke-exquisite-food-photography-black-background-showcasing-gourmet-delights-captivating-363004972.jpg' }}
                                 style={styles.profileImage}
                             />
-                            <Ionicons
-                                name="camera"
-                                size={22}
-                                color="white"
-                                style={styles.cameraIconBadge}
-                            />
+                            <View style={styles.cameraIconBadge}>
+                                <Ionicons name="camera" size={16} color="white" />
+                            </View>
                         </TouchableOpacity>
                     </View>
 
@@ -150,7 +184,6 @@ export default function Upload() {
                     <View style={styles.cardContainer}>
                         <Text style={styles.sectionTitle}>Overall Item Rating</Text>
                         
-                        {/* Interactive Half-Star Touch Row */}
                         <View style={styles.starInteractiveRow}>
                             {[1, 2, 3, 4, 5].map((starIndex) => {
                                 let iconName: "star" | "star-half" | "star-outline" = "star-outline";
@@ -188,7 +221,7 @@ export default function Upload() {
                         </Text>
                     </View>
 
-                    {/* Order Customization Notes Input Section */}
+                    {/* Order Customization Notes */}
                     <View style={styles.cardContainer}>
                         <Text style={styles.sectionTitle}>Any adjustments to your order?</Text>
                         <TextInput
@@ -203,26 +236,23 @@ export default function Upload() {
                         <Text style={styles.charCounter}>{adjustmentText.length} / 250</Text>
                     </View>
 
-                    {/* Granular Attribute Configuration Panel (Flexible Height Engine) */}
+                    {/* Rating Criteria Configuration Panel (Locked open space setup) */}
                     <View style={[styles.cardContainer, styles.flexibleCriteriaBox]}>
                         <View style={styles.criteriaHeader}>
-                            <Text style={styles.sectionTitle}>Granular Attributes</Text>
+                            <Text style={styles.sectionTitle}>Rating Criteria</Text>
                             <TouchableOpacity onPress={() => setShowAddModal(true)} style={styles.addButton}>
                                 <Ionicons name="add-circle" size={28} color="#6c3b3b" />
                             </TouchableOpacity>
                         </View>
 
-                        {/* Flat list mapping with internal shrinking constraints */}
                         <ScrollView 
-                            contentContainerStyle={{ flexGrow: 1 }} 
-                            showsVerticalScrollIndicator={false}
-                            bounces={false}
+                            style={{ flex: 1 }}
+                            contentContainerStyle={{ flexGrow: 1, paddingBottom: 10 }} 
+                            showsVerticalScrollIndicator={false} 
+                            bounces={true}
                         >
                             {criteriaList.map((c) => (
-                                <View 
-                                    key={c.id} 
-                                    style={[styles.criterionRow, getDynamicRowStyles()]}
-                                >
+                                <View key={c.id} style={[styles.criterionRow, getDynamicRowStyles()]}>
                                     <View style={{ flex: 1 }}>
                                         <RatingMenu
                                             buttonTitle={`${c.name}: ${c.value || 'Not Rated'}`}
@@ -235,19 +265,21 @@ export default function Upload() {
                                             }}
                                         />
                                     </View>
-                                    <TouchableOpacity 
-                                        onPress={() => setCriteriaList(prev => prev.filter(item => item.id !== c.id))} 
-                                        style={styles.removeButton}
-                                    >
+                                    <TouchableOpacity onPress={() => setCriteriaList(prev => prev.filter(item => item.id !== c.id))} style={styles.removeButton}>
                                         <Ionicons name="trash-outline" size={18} color="#b01212" />
                                     </TouchableOpacity>
                                 </View>
                             ))}
                         </ScrollView>
                     </View>
-                </View>
+                </ScrollView>
 
-                {/* --- OVERLAY MODALS --- */}
+                {/* Fixed Submit Button Bar overlaying content at bottom layout limits */}
+                <View style={styles.fixedFooterButtonContainer}>
+                    <TouchableOpacity style={styles.primarySubmitButton} activeOpacity={0.8} onPress={handleFormSubmit} disabled={isSubmitting}>
+                        {isSubmitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primarySubmitButtonText}>Submit Review</Text>}
+                    </TouchableOpacity>
+                </View>
 
                 {/* Media Picker Sheet Overlay */}
                 <Modal visible={isProfileModal} animationType="slide" transparent={true} onRequestClose={() => setProfileModalVisible(false)}>
@@ -276,23 +308,13 @@ export default function Upload() {
                             <Text style={styles.modalTitle}>Add Rating Criteria</Text>
                             <ScrollView style={{ maxHeight: 200 }}>
                                 {PREDEFINED_CRITERIA.map((name) => (
-                                    <TouchableOpacity
-                                        key={name}
-                                        style={styles.addOption}
-                                        onPress={() => handleAddCriterion(name)}
-                                    >
+                                    <TouchableOpacity key={name} style={styles.addOption} onPress={() => handleAddCriterion(name)}>
                                         <Text style={styles.addOptionText}>{name}</Text>
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
-
                             <Text style={styles.customLabel}>Or build a custom metric:</Text>
-                            <TextInput
-                                placeholder="E.g., Spice Level, Chewiness"
-                                value={newCriterionName}
-                                onChangeText={setNewCriterionName}
-                                style={styles.addInput}
-                            />
+                            <TextInput placeholder="E.g., Spice Level, Chewiness" value={newCriterionName} onChangeText={setNewCriterionName} style={styles.addInput} />
                             <View style={styles.modalActionRow}>
                                 <TouchableOpacity style={[styles.dialogBtn, styles.btnConfirm]} onPress={() => handleAddCriterion(newCriterionName)}>
                                     <Text style={styles.textStyle}>Add Metric</Text>
@@ -305,7 +327,7 @@ export default function Upload() {
                     </View>
                 </Modal>
 
-                {/* Discard Workspace Escape Confirmation Dialog */}
+                {/* Discard Changes Escape Dialog */}
                 <Modal visible={isDiscardModalVisible} transparent={true} animationType="fade" onRequestClose={() => setDiscardModalVisible(false)}>
                     <View style={styles.modalCenteredView}>
                         <View style={styles.modalView}>
@@ -329,270 +351,299 @@ export default function Upload() {
 }
 
 const styles = StyleSheet.create({
-    root: {
-        flex: 1,
-        backgroundColor: '#F9FAFB',
+    root: { 
+        flex: 1, 
+        backgroundColor: '#F9FAFB' 
     },
-    mainLayoutContent: {
-        flex: 1,
-        paddingBottom: 16,
+    mainLayoutContent: { 
+        paddingBottom: 110 
     },
-    centerImageWrapper: {
-        alignItems: 'center',
-        marginVertical: SCREEN_HEIGHT < 700 ? 10 : 16, // Adjust padding on shorter screen scales
+    centerImageWrapper: { 
+        alignItems: 'center', 
+        marginVertical: SCREEN_HEIGHT < 700 ? 12 : 20 
     },
-    imageContainer: {
-        position: 'relative',
-        width: 100,
-        height: 100,
+    imageContainer: { 
+        position: 'relative', 
+        width: 100, 
+        height: 100 
     },
-    profileImage: {
-        width: 100,
-        height: 100,
-        borderColor: '#E5E7EB',
-        borderWidth: 3,
-        borderRadius: 50,
-        backgroundColor: '#E5E7EB'
+    profileImage: { 
+        width: 100, 
+        height: 100, 
+        borderColor: '#E5E7EB', 
+        borderWidth: 3, 
+        borderRadius: 50, 
+        backgroundColor: '#E5E7EB' 
     },
-    cameraIconBadge: {
-        position: 'absolute',
-        bottom: 0,
-        right: 0,
-        backgroundColor: '#6c3b3b',
-        borderRadius: 20,
-        padding: 5,
-        overflow: 'hidden',
+    cameraIconBadge: { 
+        position: 'absolute', 
+        bottom: 0, 
+        right: 0, 
+        backgroundColor: '#6c3b3b', 
+        borderRadius: 20, 
+        padding: 6, 
+        zIndex: 3 
     },
-    cardContainer: {
-        backgroundColor: 'white',
-        borderRadius: 16,
-        padding: 14,
-        marginHorizontal: 16,
-        marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.04,
-        shadowRadius: 3,
-        elevation: 2,
+    cardContainer: { 
+        backgroundColor: 'white', 
+        borderRadius: 16, 
+        padding: 14, 
+        marginHorizontal: 16, 
+        marginBottom: 12, 
+        shadowColor: '#000', 
+        shadowOffset: { width: 0, height: 1 }, 
+        shadowOpacity: 0.04, 
+        shadowRadius: 3, 
+        elevation: 2 
     },
     flexibleCriteriaBox: {
-        flex: 1, // Tells the attributes box to swallow up all remaining layout room dynamically
-        minHeight: 150,
-    },
-    sectionTitle: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: '#1F2937',
-        marginBottom: 6,
-    },
-    starInteractiveRow: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 6,
-        gap: 6,
-    },
-    starToggleGroup: {
-        flexDirection: 'row',
-        position: 'relative',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 40,
-        height: 40,
-    },
-    starIconVisual: {
-        position: 'absolute',
-        zIndex: 1,
-        pointerEvents: 'none',
-    },
-    halfStarHitbox: {
-        width: 20,
-        height: '100%',
-        zIndex: 2,
-    },
-    scoreTextSubtitle: {
-        textAlign: 'center',
-        fontSize: 14,
-        color: '#6c3b3b',
-        marginTop: 6,
-        fontWeight: '700',
-    },
-    textInput: {
-        height: SCREEN_HEIGHT < 700 ? 60 : 75, // Contracts textbox height cleanly on smaller devices
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        backgroundColor: '#FBFBFB',
-        padding: 10,
-        borderRadius: 12,
-        textAlignVertical: 'top',
-        fontSize: 13,
-        color: '#374151',
-    },
-    charCounter: {
-        textAlign: 'right',
-        fontSize: 11,
-        color: '#9CA3AF',
-        marginTop: 2,
-    },
-    criteriaHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 4,
-    },
-    addButton: {
-        padding: 2,
-    },
-    criterionRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F9FAFB',
-        borderRadius: 12,
-        paddingLeft: 4,
-    },
-    removeButton: {
-        padding: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    modalProfileView: {
         flex: 1,
-        justifyContent: 'flex-end',
-        backgroundColor: 'rgba(0,0,0,0.4)',
+        minHeight: 275,
     },
-    profileModalView: {
-        backgroundColor: 'white',
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        paddingHorizontal: 24,
-        paddingTop: 24,
-        paddingBottom: 34,
+    sectionTitle: { 
+        fontSize: 14, 
+        fontWeight: '700', 
+        color: '#1F2937', 
+        marginBottom: 6 
     },
-    profileModalTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#1F2937',
-        marginBottom: 16,
-        textAlign: 'center',
+    starInteractiveRow: { 
+        flexDirection: 'row', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        marginTop: 6, 
+        gap: 6 
     },
-    profileButtonContainer: {
-        gap: 12,
+    starToggleGroup: { 
+        flexDirection: 'row', 
+        position: 'relative', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        width: 40, 
+        height: 40 
     },
-    profileButton: {
-        borderRadius: 14,
-        padding: 16,
-        alignItems: 'center',
+    starIconVisual: { 
+        position: 'absolute', 
+        zIndex: 1, 
+        pointerEvents: 'none' 
     },
-    buttonNeutral: {
-        backgroundColor: '#F3F4F6',
+    halfStarHitbox: { 
+        width: 20, 
+        height: '100%', 
+        zIndex: 2 
     },
-    buttonTextDark: {
-        fontSize: 15,
-        fontWeight: '600',
-        color: '#374151',
+    scoreTextSubtitle: { 
+        textAlign: 'center', 
+        fontSize: 14, 
+        color: '#6c3b3b', 
+        marginTop: 6, 
+        fontWeight: '700' 
     },
-    addModalCenteredView: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.4)',
+    textInput: { 
+        height: SCREEN_HEIGHT < 700 ? 60 : 75, 
+        borderWidth: 1, 
+        borderColor: '#E5E7EB', 
+        backgroundColor: '#FBFBFB', 
+        padding: 10, 
+        borderRadius: 12, 
+        textAlignVertical: 'top', 
+        fontSize: 13, 
+        color: '#374151' 
     },
-    addModalView: {
-        width: '85%',
-        backgroundColor: 'white',
-        borderRadius: 20,
-        padding: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 10,
-        elevation: 5,
+    charCounter: { 
+        textAlign: 'right', 
+        fontSize: 11, 
+        color: '#9CA3AF', 
+        marginTop: 2 
     },
-    addOption: {
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderColor: '#F3F4F6',
+    criteriaHeader: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        marginBottom: 4 
     },
-    addOptionText: {
-        fontSize: 15,
-        color: '#4B5563',
+    addButton: { 
+        padding: 2 
     },
-    customLabel: {
-        marginTop: 16,
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#4B5563',
+    criterionRow: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        backgroundColor: '#F9FAFB', 
+        borderRadius: 12, 
+        paddingLeft: 4, 
+        marginBottom: 6 
     },
-    addInput: {
-        borderWidth: 1,
-        borderColor: '#D1D5DB',
-        padding: 10,
-        borderRadius: 10,
-        marginTop: 6,
-        fontSize: 14,
+    removeButton: { 
+        padding: 10, 
+        justifyContent: 'center', 
+        alignItems: 'center' 
     },
-    modalActionRow: {
-        flexDirection: 'row',
-        marginTop: 16,
-        gap: 10,
+    fixedFooterButtonContainer: { 
+        position: 'absolute', 
+        bottom: 0, 
+        left: 0, 
+        right: 0, 
+        backgroundColor: '#F9FAFB', 
+        paddingHorizontal: 16, 
+        paddingVertical: 14, 
+        borderTopWidth: 1, 
+        borderTopColor: '#E5E7EB', 
+        zIndex: 10 
     },
-    dialogBtn: {
-        flex: 1,
-        padding: 12,
-        borderRadius: 12,
-        alignItems: 'center',
+    primarySubmitButton: { 
+        backgroundColor: '#6c3b3b', 
+        height: 50, 
+        borderRadius: 15, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        elevation: 2, 
+        shadowColor: '#000', 
+        shadowOffset: { width: 0, height: 1 }, 
+        shadowOpacity: 0.1, 
+        shadowRadius: 2 
     },
-    btnConfirm: {
-        backgroundColor: '#6c3b3b',
+    primarySubmitButtonText: { 
+        color: '#FFFFFF', 
+        fontSize: 16, 
+        fontWeight: '700' 
     },
-    btnCancel: {
-        backgroundColor: '#9CA3AF',
+    modalProfileView: { 
+        flex: 1, 
+        justifyContent: 'flex-end', 
+        backgroundColor: 'rgba(0,0,0,0.4)' 
     },
-    modalCenteredView: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
+    profileModalView: { 
+        backgroundColor: 'white', 
+        borderTopLeftRadius: 24, 
+        borderTopRightRadius: 24, 
+        paddingHorizontal: 24, 
+        paddingTop: 24, 
+        paddingBottom: 34 
     },
-    modalView: {
-        width: '80%',
-        backgroundColor: 'white',
-        borderRadius: 20,
-        padding: 24,
-        alignItems: 'center',
+    profileModalTitle: { 
+        fontSize: 18, 
+        fontWeight: '700', 
+        color: '#1F2937', 
+        marginBottom: 16, 
+        textAlign: 'center' 
+    },
+    profileButtonContainer: { 
+        gap: 12 
+    },
+    profileButton: { 
+        borderRadius: 14, 
+        padding: 16, 
+        alignItems: 'center' 
+    },
+    buttonNeutral: { 
+        backgroundColor: '#F3F4F6' 
+    },
+    buttonTextDark: { 
+        fontSize: 15, 
+        fontWeight: '600', 
+        color: '#374151' 
+    },
+    addModalCenteredView: { 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        backgroundColor: 'rgba(0,0,0,0.4)' 
+    },
+    addModalView: { 
+        width: '85%', 
+        backgroundColor: 'white', 
+        borderRadius: 20, 
+        padding: 20, 
+        shadowColor: '#000', 
+        shadowOffset: { width: 0, height: 2 }, 
+        shadowOpacity: 0.15, 
+        shadowRadius: 10, 
+        elevation: 5 
+    },
+    addOption: { 
+        paddingVertical: 12, 
+        borderBottomWidth: 1, 
+        borderColor: '#F3F4F6' 
+    },
+    addOptionText: { 
+        fontSize: 15, 
+        color: '#4B5563' 
+    },
+    customLabel: { 
+        marginTop: 16, 
+        fontSize: 13, 
+        fontWeight: '600', 
+        color: '#4B5563' 
+    },
+    addInput: { 
+        borderWidth: 1, 
+        borderColor: '#D1D5DB', 
+        padding: 10, 
+        borderRadius: 10, 
+        marginTop: 6, 
+        fontSize: 14 
+    },
+    modalActionRow: { 
+        flexDirection: 'row', 
+        marginTop: 16, 
+        gap: 10 
+    },
+    dialogBtn: { 
+        flex: 1, 
+        padding: 12, 
+        borderRadius: 12, 
+        alignItems: 'center' 
+    },
+    btnConfirm: { 
+        backgroundColor: '#6c3b3b' 
+    },
+    btnCancel: { 
+        backgroundColor: '#9CA3AF' 
+    },
+    modalCenteredView: { 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        backgroundColor: 'rgba(0,0,0,0.5)' 
+    },
+    modalView: { 
+        width: '80%', 
+        backgroundColor: 'white', 
+        borderRadius: 20, 
+        padding: 24, 
+        alignItems: 'center' 
+    },
+    modalText: { 
+        fontSize: 14, 
+        color: '#6B7280', 
+        textAlign: 'center', 
+        marginBottom: 20, 
+        lineHeight: 20 
+    },
+    buttonContainer: { 
+        flexDirection: 'row', 
+        gap: 10 
+    },
+    button: { 
+        borderRadius: 12, 
+        padding: 12, 
+        flex: 1, 
+        alignItems: 'center' 
+    },
+    buttonLeave: { 
+        backgroundColor: '#DC2626' 
+    },
+    buttonContinue: { 
+        backgroundColor: '#4B5563' 
+    },
+    textStyle: { 
+        color: 'white', 
+        fontWeight: '600', 
+        fontSize: 14 
     },
     modalTitle: {
         fontSize: 17,
         fontWeight: '700',
         color: '#1F2937',
-        marginBottom: 8,
-    },
-    modalText: {
-        fontSize: 14,
-        color: '#6B7280',
-        textAlign: 'center',
-        marginBottom: 20,
-        lineHeight: 20,
-    },
-    buttonContainer: {
-        flexDirection: 'row',
-        gap: 10,
-    },
-    button: {
-        borderRadius: 12,
-        padding: 12,
-        flex: 1,
-        alignItems: 'center',
-    },
-    buttonLeave: {
-        backgroundColor: '#DC2626',
-    },
-    buttonContinue: {
-        backgroundColor: '#4B5563',
-    },
-    textStyle: {
-        color: 'white',
-        fontWeight: '600',
-        fontSize: 14,
-    },
+        marginBottom: 8
+    }
 });

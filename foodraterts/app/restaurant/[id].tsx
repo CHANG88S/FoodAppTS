@@ -32,7 +32,7 @@ export default function RestaurantDetailScreen() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   
-  // Fetch live backend data
+  // Fetch live backend data bundling restaurant and linked menu items
   const dbData = useQuery(api.restaurants.getRestaurantDetails, { 
     restaurantId: id as Id<"restaurants"> 
   });
@@ -55,7 +55,7 @@ export default function RestaurantDetailScreen() {
     );
   }
 
-  // Dynamic Category Extraction
+  // Dynamic Category Extraction natively from the database response array
   const uniqueCategories = ["All"];
   dbData.menuItems?.forEach((item: any) => {
     if (item.category && !uniqueCategories.includes(item.category)) {
@@ -243,13 +243,22 @@ export default function RestaurantDetailScreen() {
                       </View>
                     </View>
 
-                    <TouchableOpacity 
-                      style={styles.rateButton}
-                      activeOpacity={0.7}
-                      onPress={() => router.push(`/restaurant/${dbData._id}/rate/${item._id}`)}
-                    >
-                      <Text style={styles.rateButtonText}>RATE ★</Text>
-                    </TouchableOpacity>
+<TouchableOpacity 
+  style={styles.rateButton}
+  activeOpacity={0.7}
+  onPress={() => {
+    router.push({
+      // 🔑 Explicitly matches the type declaration "/restaurant/rate/[itemId]"
+      pathname: "/restaurant/rate/[itemId]",
+      params: { 
+        id: id as string, 
+        itemId: item._id 
+      }
+    });
+  }}
+>
+  <Text style={styles.rateButtonText}>RATE ★</Text>
+</TouchableOpacity>
                   </View>
                 ))}
               </View>
@@ -290,308 +299,53 @@ export default function RestaurantDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: "#FAFAFA" 
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#FAFAFA",
-    paddingTop: 100,
-  },
-  heroContainer: { 
-    alignItems: 'center', 
-    paddingTop: 20, 
-    paddingBottom: 12 
-  },
-  restaurantTitle: { 
-    fontSize: 22, 
-    fontWeight: "800", 
-    color: "#1F2937" 
-  },
-  categorySub: { 
-    fontSize: 13, 
-    fontWeight: "500", 
-    color: "#6B7280", 
-    marginTop: 4 
-  },
-  tabRow: { 
-    flexDirection: 'row', 
-    justifyContent: 'center', 
-    gap: 8, 
-    marginTop: 8, 
-    paddingHorizontal: 20 
-  },
-  tabPill: { 
-    paddingVertical: 8, 
-    paddingHorizontal: 16, 
-    borderRadius: 20, 
-    backgroundColor: '#E5E7EB' 
-  },
-  activeTabPill: { 
-    backgroundColor: '#6c3b3b' 
-  },
-  tabText: { 
-    fontSize: 12, 
-    fontWeight: '700', 
-    color: '#4B5563' 
-  },
-  activeTabText: { 
-    color: '#FFFFFF' 
-  },
-  searchContainer: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    backgroundColor: "#FFFFFF", 
-    marginHorizontal: 20, 
-    marginTop: 18, 
-    paddingHorizontal: 12, 
-    height: 42, 
-    borderRadius: 20, 
-    borderWidth: 1, 
-    borderColor: "#E5E7EB" 
-  },
-  searchIcon: { 
-    marginRight: 8 
-  },
-  searchInput: { 
-    flex: 1, 
-    fontSize: 14, 
-    color: "#374151" 
-  },
-  menuSectionHeader: { 
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20, 
-    marginTop: 24, 
-    marginBottom: 14,
-    gap: 12,
-  },
-  menuSectionTitle: { 
-    fontSize: 14, 
-    fontWeight: "800", 
-    color: "#1F2937", 
-    letterSpacing: 0.5 
-  },
-  dropdownSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(108, 59, 59, 0.08)',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    gap: 4,
-    flexShrink: 1,
-    maxWidth: '60%',
-  },
-  dropdownSelectorText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#6c3b3b',
-    flexShrink: 1,
-  },
-  dropdownChevron: {
-    flexShrink: 0,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dropdownMenuContainer: {
-    backgroundColor: '#FFFFFF',
-    width: '80%',
-    maxHeight: '40%',
-    borderRadius: 20,
-    padding: 16,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-  },
-  dropdownMenuTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#1F2937',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  dropdownItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    marginBottom: 4,
-  },
-  activeDropdownItem: {
-    backgroundColor: '#6c3b3b',
-  },
-  dropdownItemText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4B5563',
-  },
-  activeDropdownItemText: {
-    color: '#FFFFFF',
-  },
-  carouselWrapper: {
-    paddingHorizontal: GRID_PADDING,
-  },
-  gridContainer: {
-    width: PAGE_WIDTH,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    gap: 10,
-    paddingBottom: 10,
-    marginRight: GRID_PADDING * 2,
-  },
-  compactGridCard: { 
-    width: '31%', 
-    backgroundColor: "#FFFFFF", 
-    borderRadius: 12, 
-    padding: 6, 
-    alignItems: "center", 
-    borderWidth: 1, 
-    borderColor: "#F3F4F6", 
-    marginBottom: 4,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  cardImage: { 
-    width: '100%', 
-    height: 70, 
-    borderRadius: 8, 
-    backgroundColor: "#F3F4F6" 
-  },
-  placeholderImageContainer: { 
-    width: '100%', 
-    height: 70, 
-    borderRadius: 8, 
-    backgroundColor: "#F5F5F4", 
-    justifyContent: "center", 
-    alignItems: "center" 
-  },
-  cardContent: { 
-    width: '100%', 
-    marginTop: 4, 
-    alignItems: 'flex-start',
-    minHeight: 56, 
-  },
-  itemName: { 
-    fontSize: 11, 
-    fontWeight: "700", 
-    color: "#1F2937", 
-    lineHeight: 14 
-  },
-  pinnedMetricsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    marginTop: 'auto', 
-    paddingTop: 2,
-  },
-  cardPriceText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#6c3b3b",
-  },
-  ratingRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 1, 
-  },
-  ratingText: { 
-    fontSize: 10, 
-    fontWeight: '600', 
-    color: '#6B7280' 
-  },
-  rateButton: { 
-    backgroundColor: '#6c3b3b', 
-    width: '100%', 
-    paddingVertical: 5, 
-    borderRadius: 8, 
-    alignItems: 'center', 
-    marginTop: 4 
-  },
-  rateButtonText: { 
-    color: '#FFF', 
-    fontSize: 9, 
-    fontWeight: '700' 
-  },
-  paginationDotsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 16,
-    gap: 6
-  },
-  dot: {
-    height: 6,
-    borderRadius: 3,
-  },
-  activeDot: {
-    width: 14,
-    backgroundColor: '#6c3b3b',
-  },
-  inactiveDot: {
-    width: 6,
-    backgroundColor: '#D1D5DB',
-  },
-  actionRow: { 
-    flexDirection: "row", 
-    padding: 20, 
-    justifyContent: "center", 
-    gap: 12, 
-    marginTop: 5 
-  },
-  actionButton: { 
-    flex: 1, 
-    alignItems: 'center', 
-    paddingVertical: 10, 
-    borderRadius: 20, 
-    backgroundColor: "#F3F4F6" 
-  },
-  actionButtonText: { 
-    fontSize: 13, 
-    fontWeight: "600", 
-    color: "#6c3b3b" 
-  },
-  emptyMenuCard: { 
-    backgroundColor: "#FFFFFF", 
-    marginHorizontal: 20, 
-    padding: 24, 
-    borderRadius: 16, 
-    borderWidth: 1, 
-    borderColor: "#E5E7EB", 
-    alignItems: "center" 
-  },
-  emptyMenuText: { 
-    color: "#9CA3AF", 
-    fontSize: 13, 
-    marginBottom: 12 
-  },
-  addDrinkButton: { 
-    backgroundColor: "#6c3b3b", 
-    paddingHorizontal: 16, 
-    paddingVertical: 8, 
-    borderRadius: 8 
-  },
-  addDrinkButtonText: { 
-    color: "#FFF", 
-    fontWeight: "600", 
-    fontSize: 12 
-  },
+  container: { flex: 1, backgroundColor: "#FAFAFA" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#FAFAFA", paddingTop: 100 },
+  heroContainer: { alignItems: 'center', paddingTop: 20, paddingBottom: 12 },
+  restaurantTitle: { fontSize: 22, fontWeight: "800", color: "#1F2937" },
+  categorySub: { fontSize: 13, fontWeight: "500", color: "#6B7280", marginTop: 4 },
+  tabRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 8, paddingHorizontal: 20 },
+  tabPill: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: '#E5E7EB' },
+  activeTabPill: { backgroundColor: '#6c3b3b' },
+  tabText: { fontSize: 12, fontWeight: '700', color: '#4B5563' },
+  activeTabText: { color: '#FFFFFF' },
+  searchContainer: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", marginHorizontal: 20, marginTop: 18, paddingHorizontal: 12, height: 42, borderRadius: 20, borderWidth: 1, borderColor: "#E5E7EB" },
+  searchIcon: { marginRight: 8 },
+  searchInput: { flex: 1, fontSize: 14, color: "#374151" },
+  menuSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 24, marginBottom: 14, gap: 12 },
+  menuSectionTitle: { fontSize: 14, fontWeight: "800", color: "#1F2937", letterSpacing: 0.5 },
+  dropdownSelector: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(108, 59, 59, 0.08)', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 14, gap: 4, flexShrink: 1, maxWidth: '60%' },
+  dropdownSelectorText: { fontSize: 12, fontWeight: '700', color: '#6c3b3b', flexShrink: 1 },
+  dropdownChevron: { flexShrink: 0 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)', justifyContent: 'center', alignItems: 'center' },
+  dropdownMenuContainer: { backgroundColor: '#FFFFFF', width: '80%', maxHeight: '40%', borderRadius: 20, padding: 16, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4 },
+  dropdownMenuTitle: { fontSize: 15, fontWeight: '800', color: '#1F2937', marginBottom: 12, textAlign: 'center' },
+  dropdownItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14, borderRadius: 10, marginBottom: 4 },
+  activeDropdownItem: { backgroundColor: '#6c3b3b' },
+  dropdownItemText: { fontSize: 14, fontWeight: '600', color: '#4B5563' },
+  activeDropdownItemText: { color: '#FFFFFF' },
+  carouselWrapper: { paddingHorizontal: GRID_PADDING },
+  gridContainer: { width: PAGE_WIDTH, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', gap: 10, paddingBottom: 10, marginRight: GRID_PADDING * 2 },
+  compactGridCard: { width: '31%', backgroundColor: "#FFFFFF", borderRadius: 12, padding: 6, alignItems: "center", borderWidth: 1, borderColor: "#F3F4F6", marginBottom: 4, elevation: 2, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 },
+  cardImage: { width: '100%', height: 70, borderRadius: 8, backgroundColor: "#F3F4F6" },
+  placeholderImageContainer: { width: '100%', height: 70, borderRadius: 8, backgroundColor: "#F5F5F4", justifyContent: "center", alignItems: "center" },
+  cardContent: { width: '100%', marginTop: 4, alignItems: 'flex-start', minHeight: 56 },
+  itemName: { fontSize: 11, fontWeight: "700", color: "#1F2937", lineHeight: 14 },
+  pinnedMetricsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginTop: 'auto', paddingTop: 2 },
+  cardPriceText: { fontSize: 10, fontWeight: "700", color: "#6c3b3b" },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 1 },
+  ratingText: { fontSize: 10, fontWeight: '600', color: '#6B7280' },
+  rateButton: { backgroundColor: '#6c3b3b', width: '100%', paddingVertical: 5, borderRadius: 8, alignItems: 'center', marginTop: 4 },
+  rateButtonText: { color: '#FFF', fontSize: 9, fontWeight: '700' },
+  paginationDotsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 8, marginBottom: 16, gap: 6 },
+  dot: { height: 6, borderRadius: 3 },
+  activeDot: { width: 14, backgroundColor: '#6c3b3b' },
+  inactiveDot: { width: 6, backgroundColor: '#D1D5DB' },
+  actionRow: { flexDirection: "row", padding: 20, justifyContent: "center", gap: 12, marginTop: 5 },
+  actionButton: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 20, backgroundColor: "#F3F4F6" },
+  actionButtonText: { fontSize: 13, fontWeight: "600", color: "#6c3b3b" },
+  emptyMenuCard: { backgroundColor: "#FFFFFF", marginHorizontal: 20, padding: 24, borderRadius: 16, borderWidth: 1, borderColor: "#E5E7EB", alignItems: "center" },
+  emptyMenuText: { color: "#9CA3AF", fontSize: 13, marginBottom: 12 },
+  addDrinkButton: { backgroundColor: "#6c3b3b", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
+  addDrinkButtonText: { color: "#FFF", fontWeight: "600", fontSize: 12 },
 });

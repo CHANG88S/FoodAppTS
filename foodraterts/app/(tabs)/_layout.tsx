@@ -1,22 +1,20 @@
+import React from 'react';
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-
 
 export default function TabLayout() {
     return (
         <Tabs
             screenOptions={({ route }) => ({
                 tabBarIcon: ({ focused, color, size }) => {
-                    let iconName: string;
+                    let iconName: keyof typeof Ionicons.glyphMap;
+
                     switch (route.name) {
                         case "home":
                             iconName = focused ? "home" : "home-outline";
                             break;
                         case "search":
                             iconName = focused ? "search" : "search-outline";
-                            break;
-                        case "upload":
-                            iconName = focused ? "add-circle" : "add-circle-outline";
                             break;
                         case "notification":
                             iconName = focused ? "notifications" : "notifications-outline";
@@ -27,27 +25,34 @@ export default function TabLayout() {
                         default:
                             iconName = "ellipse";
                     }
-                    return <Ionicons name={iconName as any} size={size} color={color} />;
+                    return <Ionicons name={iconName} size={size} color={color} />;
                 },
-                tabBarActiveTintColor: "blue",
-                tabBarInactiveTintColor: "gray",
+                tabBarActiveTintColor: "#6c3b3b",
+                tabBarInactiveTintColor: "#9CA3AF",
+                tabBarShowLabel: false,
+                tabBarStyle: {
+                    backgroundColor: "#FFFFFF",
+                    borderTopWidth: 1,
+                    borderTopColor: "#E5E7EB",
+                    height: 60,
+                    paddingBottom: 5,
+                }
             })}
         >
-            <Tabs.Screen name="home" options={{ tabBarLabel: '',}}/>
-            <Tabs.Screen name="search" options={{ tabBarLabel: '',}}/>
-            <Tabs.Screen name="upload"
-                    options={{
-                    headerShown: false,               // Show the header to place the X button
-                    tabBarStyle: { display: 'none' }, // Hide the tab bar for this screen
-                    tabBarLabel: '',                  // Hide the label for this tab
+            <Tabs.Screen 
+                name="home" 
+                options={{
+                    headerShown: false,
                 }}
             />
-            <Tabs.Screen name="notification" options={{ tabBarLabel: '',}}/>
-            <Tabs.Screen name="profile" 
-                    options={{
-                    headerShown: true,               // Show the header to place the X button
-                    tabBarLabel: '',                  // Hide the label for this tab
-                }}/>
+            <Tabs.Screen name="search" />
+            <Tabs.Screen name="notification" />
+            <Tabs.Screen 
+                name="profile" 
+                options={{
+                    headerShown: false, 
+                }}
+            />
         </Tabs>
     );
 }
