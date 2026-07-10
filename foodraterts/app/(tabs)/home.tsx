@@ -52,7 +52,11 @@ export default function Home() {
 
     const matchingItems = itemSearchResults?.filter((item: any) => {
       if (selectedCategory === "All") return true;
-      return item.category?.toLowerCase() === selectedCategory.toLowerCase();
+      
+      const itemCat = item.category?.toLowerCase().trim() || "";
+      const filterCat = selectedCategory.toLowerCase().trim();
+      
+      return itemCat.includes(filterCat) || filterCat.includes(itemCat);
     }) || [];
 
     // Return the stitched data list (Shops populate at the top, dishes right below)
@@ -74,9 +78,17 @@ export default function Home() {
       </View>
       <View style={styles.cardContent}>
         <Text style={styles.restaurantTitle}>{item.restaurantName}</Text>
+        
+        {/* Line 1: Street Details */}
         <Text style={styles.metaText} numberOfLines={1}>
-          📍 {item.address || "Riverside, CA"}
+          📍 {item.streetAddress || item.address || "Address unavailable"}
         </Text>
+
+        {/* 🔑 Line 2: City, State Location Metrics */}
+        <Text style={styles.locationSubText}>
+          {item.city && item.state ? `${item.city}, ${item.state}` : "Riverside, CA"}
+        </Text>
+
         <Text style={styles.hoursText}>
           🕒 {item.hours || "Hours unavailable"}
         </Text>
@@ -116,8 +128,8 @@ export default function Home() {
       {/* Header Container */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hey there! 👋</Text>
-          <Text style={styles.subtitle}>Find your next favorite boba spot</Text>
+          <Text style={styles.greeting}>Welcome in! 👋</Text>
+          <Text style={styles.subtitle}>Find your next spot to try!</Text>
         </View>
         <TouchableOpacity style={styles.profileButton}>
           <Ionicons name="person-circle-outline" size={36} color="#6c3b3b" />
@@ -165,7 +177,7 @@ export default function Home() {
 
       {/* Dynamic List Section Header */}
       <Text style={styles.sectionTitle}>
-        {isSearching ? "🔍 Combined Search Matches" : "✨ 20 Local Riverside Spots"}
+        {isSearching ? "🔍 Combined Search Matches" : "✨ 20 Local Spots"}
       </Text>
 
       {isLoading ? (
@@ -177,7 +189,6 @@ export default function Home() {
           data={unifiedData}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => {
-            // Tight check constraint layer: if flagged OR possesses restaurant metadata only, use Card A
             if (item.isRestaurantCard || (item.restaurantName && !item.itemName)) {
               return renderRestaurantItem(item);
             }
@@ -337,6 +348,14 @@ const styles = StyleSheet.create({
     color: "#4B5563", 
     marginTop: 3, 
     fontWeight: "500",
+  },
+  // 🔑 NEW STYLING RULE: indents the city/state line to sit beautifully under the address text field layout parameters
+  locationSubText: { 
+    fontSize: 12, 
+    color: "#6B7280", 
+    marginTop: 1, 
+    paddingLeft: 18, 
+    fontWeight: "500" 
   },
   hoursText: { 
     fontSize: 12, 

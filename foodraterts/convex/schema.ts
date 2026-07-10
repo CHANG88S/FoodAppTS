@@ -4,21 +4,26 @@ import { v } from "convex/values";
 export default defineSchema({
   // 1. MASTER RESTAURANT DIRECTORY
   restaurants: defineTable({
-    placeId: v.optional(v.string()),  // Left optional for external APIs
-    restaurantName: v.string(),       // Required text matching your CSV
+    placeId: v.optional(v.string()),  
+    restaurantName: v.string(),       
     category: v.optional(v.string()), 
-    address: v.optional(v.string()),
+    // 👇 Temporarily change these to v.optional so your deployment succeeds
+    streetAddress: v.optional(v.string()),        
+    city: v.optional(v.string()),                 
+    state: v.optional(v.string()),                
+    address: v.optional(v.string()),  
     phone: v.optional(v.string()),
     hours: v.optional(v.string()),
     logoUrl: v.optional(v.string()),
-    status: v.optional(v.string()), // "Open", "Closed", etc. for UI badges
+    status: v.optional(v.string()),   
     website: v.optional(v.string()),
     mapsLocation: v.optional(v.string()),
-  }).index("by_restaurantName", ["restaurantName"]),
+  })
+    .index("by_restaurantName", ["restaurantName"])
+    .index("by_state_and_city", ["state", "city"]),
 
   // 2. INDIVIDUAL MENU ITEMS (DISHES/DRINKS)
   menuItems: defineTable({
-    // 🔥 FIX: Link directly to the local restaurant document ID instead of a loose string
     restaurantId: v.id("restaurants"), 
     restaurantName: v.string(),        // Kept for flat UI rendering speed
     itemName: v.string(),        
@@ -26,7 +31,6 @@ export default defineSchema({
     price: v.optional(v.number()),      
     imageUrl: v.optional(v.string()),   
   })
-    // 🔥 FIX: Update the index to target your new relational ID field
     .index("by_restaurantId", ["restaurantId"])
     .searchIndex("search_item", {
       searchField: "itemName",

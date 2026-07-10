@@ -2,12 +2,31 @@ import { query } from "./_generated/server";
 import { v } from "convex/values";
 
 /**
- * 1. LIST ALL RESTAURANTS - Returns all restaurants for home screen display
+ * 1. LIST ALL RESTAURANTS - Returns restaurants filtered by city and state, or all if none provided
+ * Normalizes inputs to bypass trailing database whitespace strings safely.
  */
 export const listAllRestaurants = query({
-  args: {}, 
-  handler: async (ctx) => {
-    return await ctx.db.query("restaurants").collect();
+  args: { 
+    cityFilter: v.optional(v.string()),
+    stateFilter: v.optional(v.string()),
+  }, 
+  handler: async (ctx, args) => {
+    const allRestaurants = await ctx.db.query("restaurants").collect();
+
+    // If no filter is applied, or "All" is chosen, return everything
+    if (!args.cityFilter || !args.stateFilter || args.cityFilter === "All") {
+      return allRestaurants;
+    }
+
+    const targetCity = args.cityFilter.trim().toLowerCase();
+    const targetState = args.stateFilter.trim().toLowerCase();
+
+    // Filter programmatically to catch database strings containing hidden spaces
+    return allRestaurants.filter((shop) => {
+      const shopCity = shop.city?.trim().toLowerCase();
+      const shopState = shop.state?.trim().toLowerCase();
+      return shopCity === targetCity && shopState === targetState;
+    });
   },
 });
 
@@ -65,15 +84,31 @@ export const searchAllByName = query({
 });
 
 /**
- * 🔥 5. GET RESTAURANT DETAILS & MENU ITEMS (ADDED)
- * Fetches the core restaurant data and cross-references its linked items from your database
+ * 5. GET RESTAURANT DETAILS & MENU ITEMS 
+ * Fetches core restaurant data and cross-references its linked items from your database
  */
 export const getRestaurantDetails = query({
-  args: { restaurantId: v.id("restaurants") },
+  args: { 
+    restaurantId: v.id("restaurants"),
+    cityFilter: v.optional(v.string()),
+    stateFilter: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     // Fetch the restaurant metadata by its direct Document ID
     const restaurant = await ctx.db.get(args.restaurantId);
     if (!restaurant) return null;
+
+    // Robust trim validation guard to ensure profile matches location safely
+    if (args.cityFilter && args.stateFilter && args.cityFilter !== "All") {
+      const targetCity = args.cityFilter.trim().toLowerCase();
+      const targetState = args.stateFilter.trim().toLowerCase();
+      const shopCity = restaurant.city?.trim().toLowerCase();
+      const shopState = restaurant.state?.trim().toLowerCase();
+
+      if (shopCity !== targetCity || shopState !== targetState) {
+        return null; 
+      }
+    }
 
     // Fast indexed query to grab all drinks/dishes matching this restaurantId
     const menuItems = await ctx.db
