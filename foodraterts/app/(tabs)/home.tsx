@@ -79,15 +79,18 @@ export default function Home() {
       <View style={styles.cardContent}>
         <Text style={styles.restaurantTitle}>{item.restaurantName}</Text>
         
-        {/* Line 1: Street Details */}
-        <Text style={styles.metaText} numberOfLines={1}>
-          📍 {item.streetAddress || item.address || "Address unavailable"}
-        </Text>
+        {/* 🔑 Wrapping layout block handles structural alignment leftwards beneath the title */}
+        <View style={styles.cardTextAlignmentBlock}>
+          {/* Line 1: Street Details */}
+          <Text style={styles.metaText} numberOfLines={1}>
+            📍 {item.streetAddress || item.address || "Address unavailable"}
+          </Text>
 
-        {/* 🔑 Line 2: City, State Location Metrics */}
-        <Text style={styles.locationSubText}>
-          {item.city && item.state ? `${item.city}, ${item.state}` : "Riverside, CA"}
-        </Text>
+          {/* Line 2: City, State Location Metrics aligned with the address text */}
+          <Text style={styles.locationSubText}>
+            {item.city && item.state ? `${item.city}, ${item.state}` : "Riverside, CA"}
+          </Text>
+        </View>
 
         <Text style={styles.hoursText}>
           🕒 {item.hours || "Hours unavailable"}
@@ -213,27 +216,27 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: "#FAFAFA",
+    backgroundColor: "#FAFAFA"
   },
   header: { 
     flexDirection: "row", 
     justifyContent: "space-between", 
     alignItems: "center", 
     paddingHorizontal: 20, 
-    marginTop: 10,
+    marginTop: 10
   },
   greeting: { 
     fontSize: 24, 
     fontWeight: "800", 
-    color: "#1F2937",
+    color: "#1F2937"
   },
   subtitle: { 
     fontSize: 14, 
     color: "#6B7280", 
-    marginTop: 2,
+    marginTop: 2
   },
   profileButton: { 
-    padding: 4,
+    padding: 4
   },
   searchContainer: { 
     flexDirection: "row", 
@@ -246,38 +249,38 @@ const styles = StyleSheet.create({
     borderRadius: 15, 
     borderWidth: 1, 
     borderColor: "#E5E7EB", 
-    elevation: 2,
+    elevation: 2
   },
   searchIcon: { 
-    marginRight: 10,
+    marginRight: 10
   },
   searchInput: { 
     flex: 1, 
     fontSize: 16, 
-    color: "#374151",
+    color: "#374151"
   },
   filterRow: { 
     flexDirection: "row", 
     paddingHorizontal: 20, 
     marginTop: 20, 
-    gap: 10,
+    gap: 10
   },
   filterPill: { 
     paddingVertical: 10, 
     paddingHorizontal: 16, 
     borderRadius: 20, 
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "#E5E7EB"
   },
   activeFilterPill: { 
-    backgroundColor: "#6c3b3b",
+    backgroundColor: "#6c3b3b"
   },
   filterText: { 
     fontSize: 14, 
     fontWeight: "600", 
-    color: "#4B5563",
+    color: "#4B5563"
   },
   activeFilterText: { 
-    color: "#FFFFFF",
+    color: "#FFFFFF"
   },
   sectionTitle: { 
     fontSize: 18, 
@@ -285,11 +288,11 @@ const styles = StyleSheet.create({
     color: "#1F2937", 
     marginHorizontal: 20, 
     marginTop: 25, 
-    marginBottom: 12,
+    marginBottom: 12
   },
   listContainer: { 
     paddingHorizontal: 20, 
-    paddingBottom: 20,
+    paddingBottom: 20
   },
   card: { 
     flexDirection: "row", 
@@ -300,7 +303,7 @@ const styles = StyleSheet.create({
     alignItems: "center", 
     borderWidth: 1, 
     borderColor: "#F3F4F6", 
-    elevation: 2,
+    elevation: 2
   },
   iconContainer: { 
     width: 64, 
@@ -308,72 +311,79 @@ const styles = StyleSheet.create({
     borderRadius: 12, 
     backgroundColor: "#F5F5F4", 
     justifyContent: "center", 
-    alignItems: "center",
+    alignItems: "center"
   },
   bobaEmoji: {
-    fontSize: 28,
+    fontSize: 28
   },
   chevronIcon: {
-    marginRight: 8,
+    marginRight: 8
   },
   cardImage: { 
     width: 64, 
     height: 64, 
     borderRadius: 12, 
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#F3F4F6"
   },
   cardContent: { 
     flex: 1, 
     paddingLeft: 14, 
-    justifyContent: "center",
+    justifyContent: "center"
   },
   restaurantTitle: { 
     fontSize: 16, 
     fontWeight: "700", 
     color: "#1F2937",
+    paddingLeft: 20,
   },
   restaurantSubName: { 
     fontSize: 13, 
     color: "#6B7280", 
     marginTop: 2, 
-    fontWeight: "500",
+    fontWeight: "500"
   },
   itemName: { 
     fontSize: 16, 
     fontWeight: "700", 
-    color: "#1F2937",
+    color: "#1F2937"
+  },
+  // 🔑 Helper layout alignment container to anchor internal content elements
+  cardTextAlignmentBlock: {
+    alignItems: 'flex-start',
+    marginTop: 2
   },
   metaText: { 
     fontSize: 13, 
     color: "#4B5563", 
-    marginTop: 3, 
-    fontWeight: "500",
+    fontWeight: "500"
   },
-  // 🔑 NEW STYLING RULE: indents the city/state line to sit beautifully under the address text field layout parameters
+  // 🔑 Adjusted indent property logic to sit flush right under the pin address string
   locationSubText: { 
     fontSize: 12, 
     color: "#6B7280", 
     marginTop: 1, 
-    paddingLeft: 18, 
+    paddingLeft: 21, 
     fontWeight: "500" 
   },
+  // 🔑 Adjusted indent property logic to sit flush right under the pin address string
   hoursText: { 
     fontSize: 12, 
     color: "#9CA3AF", 
-    marginTop: 2,
+    marginTop: 3
+
   },
   loadingContainer: { 
     flex: 1, 
     justifyContent: "center", 
-    alignItems: "center",
+    alignItems: "center"
   },
   emptyContainer: { 
     alignItems: "center", 
     marginTop: 40, 
-    gap: 10,
+    gap: 10
   },
   emptyText: { 
     color: "#9CA3AF", 
-    fontSize: 14,
-  },
+    fontSize: 14
+  }
 });
