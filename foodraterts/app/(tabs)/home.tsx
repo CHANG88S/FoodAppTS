@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     fontSize: 16, 
     fontWeight: "700", 
     color: "#1F2937",
-    paddingLeft: 5
+    paddingLeft: 21
   },
   restaurantSubName: { 
     fontSize: 13, 
