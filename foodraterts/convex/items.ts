@@ -27,7 +27,12 @@ export const addMenuItem = mutation({
     restaurantId: v.id("restaurants"),
     restaurantName: v.string(), // Saved in item table for your flat UI rendering speed
     itemName: v.string(),
-    category: v.string(),
+    category: v.optional(
+      v.union(
+        v.string(), 
+        v.array(v.string())
+      )
+    ),  
     price: v.optional(v.number()),
   },
   handler: async (ctx, args) => {

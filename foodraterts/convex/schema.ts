@@ -6,12 +6,10 @@ export default defineSchema({
   restaurants: defineTable({
     placeId: v.optional(v.string()),  
     restaurantName: v.string(),       
-    category: v.optional(v.string()), 
-    // 👇 Temporarily change these to v.optional so your deployment succeeds
-    streetAddress: v.optional(v.string()),        
-    city: v.optional(v.string()),                 
-    state: v.optional(v.string()),                
-    address: v.optional(v.string()),  
+    category: v.optional(v.string()),         
+    city: v.string(),             
+    state: v.string(),            
+    address: v.string(),
     phone: v.optional(v.string()),
     hours: v.optional(v.string()),
     logoUrl: v.optional(v.string()),
@@ -27,7 +25,12 @@ export default defineSchema({
     restaurantId: v.id("restaurants"), 
     restaurantName: v.string(),        // Kept for flat UI rendering speed
     itemName: v.string(),        
-    category: v.string(),              // "Drink" or "Food"
+    category: v.optional(
+      v.union(
+        v.string(), 
+        v.array(v.string())
+      )
+    ),              // "Drink" or "Food"
     price: v.optional(v.number()),      
     imageUrl: v.optional(v.string()),   
   })

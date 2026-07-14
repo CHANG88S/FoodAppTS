@@ -55,18 +55,51 @@ export default function RestaurantDetailScreen() {
     );
   }
 
-  // Dynamic Category Extraction natively from the database response array
+  // 🔑 1. DYNAMIC CATEGORY EXTRACTION (UPDATED FOR INDIVIDUAL UNION TYPE SCHEMA: string | string[])
   const uniqueCategories = ["All"];
   dbData.menuItems?.forEach((item: any) => {
-    if (item.category && !uniqueCategories.includes(item.category)) {
-      uniqueCategories.push(item.category);
+    if (item.category) {
+      // If it's saved as a clean array of strings
+      if (Array.isArray(item.category)) {
+        item.category.forEach((cat: string) => {
+          const trimmed = cat?.trim();
+          if (trimmed && !uniqueCategories.includes(trimmed)) {
+            uniqueCategories.push(trimmed);
+          }
+        });
+      } 
+      // If it's saved as a plain string or a comma-separated legacy string
+      else if (typeof item.category === "string") {
+        item.category.split(",").forEach((cat: string) => {
+          const trimmed = cat.trim();
+          if (trimmed && !uniqueCategories.includes(trimmed)) {
+            uniqueCategories.push(trimmed);
+          }
+        });
+      }
     }
   });
 
-  // Filter items based on Search Query and Category Selection
+  // 🔑 2. FILTER MENU ITEMS BASED ON THE UNION FORMAT
   const filteredMenuItems = dbData.menuItems?.filter((item: any) => {
     const matchesSearch = item.itemName?.toLowerCase().includes(menuSearchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
+    
+    if (selectedCategory === "All") {
+      return matchesSearch;
+    }
+
+    let matchesCategory = false;
+    if (item.category) {
+      if (Array.isArray(item.category)) {
+        matchesCategory = item.category.some((cat: string) => cat.trim() === selectedCategory);
+      } else if (typeof item.category === "string") {
+        matchesCategory = item.category
+          .split(",")
+          .map((c: string) => c.trim())
+          .includes(selectedCategory);
+      }
+    }
+
     return matchesSearch && matchesCategory;
   }) || [];
 
@@ -96,7 +129,7 @@ export default function RestaurantDetailScreen() {
       <View style={styles.heroContainer}>
         <Text style={styles.restaurantTitle}>{dbData.restaurantName}</Text>
         
-        {/* 🔑 Inner alignment wrapper block keeps lines stuck to the left while keeping the container row centered */}
+        {/* Inner alignment wrapper block keeps lines stuck to the left while keeping the container row centered */}
         <View style={styles.headerTextAlignmentBlock}>
           {/* Line 1: Street Details */}
           <Text style={styles.categorySub} numberOfLines={1}>
@@ -234,7 +267,9 @@ export default function RestaurantDetailScreen() {
                       <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
                     ) : (
                       <View style={styles.placeholderImageContainer}>
-                        <Text style={{ fontSize: 20 }}>🧋</Text>
+                        <Text style={{ 
+                          fontSize: 50,
+                          marginBottom: 10 }}>🧋</Text>
                       </View>
                     )}
 
@@ -323,7 +358,7 @@ const styles = StyleSheet.create({
     paddingTop: 100 
   },
   heroContainer: { 
-    alignItems: 'center', // Keep center alignment on the screen canvas
+    alignItems: 'center', 
     paddingTop: 20, 
     paddingBottom: 12,
     paddingHorizontal: 20
@@ -335,7 +370,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textAlign: 'center'
   },
-  // 🔑 Structural internal container block that handles text alignments leftwards within a centered frame
   headerTextAlignmentBlock: {
     alignItems: 'flex-start',
     marginTop: 2
@@ -345,13 +379,12 @@ const styles = StyleSheet.create({
     fontWeight: "500", 
     color: "#6B7280"
   },
-  //  🔑: City, State text
   locationSub: { 
     fontSize: 13, 
     fontWeight: "500", 
     color: "#6B7280", 
     marginTop: 2,
-    paddingLeft: 21 // Keeps perfectly padded directly right of the map pin footprint layer bounds
+    paddingLeft: 21 
   },
   tabRow: { 
     flexDirection: 'row', 

@@ -6,7 +6,12 @@ export const submitItemReview = mutation({
     restaurantId: v.id("restaurants"), 
     restaurantName: v.string(),        // 🔥 FIX: Added required schema text field
     itemName: v.string(),
-    category: v.string(),              // 🔥 FIX: Made required to match your item search index rules
+    category: v.optional(
+      v.union(
+        v.string(), 
+        v.array(v.string())
+      )
+    ),              // 🔥 FIX: Made required to match your item search index rules
     overallRating: v.number(),
     notes: v.string(),
     granularAttributes: v.array(

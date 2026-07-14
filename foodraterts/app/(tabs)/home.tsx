@@ -26,6 +26,29 @@ export default function Home() {
 
   const isSearching = searchQuery.trim().length > 0;
 
+  // 🔑 HELPER FUNCTION: Returns a dynamic emoji matching your restaurant category
+  const getCategoryEmoji = (categoryString?: string): string => {
+    if (!categoryString) return "🧋"; // Default fallback boba emoji
+    
+    const cat = categoryString.toLowerCase();
+
+    if (cat.includes("sushi")) return "🍣";
+    if (cat.includes("ramen") || cat.includes("noodle")) return "🍜";
+    if (cat.includes("tea") || cat.includes("boba") || cat.includes("drink") || cat.includes("bubble tea")) return "🧋";
+    if (cat.includes("coffee") || cat.includes("cafe")) return "☕";
+    if (cat.includes("dessert") || cat.includes("sweet") || cat.includes("yogurt")) return "🍦";
+    if (cat.includes("ayce") || cat.includes("buffet")) return "🍲";
+    if (cat.includes("shabu") || cat.includes("soup")) return "🍲";
+    if (cat.includes("bbq") || cat.includes("meat") || cat.includes("kbbq") || cat.includes("korean bbq")) return "🥩";
+    if (cat.includes("burger")) return "🍔";
+    if (cat.includes("donut")) return "🍩";
+    
+    // Generic categories
+    if (cat.includes("food")) return "🍲";
+
+    return "🧋"; // Final fallback
+  };
+
   // 2. BUILD THE UNIFIED SEARCH FEED ARRAY
   const getUnifiedFeed = () => {
     // Flag all restaurant items upfront so they always map via the correct card layout structure
@@ -73,13 +96,24 @@ export default function Home() {
       activeOpacity={0.8}
       key={`shop-${item._id}`}
     >
-      <View style={styles.iconContainer}>
-        <Text style={styles.bobaEmoji}>🧋</Text>
-      </View>
+      {/* 🔑 CONDITIONAL LOGO RENDERING: Show logoUrl image if present, otherwise show placeholder emoji */}
+      {item.logoUrl ? (
+        <Image 
+          source={{ uri: item.logoUrl }} 
+          style={styles.cardImage} 
+        />
+      ) : (
+        <View style={styles.iconContainer}>
+          <Text style={styles.bobaEmoji}>
+            {getCategoryEmoji(item.category)}
+          </Text>
+        </View>
+      )}
+
       <View style={styles.cardContent}>
         <Text style={styles.restaurantTitle}>{item.restaurantName}</Text>
         
-        {/* 🔑 Wrapping layout block handles structural alignment leftwards beneath the title */}
+        {/* Wrapping layout block handles structural alignment leftwards beneath the title */}
         <View style={styles.cardTextAlignmentBlock}>
           {/* Line 1: Street Details */}
           <Text style={styles.metaText} numberOfLines={1}>
@@ -172,7 +206,7 @@ export default function Home() {
               styles.filterText, 
               selectedCategory === category && styles.activeFilterText
             ]}>
-              {category === "Drink" ? "🥤 Drinks" : category === "Food" ? "🍲 Food" : "✨ All"}
+              {category === "Drink"  ? "🥤 Drinks" : category === "Food" ? "🍲 Food" : "✨ All"}
             </Text>
           </TouchableOpacity>
         ))}
@@ -334,7 +368,7 @@ const styles = StyleSheet.create({
     fontSize: 16, 
     fontWeight: "700", 
     color: "#1F2937",
-    paddingLeft: 20,
+    paddingLeft: 5
   },
   restaurantSubName: { 
     fontSize: 13, 
@@ -347,7 +381,6 @@ const styles = StyleSheet.create({
     fontWeight: "700", 
     color: "#1F2937"
   },
-  // 🔑 Helper layout alignment container to anchor internal content elements
   cardTextAlignmentBlock: {
     alignItems: 'flex-start',
     marginTop: 2
@@ -357,7 +390,6 @@ const styles = StyleSheet.create({
     color: "#4B5563", 
     fontWeight: "500"
   },
-  // 🔑 Adjusted indent property logic to sit flush right under the pin address string
   locationSubText: { 
     fontSize: 12, 
     color: "#6B7280", 
@@ -365,12 +397,10 @@ const styles = StyleSheet.create({
     paddingLeft: 21, 
     fontWeight: "500" 
   },
-  // 🔑 Adjusted indent property logic to sit flush right under the pin address string
   hoursText: { 
     fontSize: 12, 
     color: "#9CA3AF", 
     marginTop: 3
-
   },
   loadingContainer: { 
     flex: 1, 
