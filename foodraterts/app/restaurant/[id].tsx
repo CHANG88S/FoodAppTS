@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   },
   heroContainer: { 
     alignItems: 'center', 
-    paddingTop: 20, 
+    // paddingTop: 10, 
     paddingBottom: 12,
     paddingHorizontal: 20
   },
@@ -367,12 +367,12 @@ const styles = StyleSheet.create({
     fontSize: 22, 
     fontWeight: "800", 
     color: "#1F2937",
-    marginBottom: 4,
+    marginBottom: 8,
     textAlign: 'center'
   },
   headerTextAlignmentBlock: {
     alignItems: 'flex-start',
-    marginTop: 2
+    // marginTop: 2
   },
   categorySub: { 
     fontSize: 13, 
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', 
     alignItems: 'center', 
     paddingHorizontal: 20, 
-    marginTop: 24, 
+    marginTop: 10, 
     marginBottom: 14, 
     gap: 12 
   },
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
     width: '100%', 
     marginTop: 4, 
     alignItems: 'flex-start', 
-    minHeight: 56 
+    minHeight: 50 
   },
   itemName: { 
     fontSize: 11, 
