@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -26,6 +26,9 @@ const PAGE_WIDTH = SCREEN_WIDTH - (GRID_PADDING * 2);
 export default function RestaurantDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  
+  // 🔑 Create a ref to control the horizontal menu carousel scroll positioning
+  const menuCarouselRef = useRef<ScrollView>(null);
   
   const [menuSearchQuery, setMenuSearchQuery] = useState("");
   const [activePageIndex, setActivePageIndex] = useState(0);
@@ -55,11 +58,10 @@ export default function RestaurantDetailScreen() {
     );
   }
 
-  // 🔑 1. DYNAMIC CATEGORY EXTRACTION (UPDATED FOR INDIVIDUAL UNION TYPE SCHEMA: string | string[])
+  // 🔑 1. DYNAMIC CATEGORY EXTRACTION
   const uniqueCategories = ["All"];
   dbData.menuItems?.forEach((item: any) => {
     if (item.category) {
-      // If it's saved as a clean array of strings
       if (Array.isArray(item.category)) {
         item.category.forEach((cat: string) => {
           const trimmed = cat?.trim();
@@ -68,7 +70,6 @@ export default function RestaurantDetailScreen() {
           }
         });
       } 
-      // If it's saved as a plain string or a comma-separated legacy string
       else if (typeof item.category === "string") {
         item.category.split(",").forEach((cat: string) => {
           const trimmed = cat.trim();
@@ -122,6 +123,16 @@ export default function RestaurantDetailScreen() {
     }
   };
 
+  // 🔑 Helper function to safely change filters and reset carousel layout back to page 1
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    setIsDropdownVisible(false);
+    setActivePageIndex(0);
+    
+    // Safely snap the scroll view back to coordinate position x: 0 instantly
+    menuCarouselRef.current?.scrollTo({ x: 0, y: 0, animated: false });
+  };
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       
@@ -129,14 +140,11 @@ export default function RestaurantDetailScreen() {
       <View style={styles.heroContainer}>
         <Text style={styles.restaurantTitle}>{dbData.restaurantName}</Text>
         
-        {/* Inner alignment wrapper block keeps lines stuck to the left while keeping the container row centered */}
         <View style={styles.headerTextAlignmentBlock}>
-          {/* Line 1: Street Details */}
           <Text style={styles.categorySub} numberOfLines={1}>
             📍 {dbData.address || "Address details unavailable"}
           </Text>
           
-          {/* Line 2: City, State Location Metrics aligned left directly under the street line */}
           <Text style={styles.locationSub}>
             {dbData.city && dbData.state ? `${dbData.city}, ${dbData.state}` : "Riverside, CA"}
           </Text>
@@ -164,11 +172,20 @@ export default function RestaurantDetailScreen() {
           placeholder="Search Menu Items"
           placeholderTextColor="#9CA3AF"
           value={menuSearchQuery}
-          onChangeText={setMenuSearchQuery}
+          onChangeText={(text) => {
+            setMenuSearchQuery(text);
+            // Also reset to page 1 when searching so matches aren't lost out of bounds
+            setActivePageIndex(0);
+            menuCarouselRef.current?.scrollTo({ x: 0, y: 0, animated: false });
+          }}
           autoCapitalize="none"
         />
         {menuSearchQuery.trim().length > 0 && (
-          <TouchableOpacity onPress={() => setMenuSearchQuery("")}>
+          <TouchableOpacity onPress={() => {
+            setMenuSearchQuery("");
+            setActivePageIndex(0);
+            menuCarouselRef.current?.scrollTo({ x: 0, y: 0, animated: false });
+          }}>
             <Ionicons name="close-circle" size={16} color="#9CA3AF" />
           </TouchableOpacity>
         )}
@@ -217,11 +234,8 @@ export default function RestaurantDetailScreen() {
                     styles.dropdownItem,
                     selectedCategory === item && styles.activeDropdownItem
                   ]}
-                  onPress={() => {
-                    setSelectedCategory(item);
-                    setIsDropdownVisible(false);
-                    setActivePageIndex(0);
-                  }}
+                  // 🔑 UPDATED: Calls our new handler to clean up scroll layouts concurrently
+                  onPress={() => handleCategoryChange(item)}
                 >
                   <Text style={[
                     styles.dropdownItemText,
@@ -252,6 +266,8 @@ export default function RestaurantDetailScreen() {
       ) : (
         <View>
           <ScrollView 
+            // 🔑 Assign our new structural anchor ref here
+            ref={menuCarouselRef}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -276,7 +292,6 @@ export default function RestaurantDetailScreen() {
                     <View style={styles.cardContent}>
                       <Text style={styles.itemName} numberOfLines={2}>{item.itemName}</Text>
                       
-                      {/* Pinned Meta Metrics Row */}
                       <View style={styles.pinnedMetricsRow}>
                         <View style={styles.ratingRow}>
                           <Text style={styles.ratingText}>4.8</Text>
@@ -359,7 +374,6 @@ const styles = StyleSheet.create({
   },
   heroContainer: { 
     alignItems: 'center', 
-    // paddingTop: 10, 
     paddingBottom: 12,
     paddingHorizontal: 20
   },
@@ -372,7 +386,6 @@ const styles = StyleSheet.create({
   },
   headerTextAlignmentBlock: {
     alignItems: 'flex-start',
-    // marginTop: 2
   },
   categorySub: { 
     fontSize: 13, 
@@ -539,13 +552,13 @@ const styles = StyleSheet.create({
   },
   cardImage: { 
     width: '100%', 
-    height: 70, 
+    height: 80, 
     borderRadius: 8, 
     backgroundColor: "#F3F4F6" 
   },
   placeholderImageContainer: { 
     width: '100%', 
-    height: 70, 
+    height: 80, 
     borderRadius: 8, 
     backgroundColor: "#F5F5F4", 
     justifyContent: "center", 
