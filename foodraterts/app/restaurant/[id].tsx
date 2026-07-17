@@ -13,7 +13,7 @@ import {
   Modal,
   FlatList
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
@@ -27,7 +27,7 @@ export default function RestaurantDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   
-  // 🔑 Create a ref to control the horizontal menu carousel scroll positioning
+  // Ref to control the horizontal menu carousel scroll positioning
   const menuCarouselRef = useRef<ScrollView>(null);
   
   const [menuSearchQuery, setMenuSearchQuery] = useState("");
@@ -58,7 +58,7 @@ export default function RestaurantDetailScreen() {
     );
   }
 
-  // 🔑 1. DYNAMIC CATEGORY EXTRACTION
+  // 1. DYNAMIC CATEGORY EXTRACTION
   const uniqueCategories = ["All"];
   dbData.menuItems?.forEach((item: any) => {
     if (item.category) {
@@ -81,7 +81,7 @@ export default function RestaurantDetailScreen() {
     }
   });
 
-  // 🔑 2. FILTER MENU ITEMS BASED ON THE UNION FORMAT
+  // 2. FILTER MENU ITEMS BASED ON THE UNION FORMAT
   const filteredMenuItems = dbData.menuItems?.filter((item: any) => {
     const matchesSearch = item.itemName?.toLowerCase().includes(menuSearchQuery.toLowerCase());
     
@@ -123,21 +123,38 @@ export default function RestaurantDetailScreen() {
     }
   };
 
-  // 🔑 Helper function to safely change filters and reset carousel layout back to page 1
+  // Helper function to safely change filters and reset carousel layout back to page 1
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
     setIsDropdownVisible(false);
     setActivePageIndex(0);
     
-    // Safely snap the scroll view back to coordinate position x: 0 instantly
+    // Snaps the scroll view back to coordinate position x: 0 instantly
     menuCarouselRef.current?.scrollTo({ x: 0, y: 0, animated: false });
   };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       
+      {/* Completely removes the native structural header container bar from rendering */}
+      <Stack.Screen 
+        options={{
+          headerShown: false
+        }} 
+      />
+
       {/* Dynamic Header Section */}
       <View style={styles.heroContainer}>
+        
+        {/* CUSTOM IN-PAGE BACK BUTTON: Placed inline within your layout tree cleanly */}
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color="#6c3b3b" />
+        </TouchableOpacity>
+
         <Text style={styles.restaurantTitle}>{dbData.restaurantName}</Text>
         
         <View style={styles.headerTextAlignmentBlock}>
@@ -174,7 +191,6 @@ export default function RestaurantDetailScreen() {
           value={menuSearchQuery}
           onChangeText={(text) => {
             setMenuSearchQuery(text);
-            // Also reset to page 1 when searching so matches aren't lost out of bounds
             setActivePageIndex(0);
             menuCarouselRef.current?.scrollTo({ x: 0, y: 0, animated: false });
           }}
@@ -234,7 +250,6 @@ export default function RestaurantDetailScreen() {
                     styles.dropdownItem,
                     selectedCategory === item && styles.activeDropdownItem
                   ]}
-                  // 🔑 UPDATED: Calls our new handler to clean up scroll layouts concurrently
                   onPress={() => handleCategoryChange(item)}
                 >
                   <Text style={[
@@ -266,7 +281,6 @@ export default function RestaurantDetailScreen() {
       ) : (
         <View>
           <ScrollView 
-            // 🔑 Assign our new structural anchor ref here
             ref={menuCarouselRef}
             horizontal
             pagingEnabled
@@ -279,15 +293,21 @@ export default function RestaurantDetailScreen() {
               <View key={`page-${pageIndex}`} style={styles.gridContainer}>
                 {pageItems.map((item: any) => (
                   <View key={item._id} style={styles.compactGridCard}>
-                    {item.imageUrl ? (
-                      <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
-                    ) : (
-                      <View style={styles.placeholderImageContainer}>
-                        <Text style={{ 
-                          fontSize: 50,
-                          marginBottom: 10 }}>🧋</Text>
-                      </View>
-                    )}
+                    
+                    {/* 🔑 CONTAINER FOR IMAGE/EMOJI PLACEMENT */}
+                    <View style={styles.imageWrapperFrame}>
+                      {item.imageUrl ? (
+                        <Image 
+                          source={{ uri: item.imageUrl }} 
+                          style={styles.cardImage} 
+                          resizeMode="contain" // 🔑 Prevents stretching or clipping of item pictures
+                        />
+                      ) : (
+                        <View style={styles.placeholderImageContainer}>
+                          <Text style={{ fontSize: 36 }}>🧋</Text>
+                        </View>
+                      )}
+                    </View>
 
                     <View style={styles.cardContent}>
                       <Text style={styles.itemName} numberOfLines={2}>{item.itemName}</Text>
@@ -370,19 +390,28 @@ const styles = StyleSheet.create({
     justifyContent: "center", 
     alignItems: "center", 
     backgroundColor: "#FAFAFA", 
-    paddingTop: 100 
   },
   heroContainer: { 
     alignItems: 'center', 
     paddingBottom: 12,
-    paddingHorizontal: 20
+    paddingHorizontal: 20,
+    paddingTop: 60, 
+    position: 'relative' 
+  },
+  backButton: {
+    position: 'absolute',
+    left: 20,
+    top: 58, 
+    zIndex: 10,
+    padding: 4, 
   },
   restaurantTitle: { 
     fontSize: 22, 
     fontWeight: "800", 
     color: "#1F2937",
     marginBottom: 8,
-    textAlign: 'center'
+    textAlign: 'center',
+    paddingHorizontal: 36, 
   },
   headerTextAlignmentBlock: {
     alignItems: 'flex-start',
@@ -530,13 +559,13 @@ const styles = StyleSheet.create({
     width: PAGE_WIDTH, 
     flexDirection: 'row', 
     flexWrap: 'wrap', 
-    justifyContent: 'flex-start', 
-    gap: 10, 
+    justifyContent: 'space-between', 
+    gap: 6, 
     paddingBottom: 10, 
     marginRight: GRID_PADDING * 2 
   },
   compactGridCard: { 
-    width: '31%', 
+    width: '32%', 
     backgroundColor: "#FFFFFF", 
     borderRadius: 12, 
     padding: 6, 
@@ -550,17 +579,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05, 
     shadowRadius: 2 
   },
+  // 🔑 NEW STRUCTURAL IMAGE CONTAINER WRAPPER
+  imageWrapperFrame: {
+    width: '100%',
+    height: 85,
+    borderRadius: 8,
+    backgroundColor: "#F5F5F4", // A clean, continuous background
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   cardImage: { 
     width: '100%', 
-    height: 80, 
-    borderRadius: 8, 
-    backgroundColor: "#F3F4F6" 
+    height: '100%', 
   },
   placeholderImageContainer: { 
     width: '100%', 
-    height: 80, 
-    borderRadius: 8, 
-    backgroundColor: "#F5F5F4", 
+    height: '100%', 
     justifyContent: "center", 
     alignItems: "center" 
   },
