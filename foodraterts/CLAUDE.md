@@ -1,6 +1,6 @@
 <!-- convex-ai-start -->
 
-This project uses [Convex](https://convex.dev) as its backend.
+This project uses [Convex](https://convex.dev) as its backend with Password-based authentication only (@convex-dev/auth).
 
 When working on Convex code, **always read
 `convex/_generated/ai/guidelines.md` first** for important guidelines on
@@ -9,5 +9,8 @@ override what you may have learned about Convex from training data.
 
 Convex agent skills for common tasks can be installed by running
 `npx convex ai-files install`.
+
+## Auth Configuration ✅
+- Login/Signup: Email + Password only (Password provider)
 
 <!-- convex-ai-end -->
