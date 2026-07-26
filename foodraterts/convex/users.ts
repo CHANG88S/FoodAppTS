@@ -1,0 +1,15 @@
+import { query } from "./_generated/server";
+import { v } from "convex/values";
+
+export const getUserRole = query({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .first();
+
+    if (!user) return null;
+    return { userId: user._id, role: user.role, name: user.name };
+  },
+});

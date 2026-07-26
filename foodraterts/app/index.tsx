@@ -2,51 +2,36 @@ import React, { useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
-// Use the official Convex Auth hook for React Native clients
 import { useAuthActions } from "@convex-dev/auth/react";
 
 const LoginIndex = () => {  
   const router = useRouter();
-  const { signIn } = useAuthActions(); // Convex hook handles both signing in AND signing up
+  const { signIn } = useAuthActions(); 
   
+  const [isSignUpMode, setIsSignUpMode] = useState(false); // Toggle between login & signup fields
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Handle User Sign In with Convex Auth
-  const handleSignIn = async () => {
-    if (!email || !password) return Alert.alert("Error", "Please fill out all fields.");
+  const handleAuthAction = async () => {
+    if (!email || !password || (isSignUpMode && !name)) {
+      return Alert.alert("Error", "Please fill out all required fields.");
+    }
     
     setLoading(true);
     try {
-      // Convex Auth uses standard provider strings. "password" is for traditional email/pass
-      await signIn("password", { email, password, flow: "signIn" });
+      if (isSignUpMode) {
+        // Pass name along with email/password to populate the user profile document
+        await signIn("password", { email, password, name, flow: "signUp" });
+        Alert.alert('Account Created!', 'Welcome to FoodRater!');
+      } else {
+        await signIn("password", { email, password, flow: "signIn" });
+      }
       router.replace('/(tabs)/home');
     } catch (error: any) {
       console.error(error);
-      Alert.alert('Sign In Failed', error.message || 'Invalid email or password.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle User Registration with Convex Auth
-  const handleSignUp = async () => {
-    if (!email || !password) return Alert.alert("Error", "Please fill out all fields.");
-
-    setLoading(true);
-    try {
-      // Swapping the flow string to "signUp" tells Convex to generate a new user document
-      await signIn("password", { email, password, flow: "signUp" });
-      
-      Alert.alert(
-        'Account Created!', 
-        'Welcome to FoodRater!',
-        [{ text: 'Get Started', onPress: () => router.replace('/(tabs)/home') }]
-      );
-    } catch (error: any) {
-      console.error(error);
-      Alert.alert('Registration Failed', error.message || 'Could not create account.');
+      Alert.alert('Authentication Failed', error.message || 'Invalid credentials or network error.');
     } finally {
       setLoading(false);
     }
@@ -56,6 +41,17 @@ const LoginIndex = () => {
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>FoodRater</Text>
       
+      {isSignUpMode && (
+        <TextInput 
+          style={styles.textInput} 
+          placeholder="Display Name" 
+          value={name} 
+          onChangeText={setName} 
+          autoCapitalize="words"
+          editable={!loading}
+        />
+      )}
+
       <TextInput 
         style={styles.textInput} 
         placeholder="Email" 
@@ -78,18 +74,21 @@ const LoginIndex = () => {
       
       <TouchableOpacity 
         style={[styles.button, loading && styles.disabledButton]} 
-        onPress={handleSignIn}
+        onPress={handleAuthAction}
         disabled={loading}
       >
-        <Text style={styles.text}>{loading ? "Connecting..." : "Login"}</Text>
+        <Text style={styles.text}>
+          {loading ? "Processing..." : isSignUpMode ? "Create Account" : "Login"}
+        </Text>
       </TouchableOpacity>
       
       <TouchableOpacity 
-        style={[styles.button, styles.signUpButton, loading && styles.disabledButton]} 
-        onPress={handleSignUp}
-        disabled={loading}
+        style={styles.switchModeButton} 
+        onPress={() => setIsSignUpMode(!isSignUpMode)}
       >
-        <Text style={styles.text}>Make Account</Text>
+        <Text style={styles.switchModeText}>
+          {isSignUpMode ? "Already have an account? Login" : "Need an account? Sign Up"}
+        </Text>
       </TouchableOpacity>
       
       <Link href="/(tabs)/home" style={styles.skipText}>
@@ -134,7 +133,8 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '90%',
-    marginVertical: 10,
+    marginTop: 15,
+    marginBottom: 10,
     backgroundColor: '#6c3b3b', 
     padding: 16,
     borderRadius: 15, 
@@ -146,10 +146,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  signUpButton: {
-    backgroundColor: '#4B5563', 
-    shadowColor: '#4B5563',
-  },
   disabledButton: {
     opacity: 0.5,
   },
@@ -157,6 +153,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF', 
     fontSize: 16, 
     fontWeight: '600', 
+  },
+  switchModeButton: {
+    padding: 10,
+  },
+  switchModeText: {
+    color: '#4B5563',
+    fontSize: 14,
+    fontWeight: '600',
   },
   skipText: {
     marginTop: 20,

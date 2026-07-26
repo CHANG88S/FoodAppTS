@@ -1,19 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import React, { useLayoutEffect, useState } from 'react';
 import {
     View,
@@ -39,11 +23,18 @@ export default function Profile() {
     const [isSignOutModalVisible, setSignOutModalVisible] = useState(false);
     const [isProfileModal, setProfileModalVisible] = useState(false);
     const [image, setImage] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState('PREFERENCES');
 
     // User Taste Preferences States (Boba-focused)
-    const [sweetnessPref, setSweetnessPref] = useState<number>(0.5); // 0.0 to 1.0 (e.g., 50% sweetness)
-    const [icePref, setIcePref] = useState<number>(0.5);             // 0.0 to 1.0 (e.g., Less/Regular ice)
+    const [sweetnessPref, setSweetnessPref] = useState<number>(0.5); 
+    const [icePref, setIcePref] = useState<number>(0.5);             
     const [milkPref, setMilkPref] = useState<string>('Oat Milk');
+
+    // Mock state for published activities
+    const [activities, setActivities] = useState<string[]>([
+        'User rated "Brown Sugar Milk Tea" from "Sunright Tea Studio"',
+        'User rated "Uji Kintoki" from "Premium Matcha Cafe Maiko"'
+    ]);
 
     const getSweetnessLabel = (val: number) => {
         if (val === 0)   return  '0% (No Sugar)';
@@ -104,6 +95,17 @@ export default function Profile() {
         router.replace('/');
     };
 
+    const handleProfileSubmit = async (itemName: string = "Brown Sugar Milk Tea", restaurantName = "Sunright Tea Studio") => {
+        try {
+            const activityMessage = `User rated "${itemName}" from "${restaurantName}"`;
+            setActivities(prev => [activityMessage, ...prev]);
+            Alert.alert('Success 🎉', activityMessage);
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Error', 'Failed to publish review activity.');
+        }
+    };
+
     useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
@@ -132,69 +134,136 @@ export default function Profile() {
                         />
                         <Ionicons name="add-circle" size={28} color="#6c3b3b" style={styles.cameraIconBadge} />
                     </TouchableOpacity>
-                    <Text style={styles.displayName}>CHANG88S</Text>
-                    <Text style={styles.locationTag}>Riverside, CA</Text>
+                    <Text style={styles.displayName}>Username</Text>
                 </View>
 
-                {/* Shared Taste Profile Preferences Card */}
-                <View style={styles.preferenceCard}>
-                    <Text style={styles.cardTitle}>My Boba Taste Fingerprint</Text>
-                    <Text style={styles.cardSubtitle}>Followers use this baseline to match your taste profile reviews.</Text>
-
-                    {/* Sweetness Slider Preference */}
-                    <View style={styles.prefRow}>
-                        <View style={styles.prefLabelContainer}>
-                            <Text style={styles.prefLabel}>🍯 Sweetness</Text>
-                            <Text style={styles.prefValueText}>{getSweetnessLabel(sweetnessPref)}</Text>
-                        </View>
-                        <Slider
-                            style={styles.slider}
-                            minimumValue={0}
-                            maximumValue={1}
-                            step={0.1}
-                            value={sweetnessPref}
-                            onValueChange={setSweetnessPref}
-                            minimumTrackTintColor="#6c3b3b"
-                            maximumTrackTintColor="#E5E7EB"
-                        />
-                    </View>
-
-                    {/* Ice Slider Preference */}
-                    <View style={styles.prefRow}>
-                        <View style={styles.prefLabelContainer}>
-                            <Text style={styles.prefLabel}>❄️ Ice Level</Text>
-                            <Text style={styles.prefValueText}>{getIceLabel(icePref)}</Text>
-                        </View>
-                        <Slider
-                            style={styles.slider}
-                            minimumValue={0}
-                            maximumValue={1}
-                            step={0.1}
-                            value={icePref}
-                            onValueChange={setIcePref}
-                            minimumTrackTintColor="#6c3b3b"
-                            maximumTrackTintColor="#E5E7EB"
-                        />
-                    </View>
-
-                    {/* Base Milk Selection Matrix Toggle */}
-                    <View style={styles.prefRow}>
-                        <Text style={styles.prefLabel}>🥛 Preferred Milk Base</Text>
-                        <View style={styles.milkToggleRow}>
-                            {['Whole Milk', 'Oat Milk', 'Almond Milk'].map((milk) => (
-                                <TouchableOpacity
-                                    key={milk}
-                                    style={[styles.milkOptionButton, milkPref === milk ? styles.milkSelected : styles.milkUnselected]}
-                                    onPress={() => setMilkPref(milk)}
-                                >
-                                    <Text style={[styles.milkOptionText, milkPref === milk ? styles.textWhite : styles.textDark]}>
-                                        {milk.split(' ')[0]}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </View>
+                {/* Navigation Tab Row with Activity Tab Added */}
+                <View style={styles.tabRow}>
+                    {['PREFERENCES', 'REVIEWS', 'ACTIVITY', 'SAVED'].map((tab) => (
+                        <TouchableOpacity 
+                            key={tab}
+                            style={[styles.tabPill, activeTab === tab && styles.activeTabPill]}
+                            onPress={() => setActiveTab(tab)}
+                        >
+                            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
+
+                {/* Conditional Rendering Based on Active Tab */}
+                {activeTab === 'PREFERENCES' && (
+                    <View style={styles.preferenceCard}>
+                        <Text style={styles.cardTitle}>My Boba Taste Fingerprint</Text>
+                        <Text style={styles.cardSubtitle}>Followers use this baseline to match your taste profile reviews.</Text>
+
+                        {/* Sweetness Slider Preference */}
+                        <View style={styles.prefRow}>
+                            <View style={styles.prefLabelContainer}>
+                                <Text style={styles.prefLabel}>🍯 Sweetness</Text>
+                                <Text style={styles.prefValueText}>{getSweetnessLabel(sweetnessPref)}</Text>
+                            </View>
+                            <Slider
+                                style={styles.slider}
+                                minimumValue={0}
+                                maximumValue={1}
+                                step={0.1}
+                                value={sweetnessPref}
+                                onValueChange={setSweetnessPref}
+                                minimumTrackTintColor="#6c3b3b"
+                                maximumTrackTintColor="#E5E7EB"
+                            />
+                        </View>
+
+                        {/* Ice Slider Preference */}
+                        <View style={styles.prefRow}>
+                            <View style={styles.prefLabelContainer}>
+                                <Text style={styles.prefLabel}>❄️ Ice Level</Text>
+                                <Text style={styles.prefValueText}>{getIceLabel(icePref)}</Text>
+                            </View>
+                            <Slider
+                                style={styles.slider}
+                                minimumValue={0}
+                                maximumValue={1}
+                                step={0.1}
+                                value={icePref}
+                                onValueChange={setIcePref}
+                                minimumTrackTintColor="#6c3b3b"
+                                maximumTrackTintColor="#E5E7EB"
+                            />
+                        </View>
+
+                        {/* Base Milk Selection Matrix Toggle */}
+                        <View style={styles.prefRow}>
+                            <Text style={styles.prefLabel}>🥛 Preferred Milk Base</Text>
+                            <View style={styles.milkToggleRow}>
+                                {['Whole Milk', 'Oat Milk', 'Almond Milk'].map((milk) => (
+                                    <TouchableOpacity
+                                        key={milk}
+                                        style={[styles.milkOptionButton, milkPref === milk ? styles.milkSelected : styles.milkUnselected]}
+                                        onPress={() => setMilkPref(milk)}
+                                    >
+                                        <Text style={[styles.milkOptionText, milkPref === milk ? styles.textWhite : styles.textDark]}>
+                                            {milk.split(' ')[0]}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+
+                        {/* Action Button triggering the activity feed log */}
+                        <TouchableOpacity 
+                            style={styles.submitProfileButton} 
+                            activeOpacity={0.8}
+                            onPress={() => handleProfileSubmit("Brown Sugar Milk Tea", "Sunright Tea Studio")}
+                        >
+                            <Text style={styles.submitButtonText}>Publish Activity Feed</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {activeTab === 'REVIEWS' && (
+                    <View style={styles.preferenceCard}>
+                        <Text style={styles.cardTitle}>My Reviews</Text>
+                        <Text style={styles.cardSubtitle}>Your submitted item evaluations appear here.</Text>
+                        <View style={styles.emptyTabContent}>
+                            <Ionicons name="star-outline" size={32} color="#9CA3AF" />
+                            <Text style={styles.emptyTabText}>No reviews published yet.</Text>
+                        </View>
+                    </View>
+                )}
+
+                {activeTab === 'ACTIVITY' && (
+                    <View style={styles.preferenceCard}>
+                        <Text style={styles.cardTitle}>Activity Feed</Text>
+                        <Text style={styles.cardSubtitle}>Recent rating logs published to your network.</Text>
+                        {activities.length === 0 ? (
+                            <View style={styles.emptyTabContent}>
+                                <Ionicons name="pulse-outline" size={32} color="#9CA3AF" />
+                                <Text style={styles.emptyTabText}>No recent activity.</Text>
+                            </View>
+                        ) : (
+                            <View style={styles.activityList}>
+                                {activities.map((act, index) => (
+                                    <View key={index} style={styles.activityItem}>
+                                        <Ionicons name="checkmark-circle" size={16} color="#6c3b3b" />
+                                        <Text style={styles.activityText}>{act}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+                    </View>
+                )}
+
+                {activeTab === 'SAVED' && (
+                    <View style={styles.preferenceCard}>
+                        <Text style={styles.cardTitle}>Saved Items & Spots</Text>
+                        <Text style={styles.cardSubtitle}>Quick access to your bookmarks.</Text>
+                        <View style={styles.emptyTabContent}>
+                            <Ionicons name="bookmark-outline" size={32} color="#9CA3AF" />
+                            <Text style={styles.emptyTabText}>No saved items yet.</Text>
+                        </View>
+                    </View>
+                )}
 
             </ScrollView>
 
@@ -247,7 +316,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#F9FAFB',
     },
     scrollContainer: {
-        paddingBottom: 30,
+        paddingTop: 36,
+        paddingBottom: 40,
     },
     headerRightContainer: {
         flexDirection: 'row',
@@ -258,10 +328,12 @@ const styles = StyleSheet.create({
     },
     profileHeaderCard: {
         alignItems: 'center',
-        paddingVertical: 24,
+        paddingVertical: 18,
         backgroundColor: 'white',
         borderBottomWidth: 1,
         borderColor: '#E5E7EB',
+        borderRadius: 16,
+        marginHorizontal: 16,
     },
     imageContainer: {
         position: 'relative',
@@ -289,13 +361,33 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '800',
         color: '#1F2937',
-        marginTop: 12,
+        marginTop: 10,
         letterSpacing: 0.5,
     },
-    locationTag: {
-        fontSize: 13,
-        color: '#6B7280',
-        marginTop: 2,
+    tabRow: { 
+        flexDirection: 'row', 
+        justifyContent: 'center', 
+        flexWrap: 'wrap',
+        gap: 6, 
+        marginTop: 16, 
+        paddingHorizontal: 16 
+    },
+    tabPill: { 
+        paddingVertical: 6, 
+        paddingHorizontal: 12, 
+        borderRadius: 20, 
+        backgroundColor: '#E5E7EB' 
+    },
+    activeTabPill: { 
+        backgroundColor: '#6c3b3b' 
+    },
+    tabText: { 
+        fontSize: 11, 
+        fontWeight: '700', 
+        color: '#4B5563' 
+    },
+    activeTabText: { 
+        color: '#FFFFFF' 
     },
     preferenceCard: {
         backgroundColor: 'white',
@@ -372,6 +464,48 @@ const styles = StyleSheet.create({
     },
     textDark: {
         color: '#4B5563',
+    },
+    submitProfileButton: {
+        backgroundColor: '#6c3b3b',
+        marginTop: 10,
+        paddingVertical: 14,
+        borderRadius: 12,
+        alignItems: 'center',
+    },
+    submitButtonText: {
+        color: '#FFFFFF',
+        fontSize: 15,
+        fontWeight: '700',
+    },
+    emptyTabContent: {
+        paddingVertical: 40,
+        alignItems: 'center',
+        gap: 8,
+    },
+    emptyTabText: {
+        fontSize: 13,
+        color: '#9CA3AF',
+        fontWeight: '600',
+    },
+    activityList: {
+        gap: 10,
+        marginTop: 4,
+    },
+    activityItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: '#F9FAFB',
+        padding: 12,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    activityText: {
+        fontSize: 12,
+        color: '#374151',
+        fontWeight: '600',
+        flex: 1,
     },
     modalCenteredView: {
         flex: 1,

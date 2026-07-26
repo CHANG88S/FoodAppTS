@@ -14,6 +14,7 @@ import type * as items from "../items.js";
 import type * as query from "../query.js";
 import type * as restaurants from "../restaurants.js";
 import type * as review from "../review.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -28,6 +29,7 @@ declare const fullApi: ApiFromModules<{
   query: typeof query;
   restaurants: typeof restaurants;
   review: typeof review;
+  users: typeof users;
 }>;
 
 /**
