@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -6,35 +6,57 @@ import {
     Image,
     TouchableOpacity,
     Modal,
-    SafeAreaView,
     ScrollView,
     Alert,
+    Platform,
+    StatusBar,
+    LayoutAnimation,
+    UIManager,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useNavigation } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import Slider from '@react-native-community/slider';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { useAuthActions } from '@convex-dev/auth/react';
+import { DrawerActions } from '@react-navigation/native';
+import { useNavigation } from 'expo-router';
+
+// Enable LayoutAnimation for Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function Profile() {
-    const navigation = useNavigation<any>();
     const router = useRouter();
+    const navigation = useNavigation<any>();
+    const { signOut } = useAuthActions();
+
+    // Fetch the currently authenticated user document from Convex
+    const currentUser = useQuery(api.users.viewer);
+
+    // Fetch live user reviews and activities from Convex database
+    const userReviews = useQuery(api.items.getUserReviews) || [];
 
     // UI State
     const [isSignOutModalVisible, setSignOutModalVisible] = useState(false);
     const [isProfileModal, setProfileModalVisible] = useState(false);
     const [image, setImage] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState('PREFERENCES');
+    const [activeTab, setActiveTab] = useState('ACTIVITY');
+
+    // State for single open restaurant accordion dropdown in the REVIEWS tab (storing active restaurant name or null)
+    const [expandedRestaurant, setExpandedRestaurant] = useState<string | null>(null);
+
+    const toggleRestaurantDropdown = (restaurantName: string) => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setExpandedRestaurant(prev => (prev === restaurantName ? null : restaurantName));
+    };
 
     // User Taste Preferences States (Boba-focused)
     const [sweetnessPref, setSweetnessPref] = useState<number>(0.5); 
-    const [icePref, setIcePref] = useState<number>(0.5);             
+    const [icePref, setIcePref] = useState<number>(0.5);            
     const [milkPref, setMilkPref] = useState<string>('Oat Milk');
-
-    // Mock state for published activities
-    const [activities, setActivities] = useState<string[]>([
-        'User rated "Brown Sugar Milk Tea" from "Sunright Tea Studio"',
-        'User rated "Uji Kintoki" from "Premium Matcha Cafe Maiko"'
-    ]);
 
     const getSweetnessLabel = (val: number) => {
         if (val === 0)   return  '0% (No Sugar)';
@@ -90,56 +112,87 @@ export default function Profile() {
         }
     };
 
-    const handleLeave = () => {
-        setSignOutModalVisible(false);
-        router.replace('/');
-    };
-
-    const handleProfileSubmit = async (itemName: string = "Brown Sugar Milk Tea", restaurantName = "Sunright Tea Studio") => {
+    const handleLeave = async () => {
         try {
-            const activityMessage = `User rated "${itemName}" from "${restaurantName}"`;
-            setActivities(prev => [activityMessage, ...prev]);
-            Alert.alert('Success 🎉', activityMessage);
-        } catch (error) {
+            setSignOutModalVisible(false);
+            await signOut();
+            router.replace('/');
+        } catch (error: any) {
             console.error(error);
-            Alert.alert('Error', 'Failed to publish review activity.');
+            Alert.alert('Sign Out Failed', error.message || 'Could not log out.');
         }
     };
 
-    useLayoutEffect(() => {
-        navigation.setOptions({
-            headerRight: () => (
-                <View style={styles.headerRightContainer}>
-                    <TouchableOpacity onPress={() => navigation.openDrawer()}>
-                        <Ionicons name="menu-outline" size={24} color="black" style={styles.headerIcon} />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setSignOutModalVisible(true)}>
-                        <Ionicons name="log-out-outline" size={24} color="black" style={styles.headerIcon} />
-                    </TouchableOpacity>
-                </View>
-            ),
-        });
-    }, [navigation]);
+    // Determine profile image source: local selection -> user database record -> blank fallback
+    const profileImageUri = image || currentUser?.profilePicture;
+
+    // Resolve username and optional full name safely
+    const userHandle = currentUser?.username ? `@${currentUser.username}` : "@user";
+    const userFullName = currentUser?.name ? currentUser.name : null;
+
+    // Helper to format ratings to always include .0 (e.g. 5 -> 5.0)
+    const formatRating = (rating: number | undefined) => {
+        if (rating === undefined || rating === null) return "0.0";
+        return Number.isInteger(rating) ? `${rating}.0` : rating.toString();
+    };
+
+    // Group user reviews by restaurantName for the dropdown sections
+    const groupedReviews = userReviews.reduce((acc: Record<string, any[]>, review: any) => {
+        const place = review.restaurantName || "Other Locations";
+        if (!acc[place]) {
+            acc[place] = [];
+        }
+        acc[place].push(review);
+        return acc;
+    }, {});
 
     return (
-        <SafeAreaView style={styles.root}>
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
-                
-                {/* Profile Header Block */}
-                <View style={styles.profileHeaderCard}>
-                    <TouchableOpacity onPress={() => setProfileModalVisible(true)} style={styles.imageContainer}>
-                        <Image
-                            source={image ? { uri: image } : { uri: 'https://thumbs.dreamstime.com/b/culinary-symphony-blue-smoke-exquisite-food-photography-black-background-showcasing-gourmet-delights-captivating-363004972.jpg' }}
-                            style={styles.profileImage}
-                        />
-                        <Ionicons name="add-circle" size={28} color="#6c3b3b" style={styles.cameraIconBadge} />
+        <View style={styles.root}>
+            <Stack.Screen options={{ headerShown: false }} />
+
+            {/* Custom Top Header Bar */}
+            <View style={styles.topHeaderBar}>
+                <View style={{ width: 24 }} />
+                <View style={styles.headerRightContainer}>
+                    <TouchableOpacity 
+                        onPress={() => navigation.dispatch(DrawerActions.openDrawer())} 
+                        style={styles.headerIconButton}
+                    >
+                        <Ionicons name="menu-outline" size={24} color="#1F2937" />
                     </TouchableOpacity>
-                    <Text style={styles.displayName}>Username</Text>
+                    <TouchableOpacity onPress={() => setSignOutModalVisible(true)} style={styles.headerIconButton}>
+                        <Ionicons name="log-out-outline" size={22} color="#b01212" />
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.scrollContainer}>
+
+                {/* Profile Picture and Name / Username Section */}
+                <View style={styles.profileSectionUnderHeader}>
+                    <TouchableOpacity onPress={() => setProfileModalVisible(true)} style={styles.imageContainer}>
+                        {profileImageUri ? (
+                            <Image source={{ uri: profileImageUri }} style={styles.profileImage} />
+                        ) : (
+                            <View style={[styles.profileImage, styles.blankAvatar]}>
+                                <Text style={styles.avatarInitial}>
+                                    {(currentUser?.name || currentUser?.username || "U").charAt(0).toUpperCase()}
+                                </Text>
+                            </View>
+                        )}
+                        <Ionicons name="add-circle" size={26} color="#6c3b3b" style={styles.cameraIconBadge} />
+                    </TouchableOpacity>
+                    <View style={styles.userInfoContainer}>
+                        {userFullName && (
+                            <Text style={styles.displayName} numberOfLines={1}>{userFullName}</Text>
+                        )}
+                        <Text style={styles.subHandleName} numberOfLines={1}>{userHandle}</Text>
+                    </View>
                 </View>
 
-                {/* Navigation Tab Row with Activity Tab Added */}
+                {/* Navigation Tab Row (Ordered: Activity, Reviews, Preferences, Saved) */}
                 <View style={styles.tabRow}>
-                    {['PREFERENCES', 'REVIEWS', 'ACTIVITY', 'SAVED'].map((tab) => (
+                    {['ACTIVITY', 'REVIEWS', 'PREFERENCES', 'SAVED'].map((tab) => (
                         <TouchableOpacity 
                             key={tab}
                             style={[styles.tabPill, activeTab === tab && styles.activeTabPill]}
@@ -151,6 +204,110 @@ export default function Profile() {
                 </View>
 
                 {/* Conditional Rendering Based on Active Tab */}
+                {activeTab === 'ACTIVITY' && (
+                    <View style={styles.preferenceCard}>
+                        <Text style={styles.cardTitle}>Activity Feed</Text>
+                        <Text style={styles.cardSubtitle}>Recent rating logs published to your network.</Text>
+                        {userReviews.length === 0 ? (
+                            <View style={styles.emptyTabContent}>
+                                <Ionicons name="pulse-outline" size={32} color="#9CA3AF" />
+                                <Text style={styles.emptyTabText}>No recent activity.</Text>
+                            </View>
+                        ) : (
+                            <View style={styles.activityList}>
+                                {userReviews.map((review: any) => (
+                                    <View key={review._id} style={styles.activityItem}>
+                                        <Ionicons name="checkmark-circle" size={16} color="#6c3b3b" />
+                                        <Text style={styles.activityText}>
+                                            You rated "{review.itemName}" from "{review.restaurantName}"
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+                    </View>
+                )}
+
+                {activeTab === 'REVIEWS' && (
+                    <View style={styles.preferenceCard}>
+                        <Text style={styles.cardTitle}>My Reviews</Text>
+                        <Text style={styles.cardSubtitle}>Your submitted item evaluations grouped by establishment.</Text>
+                        {userReviews.length === 0 ? (
+                            <View style={styles.emptyTabContent}>
+                                <Ionicons name="star-outline" size={32} color="#9CA3AF" />
+                                <Text style={styles.emptyTabText}>No reviews published yet.</Text>
+                            </View>
+                        ) : (
+                            <View style={styles.dropdownContainer}>
+                                {Object.entries(groupedReviews).map(([restaurantName, items]: [string, any[]]) => {
+                                    const isExpanded = expandedRestaurant === restaurantName;
+                                    
+                                    const streetAddress = items[0]?.address || "";
+                                    const cityName = items[0]?.city || "";
+                                    const stateName = items[0]?.state || "";
+                                    const cityAndState = [cityName, stateName].filter(Boolean).join(", ");
+
+                                    return (
+                                        <View key={restaurantName} style={styles.restaurantAccordionWrapper}>
+                                            {/* Restaurant Header Dropdown Trigger */}
+                                            <TouchableOpacity 
+                                                style={styles.restaurantHeaderRow}
+                                                onPress={() => toggleRestaurantDropdown(restaurantName)}
+                                                activeOpacity={0.7}
+                                            >
+                                                <View style={styles.restaurantMainRow}>
+                                                    <Ionicons name="storefront-outline" size={18} color="#6c3b3b" style={styles.restaurantIcon} />
+                                                    <View style={styles.restaurantTextColumn}>
+                                                        <View style={styles.topInfoRow}>
+                                                            <Text style={styles.restaurantNameText} numberOfLines={1}>{restaurantName}</Text>
+                                                        </View>
+                                                        {streetAddress ? (
+                                                            <Text style={styles.restaurantAddressText} numberOfLines={1}>{streetAddress}</Text>
+                                                        ) : null}
+                                                        {cityAndState ? (
+                                                            <Text style={styles.restaurantCityText} numberOfLines={1}>{cityAndState}</Text>
+                                                        ) : null}
+                                                    </View>
+                                                </View>
+                                                <View style={styles.restaurantRightAction}>
+                                                    <View style={styles.countBadge}>
+                                                        <Text style={styles.countBadgeText}>{items.length}</Text>
+                                                    </View>
+                                                    <Ionicons 
+                                                        name={isExpanded ? "chevron-up" : "chevron-down"} 
+                                                        size={16} 
+                                                        color="#4B5563" 
+                                                    />
+                                                </View>
+                                            </TouchableOpacity>
+
+                                            {/* Accordion Content: Mini-Dropdown List of Item Reviews */}
+                                            {isExpanded && (
+                                                <View style={styles.dropdownItemsList}>
+                                                    {items.map((review: any) => (
+                                                        <View key={review._id} style={styles.reviewSubItem}>
+                                                            <View style={styles.reviewSubHeader}>
+                                                                <Text style={styles.reviewItemName} numberOfLines={1}>{review.itemName}</Text>
+                                                                <View style={styles.starRow}>
+                                                                    <Ionicons name="star" size={13} color="#FBBF24" />
+                                                                    <Text style={styles.reviewRatingText}>{formatRating(review.overallRating)}</Text>
+                                                                </View>
+                                                            </View>
+                                                            {review.notes ? (
+                                                                <Text style={styles.reviewNotesText} numberOfLines={2}>"{review.notes}"</Text>
+                                                            ) : null}
+                                                        </View>
+                                                    ))}
+                                                </View>
+                                            )}
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        )}
+                    </View>
+                )}
+
                 {activeTab === 'PREFERENCES' && (
                     <View style={styles.preferenceCard}>
                         <Text style={styles.cardTitle}>My Boba Taste Fingerprint</Text>
@@ -209,48 +366,6 @@ export default function Profile() {
                                 ))}
                             </View>
                         </View>
-
-                        {/* Action Button triggering the activity feed log */}
-                        <TouchableOpacity 
-                            style={styles.submitProfileButton} 
-                            activeOpacity={0.8}
-                            onPress={() => handleProfileSubmit("Brown Sugar Milk Tea", "Sunright Tea Studio")}
-                        >
-                            <Text style={styles.submitButtonText}>Publish Activity Feed</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
-
-                {activeTab === 'REVIEWS' && (
-                    <View style={styles.preferenceCard}>
-                        <Text style={styles.cardTitle}>My Reviews</Text>
-                        <Text style={styles.cardSubtitle}>Your submitted item evaluations appear here.</Text>
-                        <View style={styles.emptyTabContent}>
-                            <Ionicons name="star-outline" size={32} color="#9CA3AF" />
-                            <Text style={styles.emptyTabText}>No reviews published yet.</Text>
-                        </View>
-                    </View>
-                )}
-
-                {activeTab === 'ACTIVITY' && (
-                    <View style={styles.preferenceCard}>
-                        <Text style={styles.cardTitle}>Activity Feed</Text>
-                        <Text style={styles.cardSubtitle}>Recent rating logs published to your network.</Text>
-                        {activities.length === 0 ? (
-                            <View style={styles.emptyTabContent}>
-                                <Ionicons name="pulse-outline" size={32} color="#9CA3AF" />
-                                <Text style={styles.emptyTabText}>No recent activity.</Text>
-                            </View>
-                        ) : (
-                            <View style={styles.activityList}>
-                                {activities.map((act, index) => (
-                                    <View key={index} style={styles.activityItem}>
-                                        <Ionicons name="checkmark-circle" size={16} color="#6c3b3b" />
-                                        <Text style={styles.activityText}>{act}</Text>
-                                    </View>
-                                ))}
-                            </View>
-                        )}
                     </View>
                 )}
 
@@ -306,7 +421,7 @@ export default function Profile() {
                     </View>
                 </View>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 }
 
@@ -315,61 +430,92 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#F9FAFB',
     },
-    scrollContainer: {
-        paddingTop: 36,
-        paddingBottom: 40,
+    topHeaderBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 4 : 12,
+        paddingBottom: 10,
+        backgroundColor: '#FFFFFF',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
     },
     headerRightContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 16,
+        marginLeft: 'auto',
     },
-    headerIcon: {
-        marginRight: 16,
+    headerIconButton: {
+        padding: 4,
     },
-    profileHeaderCard: {
-        alignItems: 'center',
-        paddingVertical: 18,
-        backgroundColor: 'white',
+    profileSectionUnderHeader: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        backgroundColor: '#FFFFFF',
         borderBottomWidth: 1,
-        borderColor: '#E5E7EB',
-        borderRadius: 16,
-        marginHorizontal: 16,
+        borderBottomColor: '#E5E7EB',
     },
     imageContainer: {
         position: 'relative',
-        width: 110,
-        height: 110,
-        alignItems: 'center',
-        justifyContent: 'center',
+        width: 68,
+        height: 68,
     },
     profileImage: {
-        width: 100,
-        height: 100,
+        width: 68,
+        height: 68,
+        borderRadius: 34,
+        borderWidth: 2,
         borderColor: '#E5E7EB',
-        borderWidth: 3,
-        borderRadius: 50,
+    },
+    blankAvatar: {
+        backgroundColor: '#E5E7EB',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    avatarInitial: {
+        fontSize: 26,
+        fontWeight: '700',
+        color: '#6c3b3b',
     },
     cameraIconBadge: {
         position: 'absolute',
-        bottom: 4,
-        right: 4,
-        backgroundColor: 'white',
-        borderRadius: 14,
+        bottom: 0,
+        right: 0,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
         overflow: 'hidden',
+    },
+    userInfoContainer: {
+        justifyContent: 'center',
+        marginTop: 2,
     },
     displayName: {
         fontSize: 18,
         fontWeight: '800',
         color: '#1F2937',
-        marginTop: 10,
         letterSpacing: 0.5,
+    },
+    subHandleName: {
+        fontSize: 13,
+        fontWeight: '500',
+        color: '#6B7280',
+        marginTop: 2,
+    },
+    scrollContainer: {
+        paddingTop: 12,
+        paddingBottom: 100,
     },
     tabRow: { 
         flexDirection: 'row', 
         justifyContent: 'center', 
         flexWrap: 'wrap',
         gap: 6, 
-        marginTop: 16, 
+        marginTop: 8, 
         paddingHorizontal: 16 
     },
     tabPill: { 
@@ -409,8 +555,117 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#9CA3AF',
         marginTop: 2,
-        marginBottom: 20,
+        marginBottom: 16,
         lineHeight: 16,
+    },
+    dropdownContainer: {
+        gap: 6,
+    },
+    restaurantAccordionWrapper: {
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 12,
+        backgroundColor: '#F9FAFB',
+        overflow: 'hidden',
+    },
+    restaurantHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 6, // 🔑 Thinner vertical padding
+        paddingHorizontal: 10,
+        backgroundColor: '#FFFFFF',
+    },
+    restaurantMainRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start', // 🔑 Aligns the top of the logo with restaurant name, bottom with city/state
+        gap: 8,
+        flex: 1,
+    },
+    restaurantIcon: {
+        marginTop: 2, // 🔑 Fine-tune alignment with the top restaurant name text
+    },
+    restaurantTextColumn: {
+        flex: 1,
+    },
+    topInfoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    restaurantNameText: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#1F2937',
+    },
+    restaurantAddressText: {
+        fontSize: 10,
+        color: '#9CA3AF',
+        marginTop: 0.5,
+    },
+    restaurantCityText: {
+        fontSize: 10,
+        color: '#9CA3AF',
+        marginTop: 0.5,
+    },
+    restaurantRightAction: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    countBadge: {
+        backgroundColor: '#F3F4F6',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    countBadgeText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#4B5563',
+    },
+    dropdownItemsList: {
+        padding: 8,
+        gap: 6,
+        backgroundColor: '#F9FAFB',
+        borderTopWidth: 1,
+        borderTopColor: '#E5E7EB',
+    },
+    reviewSubItem: {
+        backgroundColor: '#FFFFFF',
+        padding: 8,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        gap: 2,
+    },
+    reviewSubHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    reviewItemName: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#374151',
+        flex: 1,
+    },
+    starRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 2,
+    },
+    reviewRatingText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#D97706',
+        marginLeft: 2,
+    },
+    reviewNotesText: {
+        fontSize: 11,
+        color: '#6B7280',
+        fontStyle: 'italic',
     },
     prefRow: {
         marginBottom: 20,
@@ -464,18 +719,6 @@ const styles = StyleSheet.create({
     },
     textDark: {
         color: '#4B5563',
-    },
-    submitProfileButton: {
-        backgroundColor: '#6c3b3b',
-        marginTop: 10,
-        paddingVertical: 14,
-        borderRadius: 12,
-        alignItems: 'center',
-    },
-    submitButtonText: {
-        color: '#FFFFFF',
-        fontSize: 15,
-        fontWeight: '700',
     },
     emptyTabContent: {
         paddingVertical: 40,
