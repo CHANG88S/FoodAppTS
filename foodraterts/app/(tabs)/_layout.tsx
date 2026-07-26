@@ -1,8 +1,11 @@
 import React from 'react';
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { createDrawerNavigator } from '@react-navigation/drawer';
 
-export default function TabLayout() {
+const Drawer = createDrawerNavigator();
+
+function TabLayout() {
     return (
         <Tabs
             screenOptions={({ route }) => ({
@@ -36,23 +39,31 @@ export default function TabLayout() {
                     borderTopColor: "#E5E7EB",
                     height: 60,
                     paddingBottom: 5,
-                }
+                },
+                headerShown: false,
             })}
         >
-            <Tabs.Screen 
-                name="home" 
-                options={{
-                    headerShown: false,
-                }}
-            />
+            <Tabs.Screen name="home" />
             <Tabs.Screen name="search" />
             <Tabs.Screen name="notification" />
-            <Tabs.Screen 
-                name="profile" 
-                options={{
-                    headerShown: false, 
-                }}
-            />
+            <Tabs.Screen name="profile" />
         </Tabs>
+    );
+}
+
+export default function RootLayout() {
+    return (
+        <Drawer.Navigator
+            screenOptions={{
+                headerShown: false,
+                drawerPosition: 'right', // 🔑 Slides smoothly from right to left
+                drawerType: 'front',
+                drawerStyle: {
+                    width: 260,
+                },
+            }}
+        >
+            <Drawer.Screen name="mainTabs" component={TabLayout} />
+        </Drawer.Navigator>
     );
 }

@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const searchMenuItems = query({
   args: {
@@ -10,13 +11,12 @@ export const searchMenuItems = query({
       return [];
     }
 
-    // Direct, case-insensitive lookup optimized by your searchIndex definition
     const results = await ctx.db
       .query("menuItems")
       .withSearchIndex("search_item", (q) => 
         q.search("itemName", args.searchQuery)
       )
-      .take(15); // Return top 15 results for efficient UI loading
+      .take(15);
 
     return results;
   },
@@ -25,7 +25,7 @@ export const searchMenuItems = query({
 export const addMenuItem = mutation({
   args: {
     restaurantId: v.id("restaurants"),
-    restaurantName: v.string(), // Saved in item table for your flat UI rendering speed
+    restaurantName: v.string(),
     itemName: v.string(),
     category: v.optional(
       v.union(
@@ -52,9 +52,63 @@ export const createItemReview = mutation({
     itemId: v.id("menuItems"),
     overallRating: v.number(),
     notes: v.string(),
-    userId: v.string(), 
+    criteriaList: v.array(
+      v.object({
+        id: v.string(),
+        name: v.string(),
+        value: v.union(v.number(), v.string()),
+      })
+    ),
   },
   handler: async (ctx, args) => {
-    // ... your insertion logic
-  }
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Must be logged in to submit a review.");
+    }
+
+    const newReviewId = await ctx.db.insert("itemReviews", {
+      itemId: args.itemId,
+      userId: userId,
+      overallRating: args.overallRating,
+      notes: args.notes,
+      granularAttributes: args.criteriaList,
+    });
+
+    return newReviewId;
+  },
+});
+
+export const getUserReviews = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const reviews = await ctx.db
+      .query("itemReviews")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+
+    const enrichedReviews = await Promise.all(
+      reviews.map(async (review) => {
+        const item = await ctx.db.get(review.itemId);
+        
+        // Fetch the associated restaurant document from the restaurants table
+        const restaurant = item?.restaurantId 
+          ? await ctx.db.get(item.restaurantId) 
+          : null;
+
+        return {
+          ...review,
+          itemName: item?.itemName || "Menu Item",
+          restaurantName: restaurant?.restaurantName || item?.restaurantName || "",
+          address: restaurant?.address || "",
+          city: restaurant?.city || "",
+          state: restaurant?.state || "", // 🔑 Added state field here
+        };
+      })
+    );
+
+    return enrichedReviews;
+  },
 });

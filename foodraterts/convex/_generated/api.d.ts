@@ -9,6 +9,7 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as http from "../http.js";
 import type * as images from "../images.js";
 import type * as items from "../items.js";
 import type * as query from "../query.js";
@@ -24,6 +25,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  http: typeof http;
   images: typeof images;
   items: typeof items;
   query: typeof query;

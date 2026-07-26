@@ -9,21 +9,23 @@ const LoginIndex = () => {
   const { signIn } = useAuthActions(); 
   
   const [isSignUpMode, setIsSignUpMode] = useState(false); // Toggle between login & signup fields
+  const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleAuthAction = async () => {
-    if (!email || !password || (isSignUpMode && !name)) {
-      return Alert.alert("Error", "Please fill out all required fields.");
+    // Enforce that email, password, and username are provided during sign up
+    if (!email || !password || (isSignUpMode && !username)) {
+      return Alert.alert("Error", "Please fill out all required fields, including a username.");
     }
     
     setLoading(true);
     try {
       if (isSignUpMode) {
-        // Pass name along with email/password to populate the user profile document
-        await signIn("password", { email, password, name, flow: "signUp" });
+        // Pass username and optional name along with email/password to Convex Auth
+        await signIn("password", { email, password, username, name, flow: "signUp" });
         Alert.alert('Account Created!', 'Welcome to FoodRater!');
       } else {
         await signIn("password", { email, password, flow: "signIn" });
@@ -42,14 +44,24 @@ const LoginIndex = () => {
       <Text style={styles.title}>FoodRater</Text>
       
       {isSignUpMode && (
-        <TextInput 
-          style={styles.textInput} 
-          placeholder="Display Name" 
-          value={name} 
-          onChangeText={setName} 
-          autoCapitalize="words"
-          editable={!loading}
-        />
+        <>
+          <TextInput 
+            style={styles.textInput} 
+            placeholder="Username (Required)" 
+            value={username} 
+            onChangeText={setUsername} 
+            autoCapitalize="none"
+            editable={!loading}
+          />
+          <TextInput 
+            style={styles.textInput} 
+            placeholder="Display Name (Optional)" 
+            value={name} 
+            onChangeText={setName} 
+            autoCapitalize="words"
+            editable={!loading}
+          />
+        </>
       )}
 
       <TextInput 

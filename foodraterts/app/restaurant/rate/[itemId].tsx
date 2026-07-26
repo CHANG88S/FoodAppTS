@@ -10,7 +10,6 @@ import {
     TextInput,
     ScrollView,
     Alert,
-    Dimensions,
     ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -123,7 +122,7 @@ export default function Upload() {
                 itemId: itemId as Id<"menuItems">,
                 overallRating: manualOverallScore,
                 notes: adjustmentText.trim(),
-                userId: "local_user_1", 
+                criteriaList: criteriaList,
             });
 
             Alert.alert('Review Added 🎉', 'Your rating data was saved successfully!', [
@@ -143,8 +142,8 @@ export default function Upload() {
             Alert.alert('Duplicate Metric', 'This field has already been added.');
             return;
         }
-        const id = `${Date.now()}-${name.trim()}`;
-        setCriteriaList(prev => [...prev, { id, name: name.trim(), value: 0 }]);
+        const criteriaId = `${Date.now()}-${name.trim()}`;
+        setCriteriaList(prev => [...prev, { id: criteriaId, name: name.trim(), value: 0 }]);
         setShowAddModal(false);
     };
 
@@ -387,7 +386,6 @@ const styles = StyleSheet.create({
         flex: 1, 
         backgroundColor: '#FAFAFA' 
     },
-    // 🔑 Generous top padding pushes the close button down safely out of the notch area
     customHeaderBar: {
         paddingHorizontal: 16,
         paddingTop: 48,
@@ -397,7 +395,6 @@ const styles = StyleSheet.create({
     closeButtonContainer: {
         padding: 4,
     },
-    // 🔑 Added top margin to shift all form contents further down, and increased bottom padding to clear the raised footer
     mainLayoutContainer: { 
         flex: 1,
         marginTop: 10,
@@ -631,7 +628,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center', 
         alignItems: 'center' 
     },
-    // 🔑 Raised the submit footer container higher up from the bottom edge
     fixedFooterButtonContainer: { 
         position: 'absolute', 
         bottom: 12, 

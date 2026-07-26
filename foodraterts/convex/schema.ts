@@ -9,7 +9,8 @@ export default defineSchema({
 
   // 0. USERS & ROLES TABLE WITH FULL HIERARCHY
   users: defineTable({
-    name: v.string(),
+    name: v.optional(v.string()),
+    username: v.string(),
     email: v.string(),
     passwordHash: v.optional(v.string()), // 🔑 Make passwordHash optional
     profilePicture: v.optional(v.string()),
@@ -75,14 +76,14 @@ export default defineSchema({
 
   // 3. GRANULAR USER REVIEWS
   itemReviews: defineTable({
-    itemId: v.id("menuItems"),         
-    userId: v.string(),         
+    itemId: v.id("menuItems"),        
+    userId: v.string(), // or v.id("users") depending on your setup
     overallRating: v.number(),  
     notes: v.string(),              
     granularAttributes: v.array(
       v.object({
         name: v.string(),
-        value: v.number(),      
+        value: v.union(v.number(), v.string()), // 🔑 Allow both numbers and strings
       })
     ),
   }).index("by_itemId", ["itemId"]),
