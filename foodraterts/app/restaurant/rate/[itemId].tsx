@@ -155,14 +155,14 @@ export default function Upload() {
                 {/* Completely hide the default native navigation header */}
                 <Stack.Screen options={{ headerShown: false }} />
 
-                {/* Custom Inline Top Bar with extra top spacing */}
+                {/* Custom Inline Top Bar with extra clearance for the X button */}
                 <View style={styles.customHeaderBar}>
                     <TouchableOpacity onPress={() => setDiscardModalVisible(true)} style={styles.closeButtonContainer} activeOpacity={0.7}>
                         <Ionicons name="close" size={22} color="#1F2937" />
                     </TouchableOpacity>
                 </View>
 
-                {/* Non-scrollable layout container */}
+                {/* Non-scrollable layout container with top offset and footer spacing */}
                 <View style={styles.mainLayoutContainer}>
                     {/* Amazon-style row layout */}
                     <View style={styles.amazonHeaderRow}>
@@ -299,7 +299,7 @@ export default function Upload() {
                     </View>
                 </View>
 
-                {/* Fixed Submit Button Bar */}
+                {/* Fixed Submit Button Bar raised slightly higher */}
                 <View style={styles.fixedFooterButtonContainer}>
                     <TouchableOpacity style={styles.primarySubmitButton} activeOpacity={0.85} onPress={handleFormSubmit} disabled={isSubmitting}>
                         {isSubmitting ? (
@@ -387,19 +387,21 @@ const styles = StyleSheet.create({
         flex: 1, 
         backgroundColor: '#FAFAFA' 
     },
-    // 🔑 Increased paddingTop to give the X close button ample clearance from the safe area
+    // 🔑 Generous top padding pushes the close button down safely out of the notch area
     customHeaderBar: {
         paddingHorizontal: 16,
-        paddingTop: 40,
+        paddingTop: 48,
         paddingBottom: 8,
         alignItems: 'flex-start',
     },
     closeButtonContainer: {
         padding: 4,
     },
+    // 🔑 Added top margin to shift all form contents further down, and increased bottom padding to clear the raised footer
     mainLayoutContainer: { 
         flex: 1,
-        paddingBottom: 72,
+        marginTop: 10,
+        paddingBottom: 76,
     },
     amazonHeaderRow: {
         flexDirection: 'row',
@@ -459,7 +461,7 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     inlineHeaderTextInput: {
-        height: 62,
+        height: 63,
         borderWidth: 1,
         borderColor: '#E5E7EB',
         backgroundColor: '#FAFAFA',
@@ -629,14 +631,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center', 
         alignItems: 'center' 
     },
+    // 🔑 Raised the submit footer container higher up from the bottom edge
     fixedFooterButtonContainer: { 
         position: 'absolute', 
-        bottom: 0, 
+        bottom: 12, 
         left: 0, 
         right: 0, 
         backgroundColor: '#FFFFFF', 
         paddingHorizontal: 16, 
-        paddingVertical: 12, 
+        paddingVertical: 10, 
         borderTopWidth: 1, 
         borderTopColor: '#F3F4F6', 
         zIndex: 10 

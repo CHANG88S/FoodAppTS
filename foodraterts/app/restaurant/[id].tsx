@@ -143,7 +143,7 @@ export default function RestaurantDetailScreen() {
         }} 
       />
 
-      {/* Dynamic Header Section */}
+      {/* Dynamic Header Section with Restored Back Button Container */}
       <View style={styles.heroContainer}>
         
         {/* CUSTOM IN-PAGE BACK BUTTON: Placed inline within your layout tree cleanly */}
@@ -294,13 +294,13 @@ export default function RestaurantDetailScreen() {
                 {pageItems.map((item: any) => (
                   <View key={item._id} style={styles.compactGridCard}>
                     
-                    {/* 🔑 CONTAINER FOR IMAGE/EMOJI PLACEMENT */}
+                    {/* CONTAINER FOR IMAGE/EMOJI PLACEMENT */}
                     <View style={styles.imageWrapperFrame}>
                       {item.imageUrl ? (
                         <Image 
                           source={{ uri: item.imageUrl }} 
                           style={styles.cardImage} 
-                          resizeMode="contain" // 🔑 Prevents stretching or clipping of item pictures
+                          resizeMode="contain" 
                         />
                       ) : (
                         <View style={styles.placeholderImageContainer}>
@@ -579,12 +579,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05, 
     shadowRadius: 2 
   },
-  // 🔑 NEW STRUCTURAL IMAGE CONTAINER WRAPPER
   imageWrapperFrame: {
     width: '100%',
     height: 85,
     borderRadius: 8,
-    backgroundColor: "#F5F5F4", // A clean, continuous background
+    backgroundColor: "#F5F5F4", 
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
