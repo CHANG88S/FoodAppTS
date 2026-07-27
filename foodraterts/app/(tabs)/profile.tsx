@@ -17,7 +17,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, Stack } from 'expo-router';
 import Slider from '@react-native-community/slider';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useAuthActions } from '@convex-dev/auth/react';
 import { DrawerActions } from '@react-navigation/native';
@@ -38,6 +38,7 @@ export default function Profile() {
 
     // Fetch live user reviews and activities from Convex database
     const userReviews = useQuery(api.items.getUserReviews) || [];
+    const deleteReviewMutation = useMutation(api.items.deleteItemReview);
 
     // UI State
     const [isSignOutModalVisible, setSignOutModalVisible] = useState(false);
@@ -45,7 +46,7 @@ export default function Profile() {
     const [image, setImage] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState('ACTIVITY');
 
-    // State for single open restaurant accordion dropdown in the REVIEWS tab (storing active restaurant name or null)
+    // State for single open restaurant accordion dropdown in the REVIEWS tab
     const [expandedRestaurant, setExpandedRestaurant] = useState<string | null>(null);
 
     const toggleRestaurantDropdown = (restaurantName: string) => {
@@ -121,6 +122,28 @@ export default function Profile() {
             console.error(error);
             Alert.alert('Sign Out Failed', error.message || 'Could not log out.');
         }
+    };
+
+    // Handle review deletion with confirmation alert
+    const handleDeleteReview = (reviewId: string, itemName: string) => {
+        Alert.alert(
+            "Delete Review",
+            `Are you sure you want to delete your review for "${itemName}"?`,
+            [
+                { text: "Cancel", style: "cancel" },
+                { 
+                    text: "Delete", 
+                    style: "destructive", 
+                    onPress: async () => {
+                        try {
+                            await deleteReviewMutation({ reviewId: reviewId as any });
+                        } catch (err: any) {
+                            Alert.alert("Error", err.message || "Failed to delete review.");
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     // Determine profile image source: local selection -> user database record -> blank fallback
@@ -219,7 +242,10 @@ export default function Profile() {
                                     <View key={review._id} style={styles.activityItem}>
                                         <Ionicons name="checkmark-circle" size={16} color="#6c3b3b" />
                                         <Text style={styles.activityText}>
-                                            You rated "{review.itemName}" from "{review.restaurantName}"
+                                            {review.isUpdated 
+                                                ? `You updated your review for "${review.itemName}" at "${review.restaurantName}"`
+                                                : `You rated "${review.itemName}" from "${review.restaurantName}"`
+                                            }
                                         </Text>
                                     </View>
                                 ))}
@@ -285,18 +311,37 @@ export default function Profile() {
                                             {isExpanded && (
                                                 <View style={styles.dropdownItemsList}>
                                                     {items.map((review: any) => (
-                                                        <View key={review._id} style={styles.reviewSubItem}>
+                                                        <TouchableOpacity 
+                                                            key={review._id} 
+                                                            style={styles.reviewSubItem}
+                                                            onPress={() => router.push({
+                                                                pathname: '/restaurant/rate/[itemId]',
+                                                                params: { itemId: review.itemId, editReviewId: review._id }
+                                                            })}
+                                                            activeOpacity={0.7}
+                                                        >
                                                             <View style={styles.reviewSubHeader}>
                                                                 <Text style={styles.reviewItemName} numberOfLines={1}>{review.itemName}</Text>
-                                                                <View style={styles.starRow}>
-                                                                    <Ionicons name="star" size={13} color="#FBBF24" />
-                                                                    <Text style={styles.reviewRatingText}>{formatRating(review.overallRating)}</Text>
+                                                                <View style={styles.reviewSubActions}>
+                                                                    <View style={styles.starRow}>
+                                                                        <Ionicons name="star" size={13} color="#FBBF24" />
+                                                                        <Text style={styles.reviewRatingText}>{formatRating(review.overallRating)}</Text>
+                                                                    </View>
+                                                                    <TouchableOpacity 
+                                                                        onPress={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleDeleteReview(review._id, review.itemName);
+                                                                        }}
+                                                                        style={styles.deleteIconButton}
+                                                                    >
+                                                                        <Ionicons name="trash-outline" size={14} color="#DC2626" />
+                                                                    </TouchableOpacity>
                                                                 </View>
                                                             </View>
                                                             {review.notes ? (
                                                                 <Text style={styles.reviewNotesText} numberOfLines={2}>"{review.notes}"</Text>
                                                             ) : null}
-                                                        </View>
+                                                        </TouchableOpacity>
                                                     ))}
                                                 </View>
                                             )}
@@ -572,18 +617,18 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 6, // 🔑 Thinner vertical padding
+        paddingVertical: 4,
         paddingHorizontal: 10,
         backgroundColor: '#FFFFFF',
     },
     restaurantMainRow: {
         flexDirection: 'row',
-        alignItems: 'flex-start', // 🔑 Aligns the top of the logo with restaurant name, bottom with city/state
+        alignItems: 'flex-start',
         gap: 8,
         flex: 1,
     },
     restaurantIcon: {
-        marginTop: 2, // 🔑 Fine-tune alignment with the top restaurant name text
+        marginTop: 2,
     },
     restaurantTextColumn: {
         flex: 1,
@@ -644,6 +689,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+    },
+    reviewSubActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    deleteIconButton: {
+        padding: 2,
     },
     reviewItemName: {
         fontSize: 12,

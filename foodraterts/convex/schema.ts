@@ -1,18 +1,17 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { authTables } from "@convex-dev/auth/server"; // Import the auth tables from auth.ts
+import { authTables } from "@convex-dev/auth/server";
 
 export default defineSchema({
 
-  ...authTables, // Import the auth table from auth.ts
-
+  ...authTables,
 
   // 0. USERS & ROLES TABLE WITH FULL HIERARCHY
   users: defineTable({
     name: v.optional(v.string()),
     username: v.string(),
     email: v.string(),
-    passwordHash: v.optional(v.string()), // 🔑 Make passwordHash optional
+    passwordHash: v.optional(v.string()),
     profilePicture: v.optional(v.string()),
     city: v.optional(v.string()),
     role: v.union(
@@ -39,9 +38,9 @@ export default defineSchema({
   // 1. MASTER RESTAURANT DIRECTORY
   restaurants: defineTable({
     placeId: v.optional(v.string()),  
-    restaurantName: v.string(),       
-    category: v.optional(v.string()),         
-    city: v.string(),             
+    restaurantName: v.string(),      
+    category: v.optional(v.string()),        
+    city: v.string(),            
     state: v.string(),            
     address: v.string(),
     phone: v.optional(v.string()),
@@ -77,14 +76,20 @@ export default defineSchema({
   // 3. GRANULAR USER REVIEWS
   itemReviews: defineTable({
     itemId: v.id("menuItems"),        
-    userId: v.string(), // or v.id("users") depending on your setup
+    userId: v.string(),
     overallRating: v.number(),  
     notes: v.string(),              
     granularAttributes: v.array(
       v.object({
+        id: v.optional(v.string()),
         name: v.string(),
-        value: v.union(v.number(), v.string()), // 🔑 Allow both numbers and strings
+        value: v.union(v.number(), v.string()),
       })
     ),
-  }).index("by_itemId", ["itemId"]),
+    orderNotes: v.optional(v.string()), // 🔑 Saved order adjustments field
+    createdAt: v.optional(v.number()),
+    updatedAt: v.optional(v.number()),
+  })
+    .index("by_itemId", ["itemId"])
+    .index("by_user", ["userId"]),
 });

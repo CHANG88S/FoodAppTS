@@ -89,11 +89,16 @@ export const searchAllByName = query({
  */
 export const getRestaurantDetails = query({
   args: { 
-    restaurantId: v.id("restaurants"),
+    restaurantId: v.optional(v.id("restaurants")), // 🔑 Made optional to prevent errors when uninitialized
     cityFilter: v.optional(v.string()),
     stateFilter: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    // 🔑 Safely return null if restaurantId hasn't loaded or been passed yet
+    if (!args.restaurantId) {
+      return null;
+    }
+
     // Fetch the restaurant metadata by its direct Document ID
     const restaurant = await ctx.db.get(args.restaurantId);
     if (!restaurant) return null;
@@ -113,7 +118,7 @@ export const getRestaurantDetails = query({
     // Fast indexed query to grab all drinks/dishes matching this restaurantId
     const menuItems = await ctx.db
       .query("menuItems")
-      .withIndex("by_restaurantId", (q) => q.eq("restaurantId", args.restaurantId))
+      .withIndex("by_restaurantId", (q) => q.eq("restaurantId", args.restaurantId!))
       .collect();
 
     // Stitch them into a single unified object for your layout grid to ingest smoothly

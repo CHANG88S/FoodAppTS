@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -37,10 +37,19 @@ const PREDEFINED_CRITERIA = [
 export default function Upload() {
     const router = useRouter();
     
-    // Ingest parameters including item ID passed via route params
-    const { id, itemId, itemName } = useLocalSearchParams();
+    const { id, itemId, itemName, editReviewId } = useLocalSearchParams<{ 
+        id?: string; 
+        itemId?: string; 
+        itemName?: string; 
+        editReviewId?: string; 
+    }>();
     
-    // Fetch live restaurant details to find the exact item name and price if needed
+    const userReviews = useQuery(api.items.getUserReviews) || [];
+    
+    const existingReview = userReviews.find((r: any) => 
+        (editReviewId && r._id === editReviewId) || (!editReviewId && itemId && r.itemId === itemId)
+    );
+
     const restaurantDetails = useQuery(api.restaurants.getRestaurantDetails, { 
         restaurantId: id as Id<"restaurants"> 
     });
@@ -58,11 +67,26 @@ export default function Upload() {
     const [manualOverallScore, setManualOverallScore] = useState<number>(5.0);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Dynamically resolve the true item name and price from params or live database list
-    const resolvedItemFromDb = restaurantDetails?.menuItems?.find((item: any) => item._id === itemId);
+    // Pre-populate fields including order adjustments when editing
+    useEffect(() => {
+        if (existingReview) {
+            setManualOverallScore(existingReview.overallRating ?? 5.0);
+            setAdjustmentText(existingReview.notes ?? '');
+            setOrderNotes(existingReview.orderNotes ?? '');
+            if (existingReview.granularAttributes) {
+                setCriteriaList(existingReview.granularAttributes.map((attr: any, idx: number) => ({
+                    id: attr.id || `${Date.now()}-${idx}`,
+                    name: attr.name,
+                    value: attr.value
+                })));
+            }
+        }
+    }, [existingReview]);
+
+    const resolvedItemFromDb = restaurantDetails?.menuItems?.find((item: any) => item._id === (itemId || existingReview?.itemId));
     const activeItemName = (typeof itemName === 'string' && itemName.trim().length > 0)
         ? itemName 
-        : (resolvedItemFromDb?.itemName || 'Menu Item');
+        : (resolvedItemFromDb?.itemName || existingReview?.itemName || 'Menu Item');
         
     const itemPrice = resolvedItemFromDb?.price !== undefined 
         ? `$${resolvedItemFromDb.price.toFixed(2)}` 
@@ -111,7 +135,8 @@ export default function Upload() {
     };
 
     const handleFormSubmit = async () => {
-        if (!itemId) {
+        const targetItemId = itemId || existingReview?.itemId;
+        if (!targetItemId) {
             Alert.alert("Error", "Missing menu item identifier context.");
             return;
         }
@@ -119,13 +144,14 @@ export default function Upload() {
         setIsSubmitting(true);
         try {
             await createReview({
-                itemId: itemId as Id<"menuItems">,
+                itemId: targetItemId as Id<"menuItems">,
                 overallRating: manualOverallScore,
                 notes: adjustmentText.trim(),
                 criteriaList: criteriaList,
+                orderNotes: orderNotes.trim(),
             });
 
-            Alert.alert('Review Added 🎉', 'Your rating data was saved successfully!', [
+            Alert.alert('Success 🎉', existingReview ? 'Your review was updated successfully!' : 'Your rating data was saved successfully!', [
                 { text: 'OK', onPress: () => router.back() }
             ]);
         } catch (error) {
@@ -151,19 +177,15 @@ export default function Upload() {
         <GestureHandlerRootView style={{ flex: 1 }}>
             <SafeAreaView style={styles.root}>
                 
-                {/* Completely hide the default native navigation header */}
                 <Stack.Screen options={{ headerShown: false }} />
 
-                {/* Custom Inline Top Bar with extra clearance for the X button */}
                 <View style={styles.customHeaderBar}>
                     <TouchableOpacity onPress={() => setDiscardModalVisible(true)} style={styles.closeButtonContainer} activeOpacity={0.7}>
                         <Ionicons name="close" size={22} color="#1F2937" />
                     </TouchableOpacity>
                 </View>
 
-                {/* Non-scrollable layout container with top offset and footer spacing */}
                 <View style={styles.mainLayoutContainer}>
-                    {/* Amazon-style row layout */}
                     <View style={styles.amazonHeaderRow}>
                         <TouchableOpacity onPress={() => setProfileModalVisible(true)} activeOpacity={0.85} style={styles.imageContainer}>
                             <Image
@@ -194,7 +216,6 @@ export default function Upload() {
                         </View>
                     </View>
 
-                    {/* Interactive Overall Rating Panel */}
                     <View style={styles.starCardContainer}>
                         <Text style={styles.sectionTitle}>Overall Item Rating</Text>
                         
@@ -238,7 +259,6 @@ export default function Upload() {
                         </View>
                     </View>
 
-                    {/* Order Customization Notes */}
                     <View style={styles.reviewCardContainer}>
                         <Text style={styles.sectionTitle}>Rate your item!</Text>
                         <TextInput
@@ -253,7 +273,6 @@ export default function Upload() {
                         <Text style={styles.charCounter}>{adjustmentText.length} / 250</Text>
                     </View>
 
-                    {/* Static Sized Rating Criteria Panel */}
                     <View style={styles.staticCriteriaCardContainer}>
                         <View style={styles.criteriaHeader}>
                             <View>
@@ -298,18 +317,16 @@ export default function Upload() {
                     </View>
                 </View>
 
-                {/* Fixed Submit Button Bar raised slightly higher */}
                 <View style={styles.fixedFooterButtonContainer}>
                     <TouchableOpacity style={styles.primarySubmitButton} activeOpacity={0.85} onPress={handleFormSubmit} disabled={isSubmitting}>
                         {isSubmitting ? (
                             <ActivityIndicator color="#FFFFFF" />
                         ) : (
-                            <Text style={styles.primarySubmitButtonText}>Submit Review</Text>
+                            <Text style={styles.primarySubmitButtonText}>{existingReview ? 'Save Changes' : 'Submit Review'}</Text>
                         )}
                     </TouchableOpacity>
                 </View>
 
-                {/* Media Picker Sheet Overlay */}
                 <Modal visible={isProfileModal} animationType="slide" transparent={true} onRequestClose={() => setProfileModalVisible(false)}>
                     <TouchableOpacity style={styles.modalProfileView} activeOpacity={1} onPress={() => setProfileModalVisible(false)}>
                         <View style={styles.profileModalView}>
@@ -332,7 +349,6 @@ export default function Upload() {
                     </TouchableOpacity>
                 </Modal>
 
-                {/* Criterion Metric Construction Sheet */}
                 <Modal visible={showAddModal} transparent animationType="fade" onRequestClose={() => setShowAddModal(false)}>
                     <View style={styles.addModalCenteredView}>
                         <View style={styles.addModalView}>
@@ -357,7 +373,6 @@ export default function Upload() {
                     </View>
                 </Modal>
 
-                {/* Discard Changes Escape Dialog */}
                 <Modal visible={isDiscardModalVisible} transparent={true} animationType="fade" onRequestClose={() => setDiscardModalVisible(false)}>
                     <View style={styles.modalCenteredView}>
                         <View style={styles.modalView}>
