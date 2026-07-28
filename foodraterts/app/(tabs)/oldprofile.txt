@@ -22,8 +22,8 @@ import { api } from '../../convex/_generated/api';
 import { useAuthActions } from '@convex-dev/auth/react';
 import { DrawerActions } from '@react-navigation/native';
 import { useNavigation } from 'expo-router';
-import { formatCount } from '../../utils/formatters';
 
+// Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
@@ -33,15 +33,20 @@ export default function Profile() {
     const navigation = useNavigation<any>();
     const { signOut } = useAuthActions();
 
+    // Fetch the currently authenticated user document from Convex
     const currentUser = useQuery(api.users.viewer);
+
+    // Fetch live user reviews and activities from Convex database
     const userReviews = useQuery(api.items.getUserReviews) || [];
     const deleteReviewMutation = useMutation(api.items.deleteItemReview);
-    const toggleLike = useMutation(api.items.toggleLikeReview);
 
+    // UI State
     const [isSignOutModalVisible, setSignOutModalVisible] = useState(false);
     const [isProfileModal, setProfileModalVisible] = useState(false);
     const [image, setImage] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState('ACTIVITY');
+
+    // State for single open restaurant accordion dropdown in the REVIEWS tab
     const [expandedRestaurant, setExpandedRestaurant] = useState<string | null>(null);
 
     const toggleRestaurantDropdown = (restaurantName: string) => {
@@ -49,6 +54,7 @@ export default function Profile() {
         setExpandedRestaurant(prev => (prev === restaurantName ? null : restaurantName));
     };
 
+    // User Taste Preferences States (Boba-focused)
     const [sweetnessPref, setSweetnessPref] = useState<number>(0.5); 
     const [icePref, setIcePref] = useState<number>(0.5);            
     const [milkPref, setMilkPref] = useState<string>('Oat Milk');
@@ -118,6 +124,7 @@ export default function Profile() {
         }
     };
 
+    // Handle review deletion with confirmation alert
     const handleDeleteReview = (reviewId: string, itemName: string) => {
         Alert.alert(
             "Delete Review",
@@ -139,15 +146,20 @@ export default function Profile() {
         );
     };
 
+    // Determine profile image source: local selection -> user database record -> blank fallback
     const profileImageUri = image || currentUser?.profilePicture;
+
+    // Resolve username and optional full name safely
     const userHandle = currentUser?.username ? `@${currentUser.username}` : "@user";
     const userFullName = currentUser?.name ? currentUser.name : null;
 
+    // Helper to format ratings to always include .0 (e.g. 5 -> 5.0)
     const formatRating = (rating: number | undefined) => {
         if (rating === undefined || rating === null) return "0.0";
         return Number.isInteger(rating) ? `${rating}.0` : rating.toString();
     };
 
+    // Deduplicate user reviews so each unique review ID only appears once in the REVIEWS tab
     const uniqueReviewsMap = new Map();
     userReviews.forEach((item: any) => {
         if (!uniqueReviewsMap.has(item._id)) {
@@ -156,6 +168,7 @@ export default function Profile() {
     });
     const uniqueReviews = Array.from(uniqueReviewsMap.values());
 
+    // Group unique user reviews by restaurantName for the dropdown sections
     const groupedReviews = uniqueReviews.reduce((acc: Record<string, any[]>, review: any) => {
         const place = review.restaurantName || "Other Locations";
         if (!acc[place]) {
@@ -169,6 +182,7 @@ export default function Profile() {
         <View style={styles.root}>
             <Stack.Screen options={{ headerShown: false }} />
 
+            {/* Custom Top Header Bar */}
             <View style={styles.topHeaderBar}>
                 <View style={{ width: 24 }} />
                 <View style={styles.headerRightContainer}>
@@ -185,6 +199,8 @@ export default function Profile() {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContainer}>
+
+                {/* Profile Picture and Name / Username Section */}
                 <View style={styles.profileSectionUnderHeader}>
                     <TouchableOpacity onPress={() => setProfileModalVisible(true)} style={styles.imageContainer}>
                         {profileImageUri ? (
@@ -206,6 +222,7 @@ export default function Profile() {
                     </View>
                 </View>
 
+                {/* Navigation Tab Row (Ordered: Activity, Reviews, Preferences, Saved) */}
                 <View style={styles.tabRow}>
                     {['ACTIVITY', 'REVIEWS', 'PREFERENCES', 'SAVED'].map((tab) => (
                         <TouchableOpacity 
@@ -218,6 +235,7 @@ export default function Profile() {
                     ))}
                 </View>
 
+                {/* Conditional Rendering Based on Active Tab */}
                 {activeTab === 'ACTIVITY' && (
                     <View style={styles.preferenceCard}>
                         <Text style={styles.cardTitle}>Activity Feed</Text>
@@ -229,84 +247,17 @@ export default function Profile() {
                             </View>
                         ) : (
                             <View style={styles.activityList}>
-                                {userReviews.map((activity: any) => {
-                                    const isLikedByMe = activity.likes?.includes(currentUser?._id);
-                                    const likesTotal = activity.likes?.length || 0;
-                                    const commentsTotal = activity.comments?.length || 0;
-
-                                    return (
-                                        <TouchableOpacity 
-                                            key={activity.uniqueKey} 
-                                            style={styles.tweetCardItem}
-                                            activeOpacity={0.8}
-                                            onPress={() => router.push({
-                                                pathname: '/restaurant/post/[reviewId]',
-                                                params: { 
-                                                    reviewId: activity._id, 
-                                                    activityType: activity.activityType 
-                                                }
-                                            })}
-                                        >
-                                            {profileImageUri ? (
-                                                <Image source={{ uri: profileImageUri }} style={styles.tweetAvatar} />
-                                            ) : (
-                                                <View style={[styles.tweetAvatar, styles.blankAvatarTweet]}>
-                                                    <Text style={styles.avatarInitialTweet}>
-                                                        {(currentUser?.name || currentUser?.username || "U").charAt(0).toUpperCase()}
-                                                    </Text>
-                                                </View>
-                                            )}
-                                            <View style={styles.tweetContentColumn}>
-                                                <View style={styles.tweetHeaderRow}>
-                                                    {userFullName ? (
-                                                        <>
-                                                            <Text style={styles.tweetFullName} numberOfLines={1}>{userFullName}</Text>
-                                                            <Text style={styles.tweetUsername} numberOfLines={1}>{userHandle}</Text>
-                                                        </>
-                                                    ) : (
-                                                        <Text style={styles.tweetUsername} numberOfLines={1}>{userHandle}</Text>
-                                                    )}
-                                                </View>
-                                                <Text style={styles.tweetBodyText}>
-                                                    {activity.activityType === 'updated' ? (
-                                                        <>
-                                                            Updated review for <Text style={styles.boldText}>{activity.itemName}</Text> at <Text style={styles.boldText}>{activity.restaurantName}</Text>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            Rated <Text style={styles.boldText}>{activity.itemName}</Text> from <Text style={styles.boldText}>{activity.restaurantName}</Text>
-                                                        </>
-                                                    )}
-                                                </Text>
-
-                                                <View style={styles.tweetActionBar}>
-                                                    <TouchableOpacity 
-                                                        style={styles.actionButton} 
-                                                        onPress={(e) => {
-                                                            e.stopPropagation();
-                                                            toggleLike({ 
-                                                                reviewId: activity._id, 
-                                                                activityType: activity.activityType 
-                                                            });
-                                                        }}
-                                                    >
-                                                        <Ionicons 
-                                                            name={isLikedByMe ? "heart" : "heart-outline"} 
-                                                            size={16} 
-                                                            color={isLikedByMe ? "#DC2626" : "#6B7280"} 
-                                                        />
-                                                        <Text style={styles.actionCountText}>{formatCount(likesTotal)}</Text>
-                                                    </TouchableOpacity>
-
-                                                    <View style={styles.actionButton}>
-                                                        <Ionicons name="chatbubble-outline" size={15} color="#6B7280" />
-                                                        <Text style={styles.actionCountText}>{formatCount(commentsTotal)}</Text>
-                                                    </View>
-                                                </View>
-                                            </View>
-                                        </TouchableOpacity>
-                                    );
-                                })}
+                                {userReviews.map((activity: any) => (
+                                    <View key={activity.uniqueKey} style={styles.activityItem}>
+                                        <Ionicons name="checkmark-circle" size={16} color="#6c3b3b" />
+                                        <Text style={styles.activityText}>
+                                            {activity.activityType === 'updated' 
+                                                ? `You updated your review for "${activity.itemName}" at "${activity.restaurantName}"`
+                                                : `You rated "${activity.itemName}" from "${activity.restaurantName}"`
+                                            }
+                                        </Text>
+                                    </View>
+                                ))}
                             </View>
                         )}
                     </View>
@@ -325,6 +276,7 @@ export default function Profile() {
                             <View style={styles.dropdownContainer}>
                                 {Object.entries(groupedReviews).map(([restaurantName, items]: [string, any[]]) => {
                                     const isExpanded = expandedRestaurant === restaurantName;
+                                    
                                     const streetAddress = items[0]?.address || "";
                                     const cityName = items[0]?.city || "";
                                     const stateName = items[0]?.state || "";
@@ -332,6 +284,7 @@ export default function Profile() {
 
                                     return (
                                         <View key={restaurantName} style={styles.restaurantAccordionWrapper}>
+                                            {/* Restaurant Header Dropdown Trigger */}
                                             <TouchableOpacity 
                                                 style={styles.restaurantHeaderRow}
                                                 onPress={() => toggleRestaurantDropdown(restaurantName)}
@@ -363,6 +316,7 @@ export default function Profile() {
                                                 </View>
                                             </TouchableOpacity>
 
+                                            {/* Accordion Content: Mini-Dropdown List of Item Reviews */}
                                             {isExpanded && (
                                                 <View style={styles.dropdownItemsList}>
                                                     {items.map((review: any) => (
@@ -413,6 +367,7 @@ export default function Profile() {
                         <Text style={styles.cardTitle}>My Boba Taste Fingerprint</Text>
                         <Text style={styles.cardSubtitle}>Followers use this baseline to match your taste profile reviews.</Text>
 
+                        {/* Sweetness Slider Preference */}
                         <View style={styles.prefRow}>
                             <View style={styles.prefLabelContainer}>
                                 <Text style={styles.prefLabel}>🍯 Sweetness</Text>
@@ -430,6 +385,7 @@ export default function Profile() {
                             />
                         </View>
 
+                        {/* Ice Slider Preference */}
                         <View style={styles.prefRow}>
                             <View style={styles.prefLabelContainer}>
                                 <Text style={styles.prefLabel}>❄️ Ice Level</Text>
@@ -447,6 +403,7 @@ export default function Profile() {
                             />
                         </View>
 
+                        {/* Base Milk Selection Matrix Toggle */}
                         <View style={styles.prefRow}>
                             <Text style={styles.prefLabel}>🥛 Preferred Milk Base</Text>
                             <View style={styles.milkToggleRow}>
@@ -476,8 +433,12 @@ export default function Profile() {
                         </View>
                     </View>
                 )}
+
             </ScrollView>
 
+            {/* --- MODAL INTERFACES --- */}
+
+            {/* Profile Avatar Selection Overlay */}
             <Modal visible={isProfileModal} animationType="slide" transparent={true} onRequestClose={() => setProfileModalVisible(false)}>
                 <View style={styles.modalProfileView}>
                     <View style={styles.profileModalView}>
@@ -497,6 +458,7 @@ export default function Profile() {
                 </View>
             </Modal>
 
+            {/* Account Sign Out Diagnostic Dialogue Window */}
             <Modal visible={isSignOutModalVisible} transparent={true} animationType="fade" onRequestClose={() => setSignOutModalVisible(false)}>
                 <View style={styles.modalCenteredView}>
                     <View style={styles.logModalView}>
@@ -602,30 +564,30 @@ const styles = StyleSheet.create({
         paddingTop: 12,
         paddingBottom: 100,
     },
-    tabRow: {
-        flexDirection: 'row',
-        justifyContent: 'center',
+    tabRow: { 
+        flexDirection: 'row', 
+        justifyContent: 'center', 
         flexWrap: 'wrap',
-        gap: 6,
-        marginTop: 8,
-        paddingHorizontal: 16,
+        gap: 6, 
+        marginTop: 8, 
+        paddingHorizontal: 16 
     },
-    tabPill: {
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 20,
-        backgroundColor: '#E5E7EB',
+    tabPill: { 
+        paddingVertical: 6, 
+        paddingHorizontal: 12, 
+        borderRadius: 20, 
+        backgroundColor: '#E5E7EB' 
     },
-    activeTabPill: {
-        backgroundColor: '#6c3b3b',
+    activeTabPill: { 
+        backgroundColor: '#6c3b3b' 
     },
-    tabText: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: '#4B5563',
+    tabText: { 
+        fontSize: 11, 
+        fontWeight: '700', 
+        color: '#4B5563' 
     },
-    activeTabText: {
-        color: '#FFFFFF',
+    activeTabText: { 
+        color: '#FFFFFF' 
     },
     preferenceCard: {
         backgroundColor: 'white',
@@ -834,80 +796,21 @@ const styles = StyleSheet.create({
         gap: 10,
         marginTop: 4,
     },
-    tweetCardItem: {
+    activityItem: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 10,
-        backgroundColor: '#FAFAFA',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: '#F9FAFB',
         padding: 12,
-        borderRadius: 12,
+        borderRadius: 10,
         borderWidth: 1,
         borderColor: '#E5E7EB',
     },
-    tweetAvatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-    },
-    blankAvatarTweet: {
-        backgroundColor: '#E5E7EB',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    avatarInitialTweet: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#6c3b3b',
-    },
-    tweetContentColumn: {
-        flex: 1,
-        justifyContent: 'flex-start',
-    },
-    tweetHeaderRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        marginBottom: 2,
-    },
-    tweetFullName: {
-        fontSize: 13,
-        fontWeight: '700',
-        color: '#1F2937',
-        letterSpacing: 0.5,
-    },
-    tweetUsername: {
-        fontSize: 11,
-        fontWeight: '400',
-        color: '#6B7280',
-        letterSpacing: 0.25,
-    },
-    tweetBodyText: {
+    activityText: {
         fontSize: 12,
-        color: '#6B7280',
-        fontWeight: '400',
-        lineHeight: 15,
-    },
-    boldText: {
-        fontWeight: '700',
-        color: '#1F2937',
-    },
-    tweetActionBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 20,
-        marginTop: 8,
-    },
-    actionButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 5,
-    },
-    actionCountText: {
-        fontSize: 12,
+        color: '#374151',
         fontWeight: '600',
-        color: '#6B7280',
+        flex: 1,
     },
     modalCenteredView: {
         flex: 1,

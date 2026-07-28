@@ -86,7 +86,33 @@ export default defineSchema({
         value: v.union(v.number(), v.string()),
       })
     ),
-    orderNotes: v.optional(v.string()), // 🔑 Saved order adjustments field
+    orderNotes: v.optional(v.string()),
+    likes: v.optional(v.array(v.string())),
+    comments: v.optional(
+      v.array(
+        v.object({
+          commentId: v.string(),
+          userId: v.string(),
+          userName: v.string(),
+          userHandle: v.string(),
+          text: v.string(),
+          createdAt: v.number(),
+        })
+      )
+    ),
+    updateLikes: v.optional(v.array(v.string())),
+    updateComments: v.optional(
+      v.array(
+        v.object({
+          commentId: v.string(),
+          userId: v.string(),
+          userName: v.string(),
+          userHandle: v.string(),
+          text: v.string(),
+          createdAt: v.number(),
+        })
+      )
+    ),
     createdAt: v.optional(v.number()),
     updatedAt: v.optional(v.number()),
   })

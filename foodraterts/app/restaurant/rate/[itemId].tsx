@@ -149,6 +149,7 @@ export default function Upload() {
                 notes: adjustmentText.trim(),
                 criteriaList: criteriaList,
                 orderNotes: orderNotes.trim(),
+                editReviewId: editReviewId ? editReviewId : (existingReview?._id ? existingReview._id : undefined), // 🔑 Pass editReviewId to prevent duplication
             });
 
             Alert.alert('Success 🎉', existingReview ? 'Your review was updated successfully!' : 'Your rating data was saved successfully!', [

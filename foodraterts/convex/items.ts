@@ -24,6 +24,16 @@ export const addMenuItem = mutation({
     price: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const existingItem = await ctx.db
+      .query("menuItems")
+      .withIndex("by_restaurantId", (q) => q.eq("restaurantId", args.restaurantId))
+      .filter((q) => q.eq(q.field("itemName"), args.itemName))
+      .first();
+
+    if (existingItem) {
+      return existingItem._id;
+    }
+
     return await ctx.db.insert("menuItems", {
       restaurantId: args.restaurantId,
       restaurantName: args.restaurantName,
@@ -47,32 +57,44 @@ export const createItemReview = mutation({
       })
     ),
     orderNotes: v.optional(v.string()),
+    editReviewId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Must be logged in to submit a review.");
 
-    const existing = await ctx.db
-      .query("itemReviews")
-      .filter((q) => 
-        q.and(
-          q.eq(q.field("userId"), userId),
-          q.eq(q.field("itemId"), args.itemId)
-        )
-      )
-      .first();
-
     const now = Date.now();
 
-    if (existing) {
-      await ctx.db.patch(existing._id, {
+    if (args.editReviewId) {
+      const cleanId = args.editReviewId.split("-")[0] as any;
+      const reviewToUpdate: any = await ctx.db.get(cleanId);
+      if (reviewToUpdate && reviewToUpdate.userId === userId) {
+        await ctx.db.patch(cleanId, {
+          overallRating: args.overallRating,
+          notes: args.notes,
+          granularAttributes: args.criteriaList,
+          orderNotes: args.orderNotes,
+          updatedAt: now,
+        });
+        return cleanId;
+      }
+    }
+
+    const existingReview = await ctx.db
+      .query("itemReviews")
+      .withIndex("by_itemId", (q) => q.eq("itemId", args.itemId))
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .first();
+
+    if (existingReview) {
+      await ctx.db.patch(existingReview._id, {
         overallRating: args.overallRating,
         notes: args.notes,
         granularAttributes: args.criteriaList,
         orderNotes: args.orderNotes,
         updatedAt: now,
       });
-      return existing._id;
+      return existingReview._id;
     } else {
       return await ctx.db.insert("itemReviews", {
         itemId: args.itemId,
@@ -81,6 +103,10 @@ export const createItemReview = mutation({
         notes: args.notes,
         granularAttributes: args.criteriaList,
         orderNotes: args.orderNotes,
+        likes: [],
+        comments: [],
+        updateLikes: [],
+        updateComments: [],
         createdAt: now,
         updatedAt: now,
       });
@@ -89,17 +115,123 @@ export const createItemReview = mutation({
 });
 
 export const deleteItemReview = mutation({
-  args: { reviewId: v.id("itemReviews") },
+  args: { reviewId: v.string() },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
 
-    const review = await ctx.db.get(args.reviewId);
+    const actualId = args.reviewId.split("-")[0] as any;
+    const review: any = await ctx.db.get(actualId);
+    
     if (!review || review.userId !== userId) {
       throw new Error("Review not found or unauthorized.");
     }
 
-    await ctx.db.delete(args.reviewId);
+    await ctx.db.delete(actualId);
+    return true;
+  },
+});
+
+export const toggleLikeReview = mutation({
+  args: { 
+    reviewId: v.string(),
+    activityType: v.optional(v.string()) 
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    const actualId = args.reviewId.split("-")[0] as any;
+    const review: any = await ctx.db.get(actualId);
+    if (!review) throw new Error("Review not found");
+
+    const isUpdate = args.activityType === "updated";
+    const likes = isUpdate ? (review.updateLikes || []) : (review.likes || []);
+    const hasLiked = likes.includes(userId);
+
+    const updatedLikes = hasLiked
+      ? likes.filter((id: string) => id !== userId)
+      : [...likes, userId];
+
+    if (isUpdate) {
+      await ctx.db.patch(actualId, { updateLikes: updatedLikes });
+    } else {
+      await ctx.db.patch(actualId, { likes: updatedLikes });
+    }
+
+    return !hasLiked;
+  },
+});
+
+export const addCommentToReview = mutation({
+  args: { 
+    reviewId: v.string(), 
+    text: v.string(),
+    activityType: v.optional(v.string()) 
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    const user: any = await ctx.db.get(userId as any);
+    const actualId = args.reviewId.split("-")[0] as any;
+    const review: any = await ctx.db.get(actualId);
+    if (!review) throw new Error("Review not found");
+
+    const isUpdate = args.activityType === "updated";
+    const comments = isUpdate ? (review.updateComments || []) : (review.comments || []);
+    
+    const newComment = {
+      commentId: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      userId,
+      userName: user?.name || user?.username || "User",
+      userHandle: user?.username ? `@${user.username}` : "@user",
+      text: args.text,
+      createdAt: Date.now(),
+    };
+
+    if (isUpdate) {
+      await ctx.db.patch(actualId, {
+        updateComments: [...comments, newComment],
+      });
+    } else {
+      await ctx.db.patch(actualId, {
+        comments: [...comments, newComment],
+      });
+    }
+
+    return newComment;
+  },
+});
+
+export const deleteCommentFromReview = mutation({
+  args: { 
+    reviewId: v.string(), 
+    commentId: v.string(),
+    activityType: v.optional(v.string())
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    const actualId = args.reviewId.split("-")[0] as any;
+    const review: any = await ctx.db.get(actualId);
+    if (!review) throw new Error("Review not found");
+
+    const isUpdate = args.activityType === "updated";
+    const comments = isUpdate ? (review.updateComments || []) : (review.comments || []);
+    const targetComment = comments.find((c: any) => c.commentId === args.commentId);
+
+    if (!targetComment || targetComment.userId !== userId) {
+      throw new Error("Unauthorized to delete this comment");
+    }
+
+    const updatedComments = comments.filter((c: any) => c.commentId !== args.commentId);
+    if (isUpdate) {
+      await ctx.db.patch(actualId, { updateComments: updatedComments });
+    } else {
+      await ctx.db.patch(actualId, { comments: updatedComments });
+    }
     return true;
   },
 });
@@ -115,26 +247,53 @@ export const getUserReviews = query({
       .filter((q) => q.eq(q.field("userId"), userId))
       .collect();
 
-    const enrichedReviews = await Promise.all(
+    const activities: any[] = [];
+
+    await Promise.all(
       reviews.map(async (review: any) => {
         const item: any = await ctx.db.get(review.itemId);
         const restaurant: any = item?.restaurantId ? await ctx.db.get(item.restaurantId) : null;
 
-        const createdAt = review.createdAt || 0;
-        const updatedAt = review.updatedAt || 0;
+        const createdAt = review.createdAt || review._creationTime || 0;
+        const updatedAt = review.updatedAt || createdAt;
+        const hasBeenUpdated = updatedAt > createdAt + 1000;
 
-        return {
+        const baseData = {
           ...review,
           itemName: item?.itemName || "Menu Item",
           restaurantName: restaurant?.restaurantName || item?.restaurantName || "",
           address: restaurant?.address || "",
           city: restaurant?.city || "",
           state: restaurant?.state || "",
-          isUpdated: updatedAt > createdAt + 1000,
         };
+
+        // 1. Initial creation entry
+        activities.push({
+          ...baseData,
+          _id: review._id, // Keep root database ID so the "REVIEWS" tab card links and deletes properly
+          uniqueKey: `${review._id}-created`,
+          activityType: "rated",
+          timestamp: createdAt,
+          likes: review.likes || [],
+          comments: review.comments || [],
+        });
+
+        // 2. Separate independent entry for updates
+        if (hasBeenUpdated) {
+          activities.push({
+            ...baseData,
+            _id: review._id, // Keep root database ID
+            uniqueKey: `${review._id}-updated`,
+            activityType: "updated",
+            timestamp: updatedAt,
+            likes: review.updateLikes || [],
+            comments: review.updateComments || [],
+          });
+        }
       })
     );
 
-    return enrichedReviews;
+    activities.sort((a, b) => b.timestamp - a.timestamp);
+    return activities;
   },
 });
