@@ -13,6 +13,7 @@ import type * as http from "../http.js";
 import type * as images from "../images.js";
 import type * as items from "../items.js";
 import type * as query from "../query.js";
+import type * as restaurantImport from "../restaurantImport.js";
 import type * as restaurants from "../restaurants.js";
 import type * as review from "../review.js";
 import type * as users from "../users.js";
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   images: typeof images;
   items: typeof items;
   query: typeof query;
+  restaurantImport: typeof restaurantImport;
   restaurants: typeof restaurants;
   review: typeof review;
   users: typeof users;
