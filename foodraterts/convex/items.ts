@@ -96,7 +96,7 @@ export const createItemReview = mutation({
       });
       return existingReview._id;
     } else {
-      return await ctx.db.insert("itemReviews", {
+      const newReviewId = await ctx.db.insert("itemReviews", {
         itemId: args.itemId,
         userId: userId,
         overallRating: args.overallRating,
@@ -110,6 +110,7 @@ export const createItemReview = mutation({
         createdAt: now,
         updatedAt: now,
       });
+      return newReviewId;
     }
   },
 });
@@ -270,7 +271,7 @@ export const getUserReviews = query({
         // 1. Initial creation entry
         activities.push({
           ...baseData,
-          _id: review._id, // Keep root database ID so the "REVIEWS" tab card links and deletes properly
+          _id: review._id,
           uniqueKey: `${review._id}-created`,
           activityType: "rated",
           timestamp: createdAt,
@@ -282,7 +283,7 @@ export const getUserReviews = query({
         if (hasBeenUpdated) {
           activities.push({
             ...baseData,
-            _id: review._id, // Keep root database ID
+            _id: review._id,
             uniqueKey: `${review._id}-updated`,
             activityType: "updated",
             timestamp: updatedAt,

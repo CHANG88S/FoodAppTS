@@ -84,8 +84,8 @@ export const searchAllByName = query({
 });
 
 /**
- * 5. GET RESTAURANT DETAILS & MENU ITEMS 
- * Fetches core restaurant data and cross-references its linked items from your database
+ * 5. GET RESTAURANT DETAILS & MENU ITEMS WITH LIVE RATINGS
+ * Fetches core restaurant data, cross-references linked items, and computes average review ratings.
  */
 export const getRestaurantDetails = query({
   args: { 
@@ -121,10 +121,32 @@ export const getRestaurantDetails = query({
       .withIndex("by_restaurantId", (q) => q.eq("restaurantId", args.restaurantId!))
       .collect();
 
+    // Compute average ratings and review counts for each menu item dynamically
+    const menuItemsWithRatings = await Promise.all(
+      menuItems.map(async (item) => {
+        const reviews = await ctx.db
+          .query("itemReviews")
+          .withIndex("by_itemId", (q) => q.eq("itemId", item._id))
+          .collect();
+
+        let averageRating = 0.0;
+        if (reviews.length > 0) {
+          const totalScore = reviews.reduce((sum, r) => sum + (r.overallRating || 0), 0);
+          averageRating = Number((totalScore / reviews.length).toFixed(1));
+        }
+
+        return {
+          ...item,
+          averageRating,
+          reviewCount: reviews.length,
+        };
+      })
+    );
+
     // Stitch them into a single unified object for your layout grid to ingest smoothly
     return {
       ...restaurant,
-      menuItems,
+      menuItems: menuItemsWithRatings,
     };
   },
 });

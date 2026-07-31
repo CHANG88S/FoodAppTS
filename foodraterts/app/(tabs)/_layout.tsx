@@ -2,6 +2,7 @@ import React from 'react';
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { createDrawerNavigator } from '@react-navigation/drawer';
+import BadgesScreen from '../badges'; // Adjust path if necessary depending on folder structure
 
 const Drawer = createDrawerNavigator();
 
@@ -56,14 +57,27 @@ export default function RootLayout() {
         <Drawer.Navigator
             screenOptions={{
                 headerShown: false,
-                drawerPosition: 'right', // 🔑 Slides smoothly from right to left
+                drawerPosition: 'right', // Slides smoothly from right to left
                 drawerType: 'front',
                 drawerStyle: {
                     width: 260,
                 },
             }}
         >
-            <Drawer.Screen name="mainTabs" component={TabLayout} />
+            <Drawer.Screen 
+                name="mainTabs" 
+                component={TabLayout} 
+                options={{ drawerItemStyle: { display: 'none' } }} // Hides mainTabs from showing as a raw text link in the drawer list
+            />
+            <Drawer.Screen 
+                name="Badges & Achievements" 
+                component={BadgesScreen} 
+                options={{
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="trophy-outline" size={size} color={color} />
+                    ),
+                }}
+            />
         </Drawer.Navigator>
     );
 }

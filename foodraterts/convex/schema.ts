@@ -31,6 +31,7 @@ export default defineSchema({
         spiceTolerance: v.optional(v.string()),
       })
     ),
+    displayedBadge: v.optional(v.string()), // 🔑 Added for displaying user achievement badges
   })
     .index("by_email", ["email"])
     .index("by_role", ["role"]),

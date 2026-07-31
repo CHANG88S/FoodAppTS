@@ -143,6 +143,12 @@ export default function Profile() {
     const userHandle = currentUser?.username ? `@${currentUser.username}` : "@user";
     const userFullName = currentUser?.name ? currentUser.name : null;
 
+    const badgesDirectory: Record<string, string> = {
+        'First Review': '🌟',
+    };
+    const equippedBadgeIcon = currentUser?.displayedBadge ? badgesDirectory[currentUser.displayedBadge] || '🏆' : null;
+    const hasUnlockedFirstReview = userReviews.length > 0;
+
     const formatRating = (rating: number | undefined) => {
         if (rating === undefined || rating === null) return "0.0";
         return Number.isInteger(rating) ? `${rating}.0` : rating.toString();
@@ -186,21 +192,36 @@ export default function Profile() {
 
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.profileSectionUnderHeader}>
-                    <TouchableOpacity onPress={() => setProfileModalVisible(true)} style={styles.imageContainer}>
-                        {profileImageUri ? (
-                            <Image source={{ uri: profileImageUri }} style={styles.profileImage} />
-                        ) : (
-                            <View style={[styles.profileImage, styles.blankAvatar]}>
-                                <Text style={styles.avatarInitial}>
-                                    {(currentUser?.name || currentUser?.username || "U").charAt(0).toUpperCase()}
-                                </Text>
-                            </View>
-                        )}
-                        <Ionicons name="add-circle" size={26} color="#6c3b3b" style={styles.cameraIconBadge} />
-                    </TouchableOpacity>
+                    <View style={styles.profileLeftColumn}>
+                        <TouchableOpacity onPress={() => setProfileModalVisible(true)} style={styles.imageContainer}>
+                            {profileImageUri ? (
+                                <Image source={{ uri: profileImageUri }} style={styles.profileImage} />
+                            ) : (
+                                <View style={[styles.profileImage, styles.blankAvatar]}>
+                                    <Text style={styles.avatarInitial}>
+                                        {(currentUser?.name || currentUser?.username || "U").charAt(0).toUpperCase()}
+                                    </Text>
+                                </View>
+                            )}
+                            <Ionicons name="add-circle" size={26} color="#6c3b3b" style={styles.cameraIconBadge} />
+                        </TouchableOpacity>
+
+                        {/* 🌟 Discord-style badge row positioned right under the profile picture */}
+                        <View style={styles.profileBadgesRow}>
+                            {hasUnlockedFirstReview && (
+                                <Text style={{ fontSize: 18 }}>🌟</Text>
+                            )}
+                        </View>
+                    </View>
+
                     <View style={styles.userInfoContainer}>
                         {userFullName && (
-                            <Text style={styles.displayName} numberOfLines={1}>{userFullName}</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                <Text style={styles.displayName} numberOfLines={1}>{userFullName}</Text>
+                                {equippedBadgeIcon && (
+                                    <Text style={{ fontSize: 16 }}>{equippedBadgeIcon}</Text>
+                                )}
+                            </View>
                         )}
                         <Text style={styles.subHandleName} numberOfLines={1}>{userHandle}</Text>
                     </View>
@@ -338,7 +359,7 @@ export default function Profile() {
                                                 activeOpacity={0.7}
                                             >
                                                 <View style={styles.restaurantMainRow}>
-                                                    <Ionicons name="storefront-outline" size={18} color="#6c3b3b" style={styles.restaurantIcon} />
+                                                    <Ionicons name="storefront-outline" size={24} color="#6c3b3b" style={styles.restaurantIcon} />
                                                     <View style={styles.restaurantTextColumn}>
                                                         <View style={styles.topInfoRow}>
                                                             <Text style={styles.restaurantNameText} numberOfLines={1}>{restaurantName}</Text>
@@ -552,6 +573,9 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#E5E7EB',
     },
+    profileLeftColumn: {
+        alignItems: 'center',
+    },
     imageContainer: {
         position: 'relative',
         width: 68,
@@ -597,6 +621,13 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         color: '#6B7280',
         marginTop: 2,
+    },
+    profileBadgesRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        marginTop: 8,
     },
     scrollContainer: {
         paddingTop: 12,

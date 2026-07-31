@@ -1,4 +1,4 @@
-import { query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -34,5 +34,14 @@ export const viewer = query({
     // Optional: Return explicit fields or the full user document 
     // since user.username is now a required field and user.name is optional.
     return user; 
+  },
+});
+
+export const setDisplayedBadge = mutation({
+  args: { badgeTitle: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+    await ctx.db.patch(userId as any, { displayedBadge: args.badgeTitle });
   },
 });
