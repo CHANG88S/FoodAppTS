@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useAuthActions } from "@convex-dev/auth/react";
 
 const LoginIndex = () => {  
   const router = useRouter();
-  const { signIn } = useAuthActions(); 
+  const { signIn, signOut } = useAuthActions(); 
   
-  const [isSignUpMode, setIsSignUpMode] = useState(false); // Toggle between login & signup fields
+  const [isSignUpMode, setIsSignUpMode] = useState(false);
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -16,7 +16,6 @@ const LoginIndex = () => {
   const [loading, setLoading] = useState(false);
 
   const handleAuthAction = async () => {
-    // Enforce that email, password, and username are provided during sign up
     if (!email || !password || (isSignUpMode && !username)) {
       return Alert.alert("Error", "Please fill out all required fields, including a username.");
     }
@@ -24,7 +23,6 @@ const LoginIndex = () => {
     setLoading(true);
     try {
       if (isSignUpMode) {
-        // Pass username and optional name along with email/password to Convex Auth
         await signIn("password", { email, password, username, name, flow: "signUp" });
         Alert.alert('Account Created!', 'Welcome to FoodRater!');
       } else {
@@ -37,6 +35,15 @@ const LoginIndex = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleContinueAsGuest = async () => {
+    try {
+      await signOut();
+    } catch (e) {
+      // Ignore errors if already signed out
+    }
+    router.replace('/(tabs)/home');
   };
 
   return (
@@ -103,9 +110,9 @@ const LoginIndex = () => {
         </Text>
       </TouchableOpacity>
       
-      <Link href="/(tabs)/home" style={styles.skipText}>
-        Skip for now
-      </Link>
+      <TouchableOpacity onPress={handleContinueAsGuest}>
+        <Text style={styles.skipText}>Continue as Guest</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
