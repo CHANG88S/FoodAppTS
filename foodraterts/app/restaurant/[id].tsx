@@ -314,7 +314,9 @@ export default function RestaurantDetailScreen() {
                       
                       <View style={styles.pinnedMetricsRow}>
                         <View style={styles.ratingRow}>
-                          <Text style={styles.ratingText}>4.8</Text>
+                          <Text style={styles.ratingText}>
+                            {item.averageRating > 0 ? item.averageRating.toFixed(1) : "New"}
+                          </Text>
                           <Ionicons name="star" size={10} color="#FBBF24" />
                         </View>
 
