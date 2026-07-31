@@ -1,6 +1,15 @@
-import { query, mutation } from "./_generated/server";
+import { query, action, mutation, QueryCtx, internalQuery, internalMutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { retrieveAccount, modifyAccountCredentials } from "@convex-dev/auth/server";
+
+// Helper function to fetch a user document directly
+async function fetchUserViewer(ctx: QueryCtx) {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) return null;
+  return await ctx.db.get(userId);
+}
 
 export const getUserRole = query({
   args: { email: v.string() },
@@ -11,7 +20,6 @@ export const getUserRole = query({
       .first();
 
     if (!user) return null;
-    // 🔑 Return username alongside userId, role, and optional name
     return { 
       userId: user._id, 
       role: user.role, 
@@ -24,16 +32,7 @@ export const getUserRole = query({
 export const viewer = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      return null;
-    }
-    const user = await ctx.db.get(userId);
-    if (!user) return null;
-
-    // Optional: Return explicit fields or the full user document 
-    // since user.username is now a required field and user.name is optional.
-    return user; 
+    return await fetchUserViewer(ctx);
   },
 });
 
@@ -43,5 +42,103 @@ export const setDisplayedBadge = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
     await ctx.db.patch(userId as any, { displayedBadge: args.badgeTitle });
+  },
+});
+
+export const updateProfile = action({
+  args: {
+    name: v.optional(v.string()),
+    username: v.optional(v.string()),
+    email: v.optional(v.string()),
+    currentPassword: v.optional(v.string()),
+    newPassword: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    // Retrieve user details via an internal query
+    const currentUser = await ctx.runQuery(internal.users.getInternalViewer, {});
+    if (!currentUser) throw new Error("User not found");
+
+    if (args.username && args.username !== currentUser.username) {
+      const existingUser = await ctx.runQuery(internal.users.getInternalUserByUsername, { username: args.username });
+      if (existingUser && existingUser._id !== userId) {
+        throw new Error("Username is already taken.");
+      }
+    }
+
+    // Handle password update and current password verification
+    if (args.newPassword && args.newPassword.trim().length > 0) {
+      if (!args.currentPassword) {
+        throw new Error("Current password is required to set a new password.");
+      }
+
+      const email = currentUser.email;
+      if (!email) {
+        throw new Error("User email not found.");
+      }
+
+      const provider = "password";
+      const retrieved = await retrieveAccount(ctx, {
+        provider,
+        account: { id: email, secret: args.currentPassword },
+      });
+
+      if (retrieved === null) {
+        throw new Error("Incorrect current password.");
+      }
+
+      await modifyAccountCredentials(ctx, {
+        provider,
+        account: { id: email, secret: args.newPassword },
+      });
+    }
+
+    // Run internal mutation to patch the profile fields
+    await ctx.runMutation(internal.users.patchUserProfile, {
+      userId,
+      name: args.name,
+      username: args.username,
+      email: args.email,
+    });
+
+    return true;
+  },
+});
+
+export const getInternalViewer = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    return await ctx.db.get(userId);
+  },
+});
+
+export const getInternalUserByUsername = internalQuery({
+  args: { username: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("username"), args.username))
+      .first();
+  },
+});
+
+export const patchUserProfile = internalMutation({
+  args: {
+    userId: v.id("users"),
+    name: v.optional(v.string()),
+    username: v.optional(v.string()),
+    email: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const updates: any = {};
+    if (args.name !== undefined) updates.name = args.name;
+    if (args.username !== undefined) updates.username = args.username;
+    if (args.email !== undefined) updates.email = args.email;
+
+    await ctx.db.patch(args.userId, updates);
   },
 });

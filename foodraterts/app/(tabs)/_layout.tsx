@@ -2,7 +2,8 @@ import React from 'react';
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import BadgesScreen from '../badges'; // Adjust path if necessary depending on folder structure
+import BadgesScreen from '../badges';
+import SettingsScreen from '../settings'; // 🔑 Import the settings screen
 
 const Drawer = createDrawerNavigator();
 
@@ -67,7 +68,7 @@ export default function RootLayout() {
             <Drawer.Screen 
                 name="mainTabs" 
                 component={TabLayout} 
-                options={{ drawerItemStyle: { display: 'none' } }} // Hides mainTabs from showing as a raw text link in the drawer list
+                options={{ drawerItemStyle: { display: 'none' } }} 
             />
             <Drawer.Screen 
                 name="Badges & Achievements" 
@@ -75,6 +76,16 @@ export default function RootLayout() {
                 options={{
                     drawerIcon: ({ color, size }) => (
                         <Ionicons name="trophy-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+            {/* 🔑 Add Profile Settings screen to the drawer menu */}
+            <Drawer.Screen 
+                name="Profile Settings" 
+                component={SettingsScreen} 
+                options={{
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="settings-outline" size={size} color={color} />
                     ),
                 }}
             />

@@ -147,7 +147,6 @@ export default function Profile() {
         'First Review': '🌟',
     };
     const equippedBadgeIcon = currentUser?.displayedBadge ? badgesDirectory[currentUser.displayedBadge] || '🏆' : null;
-    const hasUnlockedFirstReview = userReviews.length > 0;
 
     const formatRating = (rating: number | undefined) => {
         if (rating === undefined || rating === null) return "0.0";
@@ -192,28 +191,18 @@ export default function Profile() {
 
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.profileSectionUnderHeader}>
-                    <View style={styles.profileLeftColumn}>
-                        <TouchableOpacity onPress={() => setProfileModalVisible(true)} style={styles.imageContainer}>
-                            {profileImageUri ? (
-                                <Image source={{ uri: profileImageUri }} style={styles.profileImage} />
-                            ) : (
-                                <View style={[styles.profileImage, styles.blankAvatar]}>
-                                    <Text style={styles.avatarInitial}>
-                                        {(currentUser?.name || currentUser?.username || "U").charAt(0).toUpperCase()}
-                                    </Text>
-                                </View>
-                            )}
-                            <Ionicons name="add-circle" size={26} color="#6c3b3b" style={styles.cameraIconBadge} />
-                        </TouchableOpacity>
-
-                        {/* 🌟 Discord-style badge row positioned right under the profile picture */}
-                        <View style={styles.profileBadgesRow}>
-                            {hasUnlockedFirstReview && (
-                                <Text style={{ fontSize: 18 }}>🌟</Text>
-                            )}
-                        </View>
-                    </View>
-
+                    <TouchableOpacity onPress={() => setProfileModalVisible(true)} style={styles.imageContainer}>
+                        {profileImageUri ? (
+                            <Image source={{ uri: profileImageUri }} style={styles.profileImage} />
+                        ) : (
+                            <View style={[styles.profileImage, styles.blankAvatar]}>
+                                <Text style={styles.avatarInitial}>
+                                    {(currentUser?.name || currentUser?.username || "U").charAt(0).toUpperCase()}
+                                </Text>
+                            </View>
+                        )}
+                        <Ionicons name="add-circle" size={26} color="#6c3b3b" style={styles.cameraIconBadge} />
+                    </TouchableOpacity>
                     <View style={styles.userInfoContainer}>
                         {userFullName && (
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -573,9 +562,6 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#E5E7EB',
     },
-    profileLeftColumn: {
-        alignItems: 'center',
-    },
     imageContainer: {
         position: 'relative',
         width: 68,
@@ -621,13 +607,6 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         color: '#6B7280',
         marginTop: 2,
-    },
-    profileBadgesRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
-        marginTop: 8,
     },
     scrollContainer: {
         paddingTop: 12,
