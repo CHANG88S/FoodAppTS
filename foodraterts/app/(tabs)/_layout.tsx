@@ -70,15 +70,7 @@ export default function RootLayout() {
                 component={TabLayout} 
                 options={{ drawerItemStyle: { display: 'none' } }} 
             />
-            <Drawer.Screen 
-                name="Badges & Achievements" 
-                component={BadgesScreen} 
-                options={{
-                    drawerIcon: ({ color, size }) => (
-                        <Ionicons name="trophy-outline" size={size} color={color} />
-                    ),
-                }}
-            />
+
             {/* 🔑 Add Profile Settings screen to the drawer menu */}
             <Drawer.Screen 
                 name="Profile Settings" 
@@ -89,6 +81,17 @@ export default function RootLayout() {
                     ),
                 }}
             />
+            
+            <Drawer.Screen 
+                name="Badges & Achievements" 
+                component={BadgesScreen} 
+                options={{
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="trophy-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+            
         </Drawer.Navigator>
     );
 }

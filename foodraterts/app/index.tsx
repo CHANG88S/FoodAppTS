@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, Alert } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, Alert, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -14,10 +14,32 @@ const LoginIndex = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  // Track submission attempt
+  const [submitted, setSubmitted] = useState(false);
+
+  // Validation helpers
+  const isValidEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+  const hasMinUsername = username.length >= 3;
+  const hasMinPassword = password.length >= 8;
 
   const handleAuthAction = async () => {
+    setSubmitted(true);
+
     if (!email || !password || (isSignUpMode && !username)) {
       return Alert.alert("Error", "Please fill out all required fields, including a username.");
+    }
+
+    if (!isValidEmail(email)) {
+      return Alert.alert("Error", "Please enter a valid email address.");
+    }
+
+    if (isSignUpMode && !hasMinUsername) {
+      return Alert.alert("Error", "Username must be at least 3 characters long.");
+    }
+
+    if (!hasMinPassword) {
+      return Alert.alert("Error", "Password must be at least 8 characters long.");
     }
     
     setLoading(true);
@@ -46,6 +68,15 @@ const LoginIndex = () => {
     router.replace('/(tabs)/home');
   };
 
+  const handleToggleMode = () => {
+    setIsSignUpMode(!isSignUpMode);
+    setUsername("");
+    setName("");
+    setEmail("");
+    setPassword("");
+    setSubmitted(false);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>FoodRater</Text>
@@ -56,10 +87,17 @@ const LoginIndex = () => {
             style={styles.textInput} 
             placeholder="Username (Required)" 
             value={username} 
-            onChangeText={setUsername} 
+            onChangeText={(text) => {
+              setUsername(text);
+              if (submitted) setSubmitted(false);
+            }} 
             autoCapitalize="none"
             editable={!loading}
           />
+          {submitted && !hasMinUsername && (
+            <Text style={styles.errorText}>3 character minimum for username</Text>
+          )}
+
           <TextInput 
             style={styles.textInput} 
             placeholder="Display Name (Optional)" 
@@ -75,21 +113,42 @@ const LoginIndex = () => {
         style={styles.textInput} 
         placeholder="Email" 
         value={email} 
-        onChangeText={setEmail} 
+        onChangeText={(text) => {
+          setEmail(text);
+          if (submitted) setSubmitted(false);
+        }} 
         autoCapitalize="none"
         keyboardType="email-address"
         editable={!loading}
       />
+      {submitted && !isValidEmail(email) && (
+        <Text style={styles.errorText}>Not a valid email</Text>
+      )}
       
       <TextInput 
         style={styles.textInput} 
         placeholder="Password" 
         value={password} 
-        onChangeText={setPassword} 
+        onChangeText={(text) => {
+          setPassword(text);
+          if (submitted) setSubmitted(false);
+        }} 
         secureTextEntry
         autoCapitalize="none"
         editable={!loading}
       />
+      
+      {password.length > 0 && (
+        <View style={styles.constraintsBox}>
+          <Text style={[styles.constraintText, hasMinPassword ? styles.validText : styles.invalidText]}>
+            {hasMinPassword ? '✓' : '•'} At least 8 characters long
+          </Text>
+        </View>
+      )}
+
+      {submitted && !hasMinPassword && (
+        <Text style={styles.errorText}>Not a valid password</Text>
+      )}
       
       <TouchableOpacity 
         style={[styles.button, loading && styles.disabledButton]} 
@@ -103,7 +162,7 @@ const LoginIndex = () => {
       
       <TouchableOpacity 
         style={styles.switchModeButton} 
-        onPress={() => setIsSignUpMode(!isSignUpMode)}
+        onPress={handleToggleMode}
       >
         <Text style={styles.switchModeText}>
           {isSignUpMode ? "Already have an account? Login" : "Need an account? Sign Up"}
@@ -140,7 +199,8 @@ const styles = StyleSheet.create({
     borderColor: '#E8EAF6', 
     borderWidth: 2,
     borderRadius: 15, 
-    marginVertical: 10,
+    marginTop: 10,
+    marginBottom: 4,
     paddingHorizontal: 20, 
     fontSize: 16, 
     color: '#3C4858', 
@@ -149,6 +209,33 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2, 
+  },
+  errorText: {
+    width: '90%',
+    color: '#DC2626',
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 6,
+    paddingHorizontal: 4,
+  },
+  constraintsBox: {
+    width: '90%',
+    marginTop: 6,
+    marginBottom: 6,
+    padding: 10,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    gap: 4,
+  },
+  constraintText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  validText: {
+    color: '#059669',
+  },
+  invalidText: {
+    color: '#9CA3AF',
   },
   button: {
     width: '90%',
