@@ -292,58 +292,7 @@ export default function RestaurantDetailScreen() {
             {gridPages.map((pageItems: any[], pageIndex: number) => (
               <View key={`page-${pageIndex}`} style={styles.gridContainer}>
                 {pageItems.map((item: any) => (
-                  <View key={item._id} style={styles.compactGridCard}>
-                    
-                    {/* CONTAINER FOR IMAGE/EMOJI PLACEMENT */}
-                    <View style={styles.imageWrapperFrame}>
-                      {item.imageUrl ? (
-                        <Image 
-                          source={{ uri: item.imageUrl }} 
-                          style={styles.cardImage} 
-                          resizeMode="contain" 
-                        />
-                      ) : (
-                        <View style={styles.placeholderImageContainer}>
-                          <Text style={{ fontSize: 36 }}>🧋</Text>
-                        </View>
-                      )}
-                    </View>
-
-                    <View style={styles.cardContent}>
-                      <Text style={styles.itemName} numberOfLines={2}>{item.itemName}</Text>
-                      
-                      <View style={styles.pinnedMetricsRow}>
-                        <View style={styles.ratingRow}>
-                          <Text style={styles.ratingText}>
-                            {item.averageRating > 0 ? item.averageRating.toFixed(1) : "New"}
-                          </Text>
-                          <Ionicons name="star" size={10} color="#FBBF24" />
-                        </View>
-
-                        {item.price !== undefined ? (
-                          <Text style={styles.cardPriceText}>${item.price.toFixed(2)}</Text>
-                        ) : (
-                          <Text style={styles.cardPriceText}></Text> 
-                        )}
-                      </View>
-                    </View>
-
-                    <TouchableOpacity 
-                      style={styles.rateButton}
-                      activeOpacity={0.7}
-                      onPress={() => {
-                        router.push({
-                          pathname: "/restaurant/rate/[itemId]",
-                          params: { 
-                            id: id as string, 
-                            itemId: item._id 
-                          }
-                        });
-                      }}
-                    >
-                      <Text style={styles.rateButtonText}>RATE ★</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <MenuItemCard key={item._id} item={item} restaurantId={id as string} router={router} />
                 ))}
               </View>
             ))}
@@ -379,6 +328,67 @@ export default function RestaurantDetailScreen() {
         )}
       </View>
     </ScrollView>
+  );
+}
+
+// Sub-component for individual menu items to leverage storageId optimization cleanly
+function MenuItemCard({ item, restaurantId, router }: { item: any; restaurantId: string; router: any }) {
+  const imageUrl = useQuery(
+    api.images.getPublicUrl,
+    item.imageStorageId ? { storageId: item.imageStorageId } : "skip"
+  );
+
+  return (
+    <View style={styles.compactGridCard}>
+      <View style={styles.imageWrapperFrame}>
+        {imageUrl ? (
+          <Image 
+            source={{ uri: imageUrl }} 
+            style={styles.cardImage} 
+            resizeMode="contain" 
+          />
+        ) : (
+          <View style={styles.placeholderImageContainer}>
+            <Text style={{ fontSize: 36 }}>🧋</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.cardContent}>
+        <Text style={styles.itemName} numberOfLines={2}>{item.itemName}</Text>
+        
+        <View style={styles.pinnedMetricsRow}>
+          <View style={styles.ratingRow}>
+            <Text style={styles.ratingText}>
+              {item.averageRating > 0 ? item.averageRating.toFixed(1) : "New"}
+            </Text>
+            <Ionicons name="star" size={10} color="#FBBF24" />
+          </View>
+
+          {item.price !== undefined ? (
+            <Text style={styles.cardPriceText}>${item.price.toFixed(2)}</Text>
+          ) : (
+            <Text style={styles.cardPriceText}></Text> 
+          )}
+        </View>
+      </View>
+
+      <TouchableOpacity 
+        style={styles.rateButton}
+        activeOpacity={0.7}
+        onPress={() => {
+          router.push({
+            pathname: "/restaurant/rate/[itemId]",
+            params: { 
+              id: restaurantId, 
+              itemId: item._id 
+            }
+          });
+        }}
+      >
+        <Text style={styles.rateButtonText}>RATE ★</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 

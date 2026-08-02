@@ -227,7 +227,7 @@ export default function Home() {
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => {
             if (item.isRestaurantCard || (item.restaurantName && !item.itemName)) {
-              return renderRestaurantItem(item);
+              return <RestaurantCard item={item} getCategoryEmoji={getCategoryEmoji} router={router} />;
             }
             return renderItemSearchItem(item);
           }}
@@ -244,6 +244,59 @@ export default function Home() {
         />
       )}
     </SafeAreaView>
+  );
+}
+
+// Sub-component to leverage getPublicUrl query for optimized storageId references
+function RestaurantCard({ item, getCategoryEmoji, router }: { item: any; getCategoryEmoji: (cat?: string) => string; router: any }) {
+  const logoUrl = useQuery(
+    api.images.getPublicUrl,
+    item.logoStorageId ? { storageId: item.logoStorageId } : "skip"
+  );
+
+  return (
+    <TouchableOpacity 
+      style={styles.card}
+      onPress={() => router.push(`/restaurant/${item._id}`)}
+      activeOpacity={0.8}
+    >
+      {logoUrl ? (
+        <Image 
+          source={{ uri: logoUrl }} 
+          style={styles.cardImage} 
+        />
+      ) : (
+        <View style={styles.iconContainer}>
+          <Text style={styles.bobaEmoji}>
+            {getCategoryEmoji(item.category)}
+          </Text>
+        </View>
+      )}
+
+      <View style={styles.cardContent}>
+        <Text style={styles.restaurantTitle}>{item.restaurantName}</Text>
+        
+        <View style={styles.cardTextAlignmentBlock}>
+          <Text style={styles.metaText} numberOfLines={1}>
+            📍 {item.streetAddress || item.address || "Address unavailable"}
+          </Text>
+
+          <Text style={styles.locationSubText}>
+            {item.city && item.state ? `${item.city}, ${item.state}` : "Riverside, CA"}
+          </Text>
+        </View>
+
+        <Text style={styles.hoursText}>
+          🕒 {item.hours || "Hours unavailable"}
+        </Text>
+      </View>
+      <Ionicons 
+        name="chevron-forward" 
+        size={18} 
+        color="#D1D5DB" 
+        style={styles.chevronIcon} 
+      />
+    </TouchableOpacity>
   );
 }
 
