@@ -12,6 +12,7 @@ import {
     StatusBar,
     LayoutAnimation,
     UIManager,
+    TextInput,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,6 +29,8 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+const TABS = ['ACTIVITY', 'TWEETS', 'REVIEWS', 'PREFERENCES'];
+
 export default function Profile() {
     const router = useRouter();
     const navigation = useNavigation<any>();
@@ -38,11 +41,24 @@ export default function Profile() {
     const deleteReviewMutation = useMutation(api.items.deleteItemReview);
     const toggleLike = useMutation(api.items.toggleLikeReview);
 
+    // Queries & mutations for tweets feature
+    const userTweets = useQuery(api.tweets?.getUserTweets) || [];
+    const createTweetMutation = useMutation(api.tweets?.createTweet);
+    const generateUploadUrlMutation = useMutation(api.tweets?.generateUploadUrl);
+    const deleteTweetMutation = useMutation(api.tweets?.deleteTweet);
+    const toggleLikeTweet = useMutation(api.tweets?.toggleLikeTweet);
+
     const [isSignOutModalVisible, setSignOutModalVisible] = useState(false);
     const [isProfileModal, setProfileModalVisible] = useState(false);
     const [image, setImage] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState('ACTIVITY');
     const [expandedRestaurant, setExpandedRestaurant] = useState<string | null>(null);
+
+    // Tweet creation state
+    const [tweetBody, setTweetBody] = useState('');
+    const [tweetImageUri, setTweetImageUri] = useState<string | null>(null);
+    const [tweetImageAsset, setTweetImageAsset] = useState<any>(null);
+    const [isPostingTweet, setIsPostingTweet] = useState(false);
 
     const toggleRestaurantDropdown = (restaurantName: string) => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -67,6 +83,22 @@ export default function Profile() {
         if (val <= 0.5) return 'Half Ice';
         if (val <= 0.75) return 'Less Ice';
         return 'Regular Ice';
+    };
+
+    const formatTimestamp = (timestamp: number | undefined) => {
+        if (!timestamp) return '';
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / (1000 * 60));
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        return date.toLocaleDateString();
     };
 
     const pickImage = async () => {
@@ -105,6 +137,86 @@ export default function Profile() {
             setImage(result.assets[0].uri);
             setProfileModalVisible(false);
         }
+    };
+
+    const pickTweetImage = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission Denied', 'We need media library access to attach images!');
+            return;
+        }
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 0.8,
+        });
+        if (!result.canceled && result.assets[0].uri) {
+            setTweetImageUri(result.assets[0].uri);
+            setTweetImageAsset(result.assets[0]);
+        }
+    };
+
+    const handleCreateTweet = async () => {
+        if (!tweetBody.trim() && !tweetImageUri) {
+            Alert.alert('Error', 'Please enter some text or add an image to tweet.');
+            return;
+        }
+
+        try {
+            setIsPostingTweet(true);
+            let storageId = undefined;
+
+            if (tweetImageUri && tweetImageAsset) {
+                const uploadUrl = await generateUploadUrlMutation();
+                const response = await fetch(tweetImageUri);
+                const blob = await response.blob();
+
+                const uploadResult = await fetch(uploadUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': tweetImageAsset.mimeType || 'image/jpeg' },
+                    body: blob,
+                });
+                const json = await uploadResult.json();
+                storageId = json.storageId;
+            }
+
+            await createTweetMutation({
+                body: tweetBody,
+                imageStorageId: storageId,
+            });
+
+            setTweetBody('');
+            setTweetImageUri(null);
+            setTweetImageAsset(null);
+            Alert.alert('Success', 'Tweet posted successfully!');
+        } catch (error: any) {
+            console.error(error);
+            Alert.alert('Error', error.message || 'Failed to post tweet.');
+        } finally {
+            setIsPostingTweet(false);
+        }
+    };
+
+    const handleDeleteTweet = (tweetId: string) => {
+        Alert.alert(
+            "Delete Tweet",
+            "Are you sure you want to delete this tweet?",
+            [
+                { text: "Cancel", style: "cancel" },
+                { 
+                    text: "Delete", 
+                    style: "destructive", 
+                    onPress: async () => {
+                        try {
+                            await deleteTweetMutation({ tweetId: tweetId as any });
+                        } catch (err: any) {
+                            Alert.alert("Error", err.message || "Failed to delete tweet.");
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const handleLeave = async () => {
@@ -191,33 +303,55 @@ export default function Profile() {
 
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.profileSectionUnderHeader}>
-                    <TouchableOpacity onPress={() => setProfileModalVisible(true)} style={styles.imageContainer}>
-                        {profileImageUri ? (
-                            <Image source={{ uri: profileImageUri }} style={styles.profileImage} />
-                        ) : (
-                            <View style={[styles.profileImage, styles.blankAvatar]}>
-                                <Text style={styles.avatarInitial}>
-                                    {(currentUser?.name || currentUser?.username || "U").charAt(0).toUpperCase()}
-                                </Text>
-                            </View>
-                        )}
-                        <Ionicons name="add-circle" size={26} color="#6c3b3b" style={styles.cameraIconBadge} />
-                    </TouchableOpacity>
-                    <View style={styles.userInfoContainer}>
-                        {userFullName && (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                <Text style={styles.displayName} numberOfLines={1}>{userFullName}</Text>
-                                {equippedBadgeIcon && (
-                                    <Text style={{ fontSize: 16 }}>{equippedBadgeIcon}</Text>
+                    <View style={styles.profileTopRow}>
+                        <TouchableOpacity onPress={() => setProfileModalVisible(true)} style={styles.imageContainer}>
+                            {profileImageUri ? (
+                                <Image source={{ uri: profileImageUri }} style={styles.profileImage} />
+                            ) : (
+                                <View style={[styles.profileImage, styles.blankAvatar]}>
+                                    <Text style={styles.avatarInitial}>
+                                        {(currentUser?.name || currentUser?.username || "U").charAt(0).toUpperCase()}
+                                    </Text>
+                                </View>
+                            )}
+                            <Ionicons name="add-circle" size={26} color="#6c3b3b" style={styles.cameraIconBadge} />
+                        </TouchableOpacity>
+
+                        <View style={styles.middleSection}>
+                            <View style={styles.userInfoContainer}>
+                                {userFullName ? (
+                                    <View style={styles.nameRow}>
+                                        <Text style={styles.displayName} numberOfLines={1}>{userFullName}</Text>
+                                        {equippedBadgeIcon && (
+                                            <Text style={{ fontSize: 15 }}>{equippedBadgeIcon}</Text>
+                                        )}
+                                        <Text style={styles.subHandleName} numberOfLines={1}>{userHandle}</Text>
+                                    </View>
+                                ) : (
+                                    <Text style={styles.subHandleName} numberOfLines={1}>{userHandle}</Text>
                                 )}
                             </View>
-                        )}
-                        <Text style={styles.subHandleName} numberOfLines={1}>{userHandle}</Text>
+
+                            <View style={styles.statsContainer}>
+                                <View style={styles.statItem}>
+                                    <Text style={styles.statNumber}>{uniqueReviews.length}</Text>
+                                    <Text style={styles.statLabel}>Ratings</Text>
+                                </View>
+                                <TouchableOpacity style={styles.statItem} activeOpacity={0.7}>
+                                    <Text style={styles.statNumber}>0</Text>
+                                    <Text style={styles.statLabel}>Followers</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.statItem} activeOpacity={0.7}>
+                                    <Text style={styles.statNumber}>0</Text>
+                                    <Text style={styles.statLabel}>Following</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
                     </View>
                 </View>
 
                 <View style={styles.tabRow}>
-                    {['ACTIVITY', 'REVIEWS', 'PREFERENCES', 'SAVED'].map((tab) => (
+                    {['ACTIVITY', 'TWEETS', 'REVIEWS', 'PREFERENCES'].map((tab) => (
                         <TouchableOpacity 
                             key={tab}
                             style={[styles.tabPill, activeTab === tab && styles.activeTabPill]}
@@ -268,15 +402,19 @@ export default function Profile() {
                                             )}
                                             <View style={styles.tweetContentColumn}>
                                                 <View style={styles.tweetHeaderRow}>
-                                                    {userFullName ? (
-                                                        <>
-                                                            <Text style={styles.tweetFullName} numberOfLines={1}>{userFullName}</Text>
+                                                    <View style={styles.tweetNameContainer}>
+                                                        {userFullName ? (
+                                                            <>
+                                                                <Text style={styles.tweetFullName} numberOfLines={1}>{userFullName}</Text>
+                                                                <Text style={styles.tweetUsername} numberOfLines={1}>{userHandle}</Text>
+                                                            </>
+                                                        ) : (
                                                             <Text style={styles.tweetUsername} numberOfLines={1}>{userHandle}</Text>
-                                                        </>
-                                                    ) : (
-                                                        <Text style={styles.tweetUsername} numberOfLines={1}>{userHandle}</Text>
-                                                    )}
+                                                        )}
+                                                    </View>
+                                                    <Text style={styles.timestampText}>{formatTimestamp(activity.createdAt || activity._creationTime)}</Text>
                                                 </View>
+
                                                 <Text style={styles.tweetBodyText}>
                                                     {activity.activityType === 'updated' ? (
                                                         <>
@@ -298,6 +436,138 @@ export default function Profile() {
                                                                 reviewId: activity._id, 
                                                                 activityType: activity.activityType 
                                                             });
+                                                        }}
+                                                    >
+                                                        <Ionicons 
+                                                            name={isLikedByMe ? "heart" : "heart-outline"} 
+                                                            size={16} 
+                                                            color={isLikedByMe ? "#DC2626" : "#6B7280"} 
+                                                        />
+                                                        <Text style={styles.actionCountText}>{formatCount(likesTotal)}</Text>
+                                                    </TouchableOpacity>
+
+                                                    <View style={styles.actionButton}>
+                                                        <Ionicons name="chatbubble-outline" size={15} color="#6B7280" />
+                                                        <Text style={styles.actionCountText}>{formatCount(commentsTotal)}</Text>
+                                                    </View>
+                                                </View>
+                                            </View>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        )}
+                    </View>
+                )}
+
+                {activeTab === 'TWEETS' && (
+                    <View style={styles.preferenceCard}>
+                        <Text style={styles.cardTitle}>Create Tweet</Text>
+                        <Text style={styles.cardSubtitle}>Broadcast a quick status or share a photo with your network.</Text>
+
+                        <View style={styles.tweetComposerContainer}>
+                            <TextInput
+                                style={styles.tweetInput}
+                                placeholder="What's happening?"
+                                placeholderTextColor="#9CA3AF"
+                                multiline
+                                value={tweetBody}
+                                onChangeText={setTweetBody}
+                            />
+
+                            {tweetImageUri && (
+                                <View style={styles.previewImageContainer}>
+                                    <Image source={{ uri: tweetImageUri }} style={styles.previewImage} />
+                                    <TouchableOpacity 
+                                        style={styles.removeImageButton} 
+                                        onPress={() => { setTweetImageUri(null); setTweetImageAsset(null); }}
+                                    >
+                                        <Ionicons name="close-circle" size={20} color="#DC2626" />
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+
+                            <View style={styles.tweetComposerActions}>
+                                <TouchableOpacity style={styles.imagePickButton} onPress={pickTweetImage}>
+                                    <Ionicons name="image-outline" size={20} color="#6c3b3b" />
+                                    <Text style={styles.imagePickText}>Attach Photo</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity 
+                                    style={[styles.postButton, isPostingTweet && styles.buttonDisabled]} 
+                                    onPress={handleCreateTweet}
+                                    disabled={isPostingTweet}
+                                >
+                                    <Text style={styles.postButtonText}>{isPostingTweet ? 'Posting...' : 'Tweet'}</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
+                        <Text style={[styles.cardTitle, { marginTop: 24, marginBottom: 12 }]}>Your Tweets</Text>
+                        {userTweets.length === 0 ? (
+                            <View style={styles.emptyTabContent}>
+                                <Ionicons name="chatbubbles-outline" size={32} color="#9CA3AF" />
+                                <Text style={styles.emptyTabText}>No tweets posted yet.</Text>
+                            </View>
+                        ) : (
+                            <View style={styles.activityList}>
+                                {userTweets.map((tweet: any) => {
+                                    const isLikedByMe = currentUser?._id ? tweet.likes?.includes(String(currentUser._id)) : false;
+                                    const likesTotal = tweet.likes?.length || 0;
+                                    const commentsTotal = tweet.comments?.length || 0;
+
+                                    return (
+                                        <TouchableOpacity 
+                                            key={tweet._id} 
+                                            style={styles.tweetCardItem}
+                                            activeOpacity={0.8}
+                                            onPress={() => router.push({
+                                                pathname: '/social/[tweetId]',
+                                                params: { tweetId: tweet._id }
+                                            })}
+                                        >
+                                            {profileImageUri ? (
+                                                <Image source={{ uri: profileImageUri }} style={styles.tweetAvatar} />
+                                            ) : (
+                                                <View style={[styles.tweetAvatar, styles.blankAvatarTweet]}>
+                                                    <Text style={styles.avatarInitialTweet}>
+                                                        {(currentUser?.name || currentUser?.username || "U").charAt(0).toUpperCase()}
+                                                    </Text>
+                                                </View>
+                                            )}
+                                            <View style={styles.tweetContentColumn}>
+                                                <View style={styles.tweetHeaderRow}>
+                                                    <View style={styles.tweetNameContainer}>
+                                                        {userFullName ? (
+                                                            <>
+                                                                <Text style={styles.tweetFullName} numberOfLines={1}>{userFullName}</Text>
+                                                                <Text style={styles.tweetUsername} numberOfLines={1}>{userHandle}</Text>
+                                                            </>
+                                                        ) : (
+                                                            <Text style={styles.tweetUsername} numberOfLines={1}>{userHandle}</Text>
+                                                        )}
+                                                    </View>
+                                                    <View style={styles.headerRightInfo}>
+                                                        <Text style={styles.timestampText}>{formatTimestamp(tweet.createdAt || tweet._creationTime)}</Text>
+                                                        <TouchableOpacity 
+                                                            onPress={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDeleteTweet(tweet._id);
+                                                            }}
+                                                            style={styles.deleteTweetButton}
+                                                        >
+                                                            <Ionicons name="trash-outline" size={14} color="#DC2626" />
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                </View>
+                                                <Text style={[styles.tweetBodyText, { color: '#1F2937' }]}>{tweet.body}</Text>
+
+                                                <View style={styles.tweetActionBar}>
+                                                    <TouchableOpacity 
+                                                        style={styles.actionButton} 
+                                                        onPress={(e) => {
+                                                            e.stopPropagation();
+                                                            toggleLikeTweet({ tweetId: tweet._id });
                                                         }}
                                                     >
                                                         <Ionicons 
@@ -475,17 +745,6 @@ export default function Profile() {
                         </View>
                     </View>
                 )}
-
-                {activeTab === 'SAVED' && (
-                    <View style={styles.preferenceCard}>
-                        <Text style={styles.cardTitle}>Saved Items & Spots</Text>
-                        <Text style={styles.cardSubtitle}>Quick access to your bookmarks.</Text>
-                        <View style={styles.emptyTabContent}>
-                            <Ionicons name="bookmark-outline" size={32} color="#9CA3AF" />
-                            <Text style={styles.emptyTabText}>No saved items yet.</Text>
-                        </View>
-                    </View>
-                )}
             </ScrollView>
 
             <Modal visible={isProfileModal} animationType="slide" transparent={true} onRequestClose={() => setProfileModalVisible(false)}>
@@ -553,24 +812,27 @@ const styles = StyleSheet.create({
         padding: 4,
     },
     profileSectionUnderHeader: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 14,
+        backgroundColor: '#FFFFFF',
         paddingHorizontal: 16,
         paddingVertical: 16,
-        backgroundColor: '#FFFFFF',
         borderBottomWidth: 1,
         borderBottomColor: '#E5E7EB',
+        gap: 12,
+    },
+    profileTopRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
     },
     imageContainer: {
         position: 'relative',
-        width: 68,
-        height: 68,
+        width: 76,
+        height: 76,
     },
     profileImage: {
-        width: 68,
-        height: 68,
-        borderRadius: 34,
+        width: 76,
+        height: 76,
+        borderRadius: 38,
         borderWidth: 2,
         borderColor: '#E5E7EB',
     },
@@ -580,7 +842,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     avatarInitial: {
-        fontSize: 26,
+        fontSize: 28,
         fontWeight: '700',
         color: '#6c3b3b',
     },
@@ -592,21 +854,52 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         overflow: 'hidden',
     },
-    userInfoContainer: {
+    middleSection: {
+        flex: 1,
+        marginLeft: 12,
         justifyContent: 'center',
-        marginTop: 2,
+        gap: 8,
     },
-    displayName: {
-        fontSize: 18,
-        fontWeight: '800',
+    statsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+        gap: 28,
+    },
+    statItem: {
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+    },
+    statNumber: {
+        fontSize: 16,
+        fontWeight: '700',
         color: '#1F2937',
-        letterSpacing: 0.5,
+        textAlign: 'left',
     },
-    subHandleName: {
-        fontSize: 13,
-        fontWeight: '500',
+    statLabel: {
+        fontSize: 12,
         color: '#6B7280',
         marginTop: 2,
+        textAlign: 'left',
+    },
+    userInfoContainer: {
+        marginTop: 2,
+    },
+    nameRow: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        flexWrap: 'wrap',
+        gap: 6,
+    },
+    displayName: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#1F2937',
+        letterSpacing: 0.3,
+    },
+    subHandleName: {
+        fontSize: 12,
+        fontWeight: '400',
+        color: '#6B7280',
     },
     scrollContainer: {
         paddingTop: 12,
@@ -617,8 +910,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         flexWrap: 'wrap',
         gap: 6,
-        marginTop: 8,
-        paddingHorizontal: 16,
+        marginTop: 12,
+        paddingHorizontal: 12,
     },
     tabPill: {
         paddingVertical: 6,
@@ -878,26 +1171,46 @@ const styles = StyleSheet.create({
     tweetHeaderRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        justifyContent: 'space-between',
         marginBottom: 2,
+    },
+    tweetNameContainer: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        flexWrap: 'wrap',
+        gap: 6,
+        flex: 1,
     },
     tweetFullName: {
         fontSize: 13,
         fontWeight: '700',
         color: '#1F2937',
-        letterSpacing: 0.5,
+        letterSpacing: 0.3,
     },
     tweetUsername: {
         fontSize: 11,
         fontWeight: '400',
         color: '#6B7280',
-        letterSpacing: 0.25,
+    },
+    headerRightInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    timestampText: {
+        fontSize: 11,
+        color: '#9CA3AF',
+        fontWeight: '500',
+    },
+    deleteTweetButton: {
+        padding: 2,
     },
     tweetBodyText: {
         fontSize: 12,
         color: '#6B7280',
         fontWeight: '400',
         lineHeight: 15,
+        marginTop: 2,
     },
     boldText: {
         fontWeight: '700',
@@ -918,6 +1231,73 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '600',
         color: '#6B7280',
+    },
+    tweetComposerContainer: {
+        backgroundColor: '#F9FAFB',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        padding: 12,
+        gap: 10,
+    },
+    tweetInput: {
+        fontSize: 13,
+        color: '#1F2937',
+        minHeight: 60,
+        textAlignVertical: 'top',
+    },
+    previewImageContainer: {
+        position: 'relative',
+        width: '100%',
+        height: 150,
+        borderRadius: 8,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    previewImage: {
+        width: '100%',
+        height: '100%',
+    },
+    removeImageButton: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 10,
+    },
+    tweetComposerActions: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderTopWidth: 1,
+        borderTopColor: '#E5E7EB',
+        paddingTop: 8,
+    },
+    imagePickButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingVertical: 4,
+    },
+    imagePickText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#6c3b3b',
+    },
+    postButton: {
+        backgroundColor: '#6c3b3b',
+        paddingHorizontal: 16,
+        paddingVertical: 6,
+        borderRadius: 8,
+    },
+    postButtonText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    buttonDisabled: {
+        opacity: 0.6,
     },
     modalCenteredView: {
         flex: 1,
