@@ -31,7 +31,7 @@ export default defineSchema({
         spiceTolerance: v.optional(v.string()),
       })
     ),
-    displayedBadge: v.optional(v.string()), // 🔑 Added for displaying user achievement badges
+    displayedBadge: v.optional(v.string()),
   })
     .index("by_email", ["email"])
     .index("by_role", ["role"]),
@@ -47,6 +47,7 @@ export default defineSchema({
     phone: v.optional(v.string()),
     hours: v.optional(v.string()),
     logoUrl: v.optional(v.string()),
+    logoStorageId: v.optional(v.id("_storage")),
     status: v.optional(v.string()),   
     website: v.optional(v.string()),
     mapsLocation: v.optional(v.string()),
@@ -66,7 +67,8 @@ export default defineSchema({
       )
     ),                 
     price: v.optional(v.number()),      
-    imageUrl: v.optional(v.string()),   
+    imageUrl: v.optional(v.string()),
+    imageStorageId: v.optional(v.id("_storage")),   
   })
     .index("by_restaurantId", ["restaurantId"])
     .searchIndex("search_item", {
@@ -119,4 +121,24 @@ export default defineSchema({
   })
     .index("by_itemId", ["itemId"])
     .index("by_user", ["userId"]),
+
+  // 4. SOCIAL TWEETS / ACTIVITY FEED POSTS
+  tweets: defineTable({
+    body: v.string(),
+    userId: v.optional(v.string()),
+    imageStorageId: v.optional(v.id("_storage")),
+    likes: v.optional(v.array(v.string())),
+    comments: v.optional(
+      v.array(
+        v.object({
+          _id: v.string(),
+          userId: v.string(),
+          body: v.string(),
+          createdAt: v.number(),
+        })
+      )
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
 });

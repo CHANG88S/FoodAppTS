@@ -15,18 +15,34 @@ export const listAllRestaurants = query({
 
     // If no filter is applied, or "All" is chosen, return everything
     if (!args.cityFilter || !args.stateFilter || args.cityFilter === "All") {
-      return allRestaurants;
+      return Promise.all(
+        allRestaurants.map(async (restaurant) => ({
+          ...restaurant,
+          logoUrl: restaurant.logoStorageId 
+            ? await ctx.storage.getUrl(restaurant.logoStorageId) 
+            : restaurant.logoUrl,
+        }))
+      );
     }
 
     const targetCity = args.cityFilter.trim().toLowerCase();
     const targetState = args.stateFilter.trim().toLowerCase();
 
     // Filter programmatically to catch database strings containing hidden spaces
-    return allRestaurants.filter((shop) => {
+    const filtered = allRestaurants.filter((shop) => {
       const shopCity = shop.city?.trim().toLowerCase();
       const shopState = shop.state?.trim().toLowerCase();
       return shopCity === targetCity && shopState === targetState;
     });
+
+    return Promise.all(
+      filtered.map(async (restaurant) => ({
+        ...restaurant,
+        logoUrl: restaurant.logoStorageId 
+          ? await ctx.storage.getUrl(restaurant.logoStorageId) 
+          : restaurant.logoUrl,
+      }))
+    );
   },
 });
 
@@ -36,10 +52,21 @@ export const listAllRestaurants = query({
 export const getRestaurantByName = query({
   args: { name: v.string() }, 
   handler: async (ctx, args) => {
-    return await ctx.db
+    const restaurant = await ctx.db
       .query("restaurants")
       .withIndex("by_restaurantName", (q) => q.eq("restaurantName", args.name))
       .unique(); 
+
+    if (!restaurant) return null;
+
+    const logoUrl = restaurant.logoStorageId 
+      ? await ctx.storage.getUrl(restaurant.logoStorageId) 
+      : restaurant.logoUrl;
+
+    return {
+      ...restaurant,
+      logoUrl,
+    };
   },
 });
 
@@ -49,17 +76,24 @@ export const getRestaurantByName = query({
 export const searchRestaurantsByName = query({
   args: { searchTerm: v.string() },
   handler: async (ctx, args) => {
-    if (!args.searchTerm || !args.searchTerm.trim()) {
-      return await ctx.db.query("restaurants").collect(); 
-    }
-
-    const lowerSearch = args.searchTerm.toLowerCase().trim();
     const allRestaurants = await ctx.db.query("restaurants").collect();
 
-    // Filter in JS for true case-insensitive substring matching
-    return allRestaurants
-      .filter((r) => r.restaurantName.toLowerCase().includes(lowerSearch))
-      .slice(0, 15);
+    let results = allRestaurants;
+    if (args.searchTerm && args.searchTerm.trim()) {
+      const lowerSearch = args.searchTerm.toLowerCase().trim();
+      results = allRestaurants
+        .filter((r) => r.restaurantName.toLowerCase().includes(lowerSearch))
+        .slice(0, 15);
+    }
+
+    return Promise.all(
+      results.map(async (restaurant) => ({
+        ...restaurant,
+        logoUrl: restaurant.logoStorageId 
+          ? await ctx.storage.getUrl(restaurant.logoStorageId) 
+          : restaurant.logoUrl,
+      }))
+    );
   },
 });
 
@@ -69,17 +103,24 @@ export const searchRestaurantsByName = query({
 export const searchAllByName = query({
   args: { namePattern: v.string() }, 
   handler: async (ctx, args) => {
-    if (!args.namePattern || !args.namePattern.trim()) {
-      return await ctx.db.query("restaurants").collect();
-    }
-
-    const pattern = args.namePattern.toLowerCase().trim(); 
     const allRestaurants = await ctx.db.query("restaurants").collect();
 
-    // Mimics the 'pattern%' behavior securely using .startsWith()
-    return allRestaurants
-      .filter((r) => r.restaurantName.toLowerCase().startsWith(pattern))
-      .slice(0, 25);
+    let results = allRestaurants;
+    if (args.namePattern && args.namePattern.trim()) {
+      const pattern = args.namePattern.toLowerCase().trim(); 
+      results = allRestaurants
+        .filter((r) => r.restaurantName.toLowerCase().startsWith(pattern))
+        .slice(0, 25);
+    }
+
+    return Promise.all(
+      results.map(async (restaurant) => ({
+        ...restaurant,
+        logoUrl: restaurant.logoStorageId 
+          ? await ctx.storage.getUrl(restaurant.logoStorageId) 
+          : restaurant.logoUrl,
+      }))
+    );
   },
 });
 
@@ -121,7 +162,7 @@ export const getRestaurantDetails = query({
       .withIndex("by_restaurantId", (q) => q.eq("restaurantId", args.restaurantId!))
       .collect();
 
-    // Compute average ratings and review counts for each menu item dynamically
+    // Compute average ratings and resolve storage image URLs for each menu item dynamically
     const menuItemsWithRatings = await Promise.all(
       menuItems.map(async (item) => {
         const reviews = await ctx.db
@@ -135,17 +176,27 @@ export const getRestaurantDetails = query({
           averageRating = Number((totalScore / reviews.length).toFixed(1));
         }
 
+        const resolvedImageUrl = item.imageStorageId 
+          ? await ctx.storage.getUrl(item.imageStorageId) 
+          : item.imageUrl;
+
         return {
           ...item,
+          imageUrl: resolvedImageUrl,
           averageRating,
           reviewCount: reviews.length,
         };
       })
     );
 
+    const resolvedLogoUrl = restaurant.logoStorageId 
+      ? await ctx.storage.getUrl(restaurant.logoStorageId) 
+      : restaurant.logoUrl;
+
     // Stitch them into a single unified object for your layout grid to ingest smoothly
     return {
       ...restaurant,
+      logoUrl: resolvedLogoUrl,
       menuItems: menuItemsWithRatings,
     };
   },
