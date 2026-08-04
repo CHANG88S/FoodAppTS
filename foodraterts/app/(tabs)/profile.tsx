@@ -20,7 +20,6 @@ import { useRouter, Stack } from 'expo-router';
 import Slider from '@react-native-community/slider';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { useAuthActions } from '@convex-dev/auth/react';
 import { DrawerActions } from '@react-navigation/native';
 import { useNavigation } from 'expo-router';
 import { formatCount } from '../../utils/formatters';
@@ -34,7 +33,6 @@ const TABS = ['ACTIVITY', 'TWEETS', 'REVIEWS', 'PREFERENCES'];
 export default function Profile() {
     const router = useRouter();
     const navigation = useNavigation<any>();
-    const { signOut } = useAuthActions();
 
     const currentUser = useQuery(api.users.viewer);
     const userReviews = useQuery(api.items.getUserReviews) || [];
@@ -48,7 +46,6 @@ export default function Profile() {
     const deleteTweetMutation = useMutation(api.tweets?.deleteTweet);
     const toggleLikeTweet = useMutation(api.tweets?.toggleLikeTweet);
 
-    const [isSignOutModalVisible, setSignOutModalVisible] = useState(false);
     const [isProfileModal, setProfileModalVisible] = useState(false);
     const [image, setImage] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState('ACTIVITY');
@@ -219,17 +216,6 @@ export default function Profile() {
         );
     };
 
-    const handleLeave = async () => {
-        try {
-            setSignOutModalVisible(false);
-            await signOut();
-            router.replace('/');
-        } catch (error: any) {
-            console.error(error);
-            Alert.alert('Sign Out Failed', error.message || 'Could not log out.');
-        }
-    };
-
     const handleDeleteReview = (reviewId: string, itemName: string) => {
         Alert.alert(
             "Delete Review",
@@ -294,9 +280,6 @@ export default function Profile() {
                         style={styles.headerIconButton}
                     >
                         <Ionicons name="menu-outline" size={24} color="#1F2937" />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setSignOutModalVisible(true)} style={styles.headerIconButton}>
-                        <Ionicons name="log-out-outline" size={22} color="#b01212" />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -760,23 +743,6 @@ export default function Profile() {
                             </TouchableOpacity>
                             <TouchableOpacity style={[styles.profileButton, { backgroundColor: '#DC2626' }]} onPress={() => setProfileModalVisible(false)}>
                                 <Text style={styles.textStyle}>Close</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
-
-            <Modal visible={isSignOutModalVisible} transparent={true} animationType="fade" onRequestClose={() => setSignOutModalVisible(false)}>
-                <View style={styles.modalCenteredView}>
-                    <View style={styles.logModalView}>
-                        <Text style={styles.logModalTitle}>Sign Out?</Text>
-                        <Text style={styles.modalText}>Are you sure you want to log out of your system workspace profile?</Text>
-                        <View style={styles.logButtonContainer}>
-                            <TouchableOpacity style={[styles.logButton, styles.buttonLeave]} onPress={handleLeave}>
-                                <Text style={styles.dialogActionText}>Sign Out</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={[styles.logButton, styles.buttonContinue]} onPress={() => setSignOutModalVisible(false)}>
-                                <Text style={styles.dialogActionText}>Stay</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -1299,48 +1265,6 @@ const styles = StyleSheet.create({
     buttonDisabled: {
         opacity: 0.6,
     },
-    modalCenteredView: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
-    },
-    logModalView: {
-        width: '80%',
-        backgroundColor: 'white',
-        borderRadius: 20,
-        padding: 24,
-        alignItems: 'center',
-    },
-    logModalTitle: {
-        fontSize: 17,
-        fontWeight: '700',
-        color: '#1F2937',
-        marginBottom: 8,
-    },
-    modalText: {
-        fontSize: 14,
-        color: '#6B7280',
-        textAlign: 'center',
-        marginBottom: 20,
-    },
-    logButtonContainer: {
-        flexDirection: 'row',
-        gap: 10,
-        width: '100%',
-    },
-    logButton: {
-        borderRadius: 12,
-        padding: 12,
-        flex: 1,
-        alignItems: 'center',
-    },
-    buttonLeave: {
-        backgroundColor: '#b01212',
-    },
-    buttonContinue: {
-        backgroundColor: '#4371bd',
-    },
     buttonNeutral: {
         backgroundColor: '#F3F4F6',
     },
@@ -1353,11 +1277,6 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: '600',
         textAlign: 'center',
-    },
-    dialogActionText: {
-        color: 'white',
-        fontWeight: '600',
-        fontSize: 14,
     },
     modalProfileView: {
         flex: 1,

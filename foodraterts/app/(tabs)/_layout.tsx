@@ -1,9 +1,15 @@
 import React from 'react';
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { createDrawerNavigator } from '@react-navigation/drawer';
+import { 
+    createDrawerNavigator, 
+    DrawerContentScrollView, 
+    DrawerItemList, 
+    DrawerItem 
+} from '@react-navigation/drawer';
+import { useAuthActions } from '@convex-dev/auth/react';
 import BadgesScreen from '../badges';
-import SettingsScreen from '../settings'; // 🔑 Import the settings screen
+import SettingsScreen from '../settings';
 
 const Drawer = createDrawerNavigator();
 
@@ -53,12 +59,42 @@ function TabLayout() {
     );
 }
 
+// 🔑 Custom Drawer Content to include Sign Out
+function CustomDrawerContent(props: any) {
+    const { signOut } = useAuthActions();
+    const router = useRouter();
+
+    const handleSignOut = async () => {
+        try {
+            await signOut();
+            router.replace('/');
+        } catch (error: any) {
+            console.error(error);
+        }
+    };
+
+    return (
+        <DrawerContentScrollView {...props}>
+            <DrawerItemList {...props} />
+            <DrawerItem 
+                label="Sign Out"
+                icon={({ color, size }) => (
+                    <Ionicons name="log-out-outline" size={size} color="#b01212" />
+                )}
+                labelStyle={{ color: '#b01212', fontWeight: '600' }}
+                onPress={handleSignOut}
+            />
+        </DrawerContentScrollView>
+    );
+}
+
 export default function RootLayout() {
     return (
         <Drawer.Navigator
+            drawerContent={(props) => <CustomDrawerContent {...props} />} // 🔑 Pass the custom drawer
             screenOptions={{
                 headerShown: false,
-                drawerPosition: 'right', // Slides smoothly from right to left
+                drawerPosition: 'right',
                 drawerType: 'front',
                 drawerStyle: {
                     width: 260,
@@ -71,7 +107,6 @@ export default function RootLayout() {
                 options={{ drawerItemStyle: { display: 'none' } }} 
             />
 
-            {/* 🔑 Add Profile Settings screen to the drawer menu */}
             <Drawer.Screen 
                 name="Profile Settings" 
                 component={SettingsScreen} 
@@ -91,7 +126,6 @@ export default function RootLayout() {
                     ),
                 }}
             />
-            
         </Drawer.Navigator>
     );
 }
