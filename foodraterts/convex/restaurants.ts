@@ -235,7 +235,74 @@ export const userHasReviewedRestaurant = query({
 });
 
 /**
- * 7. RECORD VISIT - Logs a user check-in with a daily limit of 3 visits per restaurant
+ * 7. GET VISIT COUNT FOR RESTAURANT - Returns total check-ins for a restaurant
+ */
+export const getVisitCount = query({
+  args: { restaurantId: v.id("restaurants") },
+  handler: async (ctx, args) => {
+    const visits = await ctx.db
+      .query("restaurantVisits")
+      .filter((q) => q.eq(q.field("restaurantId"), args.restaurantId))
+      .collect();
+
+    // Count unique users who've visited
+    const uniqueVisitors = new Set(visits.map((v) => v.userId));
+    return {
+      totalVisits: visits.length,
+      uniqueVisitors: uniqueVisitors.size,
+    };
+  },
+});
+
+/**
+ * 8. GET ALL RESTAURANTS WITH VISIT COUNTS - Returns restaurants with visit statistics
+ */
+export const listAllRestaurantsWithVisits = query({
+  args: {
+    cityFilter: v.optional(v.string()),
+    stateFilter: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const allRestaurants = await ctx.db.query("restaurants").collect();
+
+    // If no filter is applied, or "All" is chosen, return everything
+    const restaurantsToReturn = !args.cityFilter || !args.stateFilter || args.cityFilter === "All"
+      ? allRestaurants
+      : allRestaurants.filter((shop) => {
+          const targetCity = args.cityFilter!.trim().toLowerCase();
+          const targetState = args.stateFilter!.trim().toLowerCase();
+          const shopCity = shop.city?.trim().toLowerCase();
+          const shopState = shop.state?.trim().toLowerCase();
+          return shopCity === targetCity && shopState === targetState;
+        });
+
+    // Fetch visit counts for all restaurants
+    const restaurantsWithVisits = await Promise.all(
+      restaurantsToReturn.map(async (restaurant) => {
+        const visits = await ctx.db
+          .query("restaurantVisits")
+          .filter((q) => q.eq(q.field("restaurantId"), restaurant._id))
+          .collect();
+
+        const uniqueVisitors = new Set(visits.map((v) => v.userId));
+
+        return {
+          ...restaurant,
+          logoStorageId: restaurant.logoStorageId
+            ? await ctx.storage.getUrl(restaurant.logoStorageId)
+            : null,
+          visitCount: visits.length,
+          uniqueVisitorCount: uniqueVisitors.size,
+        };
+      })
+    );
+
+    return restaurantsWithVisits;
+  },
+});
+
+/**
+ * 9. RECORD VISIT - Logs a user check-in with a daily limit of 3 visits per restaurant
  */
 export const recordVisit = mutation({
   args: { restaurantId: v.id("restaurants") },

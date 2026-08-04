@@ -1,11 +1,11 @@
 import React from 'react';
 import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { 
-    createDrawerNavigator, 
-    DrawerContentScrollView, 
-    DrawerItemList, 
-    DrawerItem 
+import {
+    createDrawerNavigator,
+    DrawerContentScrollView,
+    DrawerItemList,
+    DrawerItem
 } from '@react-navigation/drawer';
 import { useAuthActions } from '@convex-dev/auth/react';
 import BadgesScreen from '../badges';
@@ -17,7 +17,7 @@ function TabLayout() {
     return (
         <Tabs
             screenOptions={({ route }) => ({
-                tabBarIcon: ({ focused, color, size }) => {
+                tabBarIcon: ({ focused, color }) => {
                     let iconName: keyof typeof Ionicons.glyphMap;
 
                     switch (route.name) {
@@ -28,7 +28,7 @@ function TabLayout() {
                             iconName = focused ? "search" : "search-outline";
                             break;
                         case "notification":
-                            iconName = focused ? "notifications" : "notifications-outline";
+                            iconName = focused ? "heart" : "heart-outline";
                             break;
                         case "profile":
                             iconName = focused ? "person" : "person-outline";
@@ -36,17 +36,27 @@ function TabLayout() {
                         default:
                             iconName = "ellipse";
                     }
-                    return <Ionicons name={iconName} size={size} color={color} />;
+                    return <Ionicons name={iconName} size={24} color={color} />;
                 },
-                tabBarActiveTintColor: "#6c3b3b",
-                tabBarInactiveTintColor: "#9CA3AF",
+                tabBarActiveTintColor: "#000000",
+                tabBarInactiveTintColor: "#000000",
                 tabBarShowLabel: false,
                 tabBarStyle: {
-                    backgroundColor: "#FFFFFF",
-                    borderTopWidth: 1,
-                    borderTopColor: "#E5E7EB",
-                    height: 60,
-                    paddingBottom: 5,
+                    backgroundColor: "rgba(255, 255, 255, 0.9)",
+                    position: "absolute",
+                    bottom: 30,
+                    marginHorizontal: 40,
+                    height: 54,
+                    borderRadius: 27,
+                    borderTopWidth: 0.5,
+                    borderTopColor: "rgba(0, 0, 0, 0.1)",
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: -2 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 8,
+                    elevation: 5,
+                    paddingBottom: 6,
+                    paddingTop: 6,
                 },
                 headerShown: false,
             })}
@@ -78,7 +88,7 @@ function CustomDrawerContent(props: any) {
             <DrawerItemList {...props} />
             <DrawerItem 
                 label="Sign Out"
-                icon={({ color, size }) => (
+                icon={({ size }) => (
                     <Ionicons name="log-out-outline" size={size} color="#b01212" />
                 )}
                 labelStyle={{ color: '#b01212', fontWeight: '600' }}

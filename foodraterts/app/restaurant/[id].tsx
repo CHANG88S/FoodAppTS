@@ -49,6 +49,11 @@ export default function RestaurantDetailScreen() {
   // Mutation to track user visits
   const recordVisitMutation = useMutation(api.restaurants.recordVisit);
 
+  // Query to get visit statistics for this restaurant
+  const visitStats = useQuery(api.restaurants.getVisitCount, {
+    restaurantId: id as Id<"restaurants">
+  });
+
   const handleVisitedPress = async () => {
     // Check if user has reviewed a menu item at this restaurant first
     if (!userHasReviewed) {
@@ -84,6 +89,30 @@ export default function RestaurantDetailScreen() {
       </View>
     );
   }
+
+  // 🔑 HELPER FUNCTION: Returns a dynamic emoji matching the restaurant or item category (handles strings and arrays safely)
+  const getCategoryEmoji = (categoryString?: string | string[]): string => {
+    if (!categoryString) return "🧋"; 
+    
+    const cat = Array.isArray(categoryString) 
+      ? categoryString[0]?.toLowerCase() || "" 
+      : String(categoryString).toLowerCase();
+
+    if (cat.includes("sushi")) return "🍣";
+    if (cat.includes("ramen") || cat.includes("noodle")) return "🍜";
+    if (cat.includes("tea") || cat.includes("boba") || cat.includes("drink") || cat.includes("bubble tea")) return "🧋";
+    if (cat.includes("coffee") || cat.includes("cafe")) return "☕";
+    if (cat.includes("dessert") || cat.includes("sweet") || cat.includes("yogurt")) return "🍦";
+    if (cat.includes("ayce") || cat.includes("buffet")) return "🍲";
+    if (cat.includes("shabu") || cat.includes("soup")) return "🍲";
+    if (cat.includes("bbq") || cat.includes("meat") || cat.includes("kbbq") || cat.includes("korean bbq")) return "🥩";
+    if (cat.includes("burger")) return "🍔";
+    if (cat.includes("donut")) return "🍩";
+    
+    if (cat.includes("food")) return "🍲";
+
+    return "🧋"; 
+  };
 
   // 1. DYNAMIC CATEGORY EXTRACTION
   const uniqueCategories = ["All"];
@@ -188,11 +217,30 @@ export default function RestaurantDetailScreen() {
           <Text style={styles.categorySub} numberOfLines={1}>
             📍 {dbData.address || "Address details unavailable"}
           </Text>
-          
+
           <Text style={styles.locationSub}>
             {dbData.city && dbData.state ? `${dbData.city}, ${dbData.state}` : "Riverside, CA"}
           </Text>
         </View>
+
+        {/* Visit Statistics */}
+        {visitStats && (
+          <View style={styles.visitStatsContainer}>
+            <View style={styles.statItem}>
+              <Ionicons name="footsteps" size={16} color="#6c3b3b" />
+              <Text style={styles.statText}>
+                {visitStats.totalVisits || 0} {visitStats.totalVisits === 1 ? 'visit' : 'visits'}
+              </Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Ionicons name="people" size={16} color="#6c3b3b" />
+              <Text style={styles.statText}>
+                {visitStats.uniqueVisitors || 0} {visitStats.uniqueVisitors === 1 ? 'visitor' : 'visitors'}
+              </Text>
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Tab Row Pill Design with Visited Button added to the right of About */}
@@ -322,7 +370,14 @@ export default function RestaurantDetailScreen() {
             {gridPages.map((pageItems: any[], pageIndex: number) => (
               <View key={`page-${pageIndex}`} style={styles.gridContainer}>
                 {pageItems.map((item: any) => (
-                  <MenuItemCard key={item._id} item={item} restaurantId={id as string} router={router} />
+                  <MenuItemCard 
+                    key={item._id} 
+                    item={item} 
+                    restaurantCategory={dbData.category} 
+                    restaurantId={id as string} 
+                    router={router} 
+                    getCategoryEmoji={getCategoryEmoji} 
+                  />
                 ))}
               </View>
             ))}
@@ -361,12 +416,15 @@ export default function RestaurantDetailScreen() {
   );
 }
 
-// Sub-component for individual menu items to leverage storageId optimization cleanly
-function MenuItemCard({ item, restaurantId, router }: { item: any; restaurantId: string; router: any }) {
+// Sub-component for individual menu items using storageId directly via getUrl query, with category fallback emoji
+function MenuItemCard({ item, restaurantCategory, restaurantId, router, getCategoryEmoji }: { item: any; restaurantCategory?: string; restaurantId: string; router: any; getCategoryEmoji: (cat?: string | string[]) => string }) {
   const imageUrl = useQuery(
     api.images.getPublicUrl,
     item.imageStorageId ? { storageId: item.imageStorageId } : "skip"
   );
+
+  // Fallback priority: item category -> restaurant category
+  const effectiveCategory = item.category || restaurantCategory;
 
   return (
     <View style={styles.compactGridCard}>
@@ -375,11 +433,11 @@ function MenuItemCard({ item, restaurantId, router }: { item: any; restaurantId:
           <Image 
             source={{ uri: imageUrl }} 
             style={styles.cardImage} 
-            resizeMode="contain" 
+            resizeMode="cover" 
           />
         ) : (
           <View style={styles.placeholderImageContainer}>
-            <Text style={{ fontSize: 36 }}>🧋</Text>
+            <Text style={{ fontSize: 36 }}>{getCategoryEmoji(effectiveCategory)}</Text>
           </View>
         )}
       </View>
@@ -463,12 +521,35 @@ const styles = StyleSheet.create({
     fontWeight: "500", 
     color: "#6B7280"
   },
-  locationSub: { 
-    fontSize: 13, 
-    fontWeight: "500", 
-    color: "#6B7280", 
+  locationSub: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#6B7280",
     marginTop: 2,
-    paddingLeft: 21 
+    paddingLeft: 21
+  },
+  visitStatsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
+    marginTop: 12,
+    paddingHorizontal: 20,
+  },
+  statItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  statText: {
+    fontSize: 13,
+    color: "#6c3b3b",
+    fontWeight: "600",
+  },
+  statDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: "#E5E7EB",
   },
   tabRow: { 
     flexDirection: 'row', 

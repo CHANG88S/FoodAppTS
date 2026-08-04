@@ -290,11 +290,11 @@ function RestaurantCard({ item, getCategoryEmoji, router }: { item: any; getCate
           🕒 {item.hours || "Hours unavailable"}
         </Text>
       </View>
-      <Ionicons 
-        name="chevron-forward" 
-        size={18} 
-        color="#D1D5DB" 
-        style={styles.chevronIcon} 
+      <Ionicons
+        name="chevron-forward"
+        size={18}
+        color="#D1D5DB"
+        style={styles.chevronIcon}
       />
     </TouchableOpacity>
   );
@@ -450,14 +450,14 @@ const styles = StyleSheet.create({
     paddingLeft: 21, 
     fontWeight: "500" 
   },
-  hoursText: { 
-    fontSize: 12, 
-    color: "#9CA3AF", 
+  hoursText: {
+    fontSize: 12,
+    color: "#9CA3AF",
     marginTop: 3
   },
-  loadingContainer: { 
-    flex: 1, 
-    justifyContent: "center", 
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center"
   },
   emptyContainer: { 
