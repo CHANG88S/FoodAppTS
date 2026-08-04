@@ -51,6 +51,12 @@ export default function Profile() {
     const [activeTab, setActiveTab] = useState('ACTIVITY');
     const [expandedRestaurant, setExpandedRestaurant] = useState<string | null>(null);
 
+    // Unified Location Filter States
+    const [selectedStateFilter, setSelectedStateFilter] = useState<string>('ALL');
+    const [selectedCityFilter, setSelectedCityFilter] = useState<string>('ALL');
+    const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
+    const [expandedStateInMenu, setExpandedStateInMenu] = useState<string | null>(null);
+
     // Tweet creation state
     const [tweetBody, setTweetBody] = useState('');
     const [tweetImageUri, setTweetImageUri] = useState<string | null>(null);
@@ -259,7 +265,27 @@ export default function Profile() {
     });
     const uniqueReviews = Array.from(uniqueReviewsMap.values());
 
-    const groupedReviews = uniqueReviews.reduce((acc: Record<string, any[]>, review: any) => {
+    // Build structured state-to-city mapping dynamically from user's reviews
+    const stateCityMap: Record<string, string[]> = {};
+    uniqueReviews.forEach((r: any) => {
+        if (r.state) {
+            if (!stateCityMap[r.state]) {
+                stateCityMap[r.state] = [];
+            }
+            if (r.city && !stateCityMap[r.state].includes(r.city)) {
+                stateCityMap[r.state].push(r.city);
+            }
+        }
+    });
+
+    // Filter reviews based on selected state & nested city
+    const filteredReviews = uniqueReviews.filter((review: any) => {
+        const matchesState = selectedStateFilter === 'ALL' || review.state === selectedStateFilter;
+        const matchesCity = selectedCityFilter === 'ALL' || review.city === selectedCityFilter;
+        return matchesState && matchesCity;
+    });
+
+    const groupedReviews = filteredReviews.reduce((acc: Record<string, any[]>, review: any) => {
         const place = review.restaurantName || "Other Locations";
         if (!acc[place]) {
             acc[place] = [];
@@ -267,6 +293,13 @@ export default function Profile() {
         acc[place].push(review);
         return acc;
     }, {});
+
+    // Compute display text for location dropdown button
+    const getLocationButtonLabel = () => {
+        if (selectedStateFilter === 'ALL') return 'Location: All Locations';
+        if (selectedCityFilter === 'ALL') return `State: ${selectedStateFilter}`;
+        return `${selectedCityFilter}, ${selectedStateFilter}`;
+    };
 
     return (
         <View style={styles.root}>
@@ -579,13 +612,126 @@ export default function Profile() {
                     <View style={styles.preferenceCard}>
                         <Text style={styles.cardTitle}>My Reviews</Text>
                         <Text style={styles.cardSubtitle}>Your submitted item evaluations grouped by establishment.</Text>
-                        {uniqueReviews.length === 0 ? (
+
+                        {/* Unified Location Filter Dropdown */}
+                        {uniqueReviews.length > 0 && (
+                            <View style={styles.filterDropdownWrapperSingle}>
+                                <TouchableOpacity 
+                                    style={styles.filterButton} 
+                                    onPress={() => setIsLocationDropdownOpen(!isLocationDropdownOpen)}
+                                >
+                                    <Text style={styles.filterButtonText}>
+                                        {getLocationButtonLabel()}
+                                    </Text>
+                                    <Ionicons name={isLocationDropdownOpen ? "chevron-up" : "chevron-down"} size={14} color="#4B5563" />
+                                </TouchableOpacity>
+
+                                {isLocationDropdownOpen && (
+                                    <View style={styles.dropdownMenuListSingle}>
+                                        {/* All Locations Option */}
+                                        <TouchableOpacity 
+                                            style={styles.dropdownMenuItem}
+                                            onPress={() => {
+                                                setSelectedStateFilter('ALL');
+                                                setSelectedCityFilter('ALL');
+                                                setIsLocationDropdownOpen(false);
+                                                setExpandedStateInMenu(null);
+                                            }}
+                                        >
+                                            <Text style={[styles.dropdownMenuText, selectedStateFilter === 'ALL' && styles.selectedMenuText]}>
+                                                All Locations
+                                            </Text>
+                                        </TouchableOpacity>
+
+                                        {/* State list with nested cities */}
+                                        {Object.entries(stateCityMap).map(([stateName, cities]) => {
+                                            const isStateExpanded = expandedStateInMenu === stateName;
+                                            const isStateSelected = selectedStateFilter === stateName && selectedCityFilter === 'ALL';
+
+                                            return (
+                                                <View key={stateName}>
+                                                    {/* State Row */}
+                                                    <TouchableOpacity 
+                                                        style={[styles.dropdownMenuItem, styles.stateRowItem]}
+                                                        onPress={() => {
+                                                            // Toggle accordion expansion for cities
+                                                            setExpandedStateInMenu(isStateExpanded ? null : stateName);
+                                                        }}
+                                                    >
+                                                        <TouchableOpacity 
+                                                            style={{ flex: 1 }}
+                                                            onPress={() => {
+                                                                setSelectedStateFilter(stateName);
+                                                                setSelectedCityFilter('ALL');
+                                                                setIsLocationDropdownOpen(false);
+                                                                setExpandedStateInMenu(null);
+                                                            }}
+                                                        >
+                                                            <Text style={[styles.dropdownMenuText, isStateSelected && styles.selectedMenuText]}>
+                                                                📍 {stateName}
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                        <Ionicons 
+                                                            name={isStateExpanded ? "chevron-down" : "chevron-forward"} 
+                                                            size={13} 
+                                                            color="#6B7280" 
+                                                            onPress={() => setExpandedStateInMenu(isStateExpanded ? null : stateName)}
+                                                        />
+                                                    </TouchableOpacity>
+
+                                                    {/* Nested City Sub-list */}
+                                                    {isStateExpanded && (
+                                                        <View style={styles.nestedCityList}>
+                                                            <TouchableOpacity 
+                                                                style={styles.dropdownMenuItem}
+                                                                onPress={() => {
+                                                                    setSelectedStateFilter(stateName);
+                                                                    setSelectedCityFilter('ALL');
+                                                                    setIsLocationDropdownOpen(false);
+                                                                    setExpandedStateInMenu(null);
+                                                                }}
+                                                            >
+                                                                <Text style={[styles.dropdownMenuText, selectedStateFilter === stateName && selectedCityFilter === 'ALL' && styles.selectedMenuText]}>
+                                                                    ↳ All Cities in {stateName}
+                                                                </Text>
+                                                            </TouchableOpacity>
+
+                                                            {cities.map((cityName: string) => {
+                                                                const isCitySelected = selectedStateFilter === stateName && selectedCityFilter === cityName;
+                                                                return (
+                                                                    <TouchableOpacity 
+                                                                        key={cityName} 
+                                                                        style={styles.dropdownMenuItem}
+                                                                        onPress={() => {
+                                                                            setSelectedStateFilter(stateName);
+                                                                            setSelectedCityFilter(cityName);
+                                                                            setIsLocationDropdownOpen(false);
+                                                                            setExpandedStateInMenu(null);
+                                                                        }}
+                                                                    >
+                                                                        <Text style={[styles.dropdownMenuText, isCitySelected && styles.selectedMenuText]}>
+                                                                            ↳ {cityName}
+                                                                        </Text>
+                                                                    </TouchableOpacity>
+                                                                );
+                                                            })}
+                                                        </View>
+                                                    )}
+                                                </View>
+                                            );
+                                        })}
+                                    </View>
+                                )}
+                            </View>
+                        )}
+
+                        {filteredReviews.length === 0 ? (
                             <View style={styles.emptyTabContent}>
                                 <Ionicons name="star-outline" size={32} color="#9CA3AF" />
-                                <Text style={styles.emptyTabText}>No reviews published yet.</Text>
+                                <Text style={styles.emptyTabText}>No reviews match your location filter.</Text>
                             </View>
                         ) : (
-                            <View style={styles.dropdownContainer}>
+                            <View style={[styles.dropdownContainer, { marginTop: 12 }]}>
                                 {Object.entries(groupedReviews).map(([restaurantName, items]: [string, any[]]) => {
                                     const isExpanded = expandedRestaurant === restaurantName;
                                     const streetAddress = items[0]?.address || "";
@@ -919,6 +1065,71 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         lineHeight: 16,
     },
+    filterDropdownWrapperSingle: {
+        position: 'relative',
+        marginBottom: 8,
+        zIndex: 10,
+    },
+    filterButton: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: '#F3F4F6',
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    filterButtonText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#374151',
+    },
+    dropdownMenuListSingle: {
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        right: 0,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        marginTop: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        zIndex: 20,
+        maxHeight: 250,
+    },
+    dropdownMenuItem: {
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F3F4F6',
+    },
+    stateRowItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: '#FAFAFA',
+    },
+    nestedCityList: {
+        backgroundColor: '#F9FAFB',
+        paddingLeft: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
+    },
+    dropdownMenuText: {
+        fontSize: 12,
+        color: '#4B5563',
+    },
+    selectedMenuText: {
+        fontWeight: '700',
+        color: '#6c3b3b',
+    },
     dropdownContainer: {
         gap: 6,
     },
@@ -1175,8 +1386,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#6B7280',
         fontWeight: '400',
-        lineHeight: 15,
-        marginTop: 2,
     },
     boldText: {
         fontWeight: '700',
