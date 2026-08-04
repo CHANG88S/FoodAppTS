@@ -11,10 +11,11 @@ import {
   Dimensions,
   ActivityIndicator,
   Modal,
-  FlatList
+  FlatList,
+  Alert
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { Ionicons } from "@expo/vector-icons";
@@ -40,8 +41,34 @@ export default function RestaurantDetailScreen() {
     restaurantId: id as Id<"restaurants"> 
   });
 
+  // Query to check if the current user has submitted at least one review for this restaurant
+  const userHasReviewed = useQuery(api.items.userHasReviewedRestaurant, {
+    restaurantId: id as Id<"restaurants">
+  });
+
+  // Mutation to track user visits
+  const recordVisitMutation = useMutation(api.restaurants.recordVisit);
+
+  const handleVisitedPress = async () => {
+    // Check if user has reviewed a menu item at this restaurant first
+    if (!userHasReviewed) {
+      Alert.alert(
+        "Review Required", 
+        "You must submit a review for at least one item at this restaurant before you can log a visit!"
+      );
+      return;
+    }
+
+    try {
+      await recordVisitMutation({ restaurantId: id as Id<"restaurants"> });
+      Alert.alert("Success", "Visit logged successfully! 🎉");
+    } catch (error: any) {
+      Alert.alert("Notice", error.message || "You have reached the maximum number of visits allowed for today.");
+    }
+  };
+
   // Loading state guard
-  if (dbData === undefined) {
+  if (dbData === undefined || userHasReviewed === undefined) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#6c3b3b" />
@@ -168,7 +195,7 @@ export default function RestaurantDetailScreen() {
         </View>
       </View>
 
-      {/* Tab Row Pill Design */}
+      {/* Tab Row Pill Design with Visited Button added to the right of About */}
       <View style={styles.tabRow}>
         <TouchableOpacity style={[styles.tabPill, styles.activeTabPill]}>
           <Text style={[styles.tabText, styles.activeTabText]}>MENU 👋</Text>
@@ -178,6 +205,9 @@ export default function RestaurantDetailScreen() {
         </TouchableOpacity>
         <TouchableOpacity style={styles.tabPill}>
           <Text style={styles.tabText}>ABOUT</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.tabPill} onPress={handleVisitedPress}>
+          <Text style={styles.tabText}>VISITED ✅</Text>
         </TouchableOpacity>
       </View>
 

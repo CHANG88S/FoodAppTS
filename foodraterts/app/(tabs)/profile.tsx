@@ -301,6 +301,29 @@ export default function Profile() {
         return `${selectedCityFilter}, ${selectedStateFilter}`;
     };
 
+    // Full 9-tier ranking color & icon system (without text labels)
+    const getVisitBadgeStyle = (count: number) => {
+        if (count >= 500) {
+            return { bg: '#FDF4FF', border: '#F5D0FE', text: '#86198F', }; // chosen one for 1 visit
+        } else if (count >= 250) {
+            return { bg: '#FFF1F2', border: '#FECDD3', text: '#9F1239', }; // grandmaster for 1 visit
+        } else if (count >= 100) {
+            return { bg: '#FAF5FF', border: '#E9D5FF', text: '#6B21A8', }; // master for 1 visit
+        } else if (count >= 50) {
+            return { bg: '#ECFDF5', border: '#A7F3D0', text: '#065F46', }; // diamond for 1 visit
+        } else if (count >= 20) {
+            return { bg: '#F0FDF4', border: '#BBF7D0', text: '#166534', }; // plat for 1 visit
+        } else if (count >= 10) {
+            return { bg: '#FEF3C7', border: '#FDE68A', text: '#B45309', }; // gold for 1 visit
+        } else if (count >= 5) {
+            return { bg: '#F3F4F6', border: '#E5E7EB', text: '#374151', }; // silver for 1 visit
+        } else if (count >= 2) {
+            return { bg: '#FFF7ED', border: '#FFEDD5', text: '#C2410C' }; // bronze for 1 visit
+        } else {
+            return { bg: '#666768', border: '#E2E8F0', text: '#eeeef0' }; // iron for 1 visit
+        }
+    };
+
     return (
         <View style={styles.root}>
             <Stack.Screen options={{ headerShown: false }} />
@@ -654,7 +677,6 @@ export default function Profile() {
                                                     <TouchableOpacity 
                                                         style={[styles.dropdownMenuItem, styles.stateRowItem]}
                                                         onPress={() => {
-                                                            // Toggle accordion expansion for cities
                                                             setExpandedStateInMenu(isStateExpanded ? null : stateName);
                                                         }}
                                                     >
@@ -738,6 +760,8 @@ export default function Profile() {
                                     const cityName = items[0]?.city || "";
                                     const stateName = items[0]?.state || "";
                                     const cityAndState = [cityName, stateName].filter(Boolean).join(", ");
+                                    const visitCount = items[0]?.visitCount || 1;
+                                    const rankBadge = getVisitBadgeStyle(visitCount);
 
                                     return (
                                         <View key={restaurantName} style={styles.restaurantAccordionWrapper}>
@@ -749,8 +773,14 @@ export default function Profile() {
                                                 <View style={styles.restaurantMainRow}>
                                                     <Ionicons name="storefront-outline" size={24} color="#6c3b3b" style={styles.restaurantIcon} />
                                                     <View style={styles.restaurantTextColumn}>
+                                                        {/* Restaurant Name and Tiered Ranking Badge (Icon + Count Only) */}
                                                         <View style={styles.topInfoRow}>
                                                             <Text style={styles.restaurantNameText} numberOfLines={1}>{restaurantName}</Text>
+                                                            <View style={[styles.visitBadgeInline, { backgroundColor: rankBadge.bg, borderColor: rankBadge.border }]}>
+                                                                <Text style={[styles.visitBadgeInlineText, { color: rankBadge.text }]}>
+                                                                    {visitCount} visits
+                                                                </Text>
+                                                            </View>
                                                         </View>
                                                         {streetAddress ? (
                                                             <Text style={styles.restaurantAddressText} numberOfLines={1}>{streetAddress}</Text>
@@ -1144,7 +1174,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 4,
+        paddingVertical: 6,
         paddingHorizontal: 10,
         backgroundColor: '#FFFFFF',
     },
@@ -1163,11 +1193,23 @@ const styles = StyleSheet.create({
     topInfoRow: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 8,
+        flexWrap: 'wrap',
     },
     restaurantNameText: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '700',
         color: '#1F2937',
+    },
+    visitBadgeInline: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 8,
+        borderWidth: 1,
+    },
+    visitBadgeInlineText: {
+        fontSize: 10,
+        fontWeight: '700',
     },
     restaurantAddressText: {
         fontSize: 10,
@@ -1182,7 +1224,7 @@ const styles = StyleSheet.create({
     restaurantRightAction: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 6,
     },
     countBadge: {
         backgroundColor: '#F3F4F6',
