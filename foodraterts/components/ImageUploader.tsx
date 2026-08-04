@@ -56,8 +56,8 @@ export default function ImageUploader({ restaurantId }: ImageUploaderProps) {
 
             const { storageId } = await uploadResult.json();
 
-            // Step D: Save storage ID reference to database
-            await savePhoto({ restaurantId, storageId });
+            // Step D: Save storage ID reference to database using "imageStorageId" to match schema argument
+            await savePhoto({ restaurantId, imageStorageId: storageId });
 
             Alert.alert('Success', 'Photo uploaded successfully!');
         } catch (error: any) {

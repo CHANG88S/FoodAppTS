@@ -46,7 +46,6 @@ export default defineSchema({
     address: v.string(),
     phone: v.optional(v.string()),
     hours: v.optional(v.string()),
-    logoUrl: v.optional(v.string()),
     logoStorageId: v.optional(v.id("_storage")),
     status: v.optional(v.string()),   
     website: v.optional(v.string()),
@@ -67,7 +66,6 @@ export default defineSchema({
       )
     ),                 
     price: v.optional(v.number()),      
-    imageUrl: v.optional(v.string()),
     imageStorageId: v.optional(v.id("_storage")),   
   })
     .index("by_restaurantId", ["restaurantId"])
@@ -140,5 +138,13 @@ export default defineSchema({
     ),
     createdAt: v.number(),
   })
-    .index("by_user", ["userId"])
+    .index("by_user", ["userId"]),
+
+  // 5. RESTAURANT VISITS / CHECK-INS TRACKER
+  restaurantVisits: defineTable({
+    userId: v.string(),
+    restaurantId: v.id("restaurants"),
+    timestamp: v.number(),
+  })
+    .index("by_user_and_restaurant", ["userId", "restaurantId"]),
 });

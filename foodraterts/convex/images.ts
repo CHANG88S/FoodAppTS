@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 
 // 1. GENERATE THE UPLOAD URL
 export const generateUploadUrl = mutation({
@@ -13,13 +14,13 @@ export const generateUploadUrl = mutation({
 export const saveRestaurantPhoto = mutation({
   args: { 
     restaurantId: v.id("restaurants"), 
-    storageId: v.id("_storage"),
+    imageStorageId: v.string(), // Accept as string to avoid strict ID mismatch, then cast
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
 
     await ctx.db.insert("tweets", {
-      imageStorageId: args.storageId,
+      imageStorageId: args.imageStorageId as Id<"_storage">,
       body: "Uploaded a new photo!",
       userId: identity ? identity.subject : undefined,
       likes: [],
@@ -34,14 +35,14 @@ export const createTweet = mutation({
   args: { 
     body: v.string(),
     restaurantId: v.optional(v.id("restaurants")),
-    imageStorageId: v.optional(v.id("_storage")),
+    imageStorageId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
 
     await ctx.db.insert("tweets", {
       body: args.body,
-      imageStorageId: args.imageStorageId,
+      imageStorageId: args.imageStorageId as Id<"_storage"> | undefined,
       userId: identity ? identity.subject : undefined,
       likes: [],
       comments: [],
@@ -52,8 +53,15 @@ export const createTweet = mutation({
 
 // 4. GET THE PUBLIC URL
 export const getPublicUrl = query({
-  args: { storageId: v.id("_storage") },
+  args: { storageId: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    return await ctx.storage.getUrl(args.storageId);
+    if (!args.storageId) return null;
+    
+    // If a full HTTP URL was somehow passed, just return it directly
+    if (args.storageId.startsWith("http")) {
+      return args.storageId;
+    }
+
+    return await ctx.storage.getUrl(args.storageId as Id<"_storage">);
   },
 });

@@ -255,6 +255,20 @@ export const getUserReviews = query({
         const item: any = await ctx.db.get(review.itemId);
         const restaurant: any = item?.restaurantId ? await ctx.db.get(item.restaurantId) : null;
 
+        // Fetch total visits for this restaurant by this user, defaulting to at least 1 visit
+        let actualVisits = 0;
+        if (restaurant && restaurant._id) {
+          const visits = await ctx.db
+            .query("restaurantVisits")
+            .withIndex("by_user_and_restaurant", (q) => 
+              q.eq("userId", userId).eq("restaurantId", restaurant._id)
+            )
+            .collect();
+          actualVisits = visits.length;
+        }
+
+        const visitCount = Math.max(1, actualVisits);
+
         const createdAt = review.createdAt || review._creationTime || 0;
         const updatedAt = review.updatedAt || createdAt;
         const hasBeenUpdated = updatedAt > createdAt + 1000;
@@ -266,6 +280,7 @@ export const getUserReviews = query({
           address: restaurant?.address || "",
           city: restaurant?.city || "",
           state: restaurant?.state || "",
+          visitCount,
         };
 
         // 1. Initial creation entry
@@ -296,5 +311,33 @@ export const getUserReviews = query({
 
     activities.sort((a, b) => b.timestamp - a.timestamp);
     return activities;
+  },
+});
+
+export const userHasReviewedRestaurant = query({
+  args: { restaurantId: v.id("restaurants") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return false;
+
+    const menuItems = await ctx.db
+      .query("menuItems")
+      .withIndex("by_restaurantId", (q) => q.eq("restaurantId", args.restaurantId))
+      .collect();
+
+    const itemIds = menuItems.map((item) => item._id);
+    if (itemIds.length === 0) return false;
+
+    for (const itemId of itemIds) {
+      const review = await ctx.db
+        .query("itemReviews")
+        .withIndex("by_itemId", (q) => q.eq("itemId", itemId))
+        .filter((q) => q.eq(q.field("userId"), userId))
+        .first();
+      
+      if (review) return true;
+    }
+
+    return false;
   },
 });

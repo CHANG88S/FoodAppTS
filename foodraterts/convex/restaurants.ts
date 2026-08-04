@@ -1,5 +1,6 @@
-import { query } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 /**
  * 1. LIST ALL RESTAURANTS - Returns restaurants filtered by city and state, or all if none provided
@@ -18,9 +19,9 @@ export const listAllRestaurants = query({
       return Promise.all(
         allRestaurants.map(async (restaurant) => ({
           ...restaurant,
-          logoUrl: restaurant.logoStorageId 
+          logoStorageId: restaurant.logoStorageId 
             ? await ctx.storage.getUrl(restaurant.logoStorageId) 
-            : restaurant.logoUrl,
+            : null,
         }))
       );
     }
@@ -38,9 +39,9 @@ export const listAllRestaurants = query({
     return Promise.all(
       filtered.map(async (restaurant) => ({
         ...restaurant,
-        logoUrl: restaurant.logoStorageId 
+        logoStorageId: restaurant.logoStorageId 
           ? await ctx.storage.getUrl(restaurant.logoStorageId) 
-          : restaurant.logoUrl,
+          : null,
       }))
     );
   },
@@ -59,13 +60,13 @@ export const getRestaurantByName = query({
 
     if (!restaurant) return null;
 
-    const logoUrl = restaurant.logoStorageId 
+    const logoStorageId = restaurant.logoStorageId 
       ? await ctx.storage.getUrl(restaurant.logoStorageId) 
-      : restaurant.logoUrl;
+      : null;
 
     return {
       ...restaurant,
-      logoUrl,
+      logoStorageId,
     };
   },
 });
@@ -89,9 +90,9 @@ export const searchRestaurantsByName = query({
     return Promise.all(
       results.map(async (restaurant) => ({
         ...restaurant,
-        logoUrl: restaurant.logoStorageId 
+        logoStorageId: restaurant.logoStorageId 
           ? await ctx.storage.getUrl(restaurant.logoStorageId) 
-          : restaurant.logoUrl,
+          : null,
       }))
     );
   },
@@ -116,9 +117,9 @@ export const searchAllByName = query({
     return Promise.all(
       results.map(async (restaurant) => ({
         ...restaurant,
-        logoUrl: restaurant.logoStorageId 
+        logoStorageId: restaurant.logoStorageId 
           ? await ctx.storage.getUrl(restaurant.logoStorageId) 
-          : restaurant.logoUrl,
+          : null,
       }))
     );
   },
@@ -178,7 +179,7 @@ export const getRestaurantDetails = query({
 
         const resolvedImageUrl = item.imageStorageId 
           ? await ctx.storage.getUrl(item.imageStorageId) 
-          : item.imageUrl;
+          : null;
 
         return {
           ...item,
@@ -189,15 +190,78 @@ export const getRestaurantDetails = query({
       })
     );
 
-    const resolvedLogoUrl = restaurant.logoStorageId 
+    const resolvedLogoStorageId = restaurant.logoStorageId 
       ? await ctx.storage.getUrl(restaurant.logoStorageId) 
-      : restaurant.logoUrl;
+      : null;
 
     // Stitch them into a single unified object for your layout grid to ingest smoothly
     return {
       ...restaurant,
-      logoUrl: resolvedLogoUrl,
+      logoStorageId: resolvedLogoStorageId,
       menuItems: menuItemsWithRatings,
     };
+  },
+});
+
+/**
+ * 6. CHECK IF USER HAS REVIEWED RESTAURANT - Validates if logged in user has reviewed any item here
+ */
+export const userHasReviewedRestaurant = query({
+  args: { restaurantId: v.id("restaurants") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return false;
+
+    const menuItems = await ctx.db
+      .query("menuItems")
+      .withIndex("by_restaurantId", (q) => q.eq("restaurantId", args.restaurantId))
+      .collect();
+
+    const itemIds = menuItems.map((item) => item._id);
+    if (itemIds.length === 0) return false;
+
+    for (const itemId of itemIds) {
+      const review = await ctx.db
+        .query("itemReviews")
+        .withIndex("by_itemId", (q) => q.eq("itemId", itemId))
+        .filter((q) => q.eq(q.field("userId"), userId))
+        .first();
+      
+      if (review) return true;
+    }
+
+    return false;
+  },
+});
+
+/**
+ * 7. RECORD VISIT - Logs a user check-in with a daily limit of 3 visits per restaurant
+ */
+export const recordVisit = mutation({
+  args: { restaurantId: v.id("restaurants") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Must be logged in to record a visit.");
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const todayVisits = await ctx.db
+      .query("restaurantVisits")
+      .withIndex("by_user_and_restaurant", (q) => 
+        q.eq("userId", userId).eq("restaurantId", args.restaurantId)
+      )
+      .filter((q) => q.gte(q.field("timestamp"), startOfDay.getTime()))
+      .collect();
+
+    if (todayVisits.length >= 3) {
+      throw new Error("You have already checked into this place 3 times today!");
+    }
+
+    return await ctx.db.insert("restaurantVisits", {
+      userId,
+      restaurantId: args.restaurantId,
+      timestamp: Date.now(),
+    });
   },
 });

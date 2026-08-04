@@ -10,7 +10,7 @@ const restaurantValidator = v.object({
   address: v.string(),
   phone: v.optional(v.string()),
   hours: v.optional(v.string()),
-  logoUrl: v.optional(v.string()),
+  logoStorageId: v.optional(v.id("_storage")),
   status: v.optional(v.string()),
   website: v.optional(v.string()),
   mapsLocation: v.optional(v.string()),
