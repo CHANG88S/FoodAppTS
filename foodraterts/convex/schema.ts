@@ -147,4 +147,55 @@ export default defineSchema({
     timestamp: v.number(),
   })
     .index("by_user_and_restaurant", ["userId", "restaurantId"]),
+
+  // 6. SOCIAL FOLLOW SYSTEM
+  follows: defineTable({
+    followerId: v.string(), // User who is following
+    followingId: v.string(), // User being followed
+    createdAt: v.number(),
+  })
+    .index("by_follower", ["followerId"])
+    .index("by_following", ["followingId"])
+    .index("by_follow_pair", ["followerId", "followingId"]),
+
+  // 7. NOTIFICATIONS
+  notifications: defineTable({
+    recipientId: v.string(), // User who receives notification
+    senderId: v.string(), // User who triggered it
+    type: v.union(
+      v.literal("follow"),
+      v.literal("like"),
+      v.literal("comment"),
+      v.literal("mention")
+    ),
+    targetType: v.union(v.literal("tweet"), v.literal("review"), v.literal("user")),
+    targetId: v.optional(v.string()), // ID of liked tweet, commented review, etc. (stored as string for flexibility)
+    message: v.optional(v.string()), // Custom message (e.g., comment text)
+    isRead: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_recipient", ["recipientId"])
+    .index("by_recipient_and_read", ["recipientId", "isRead"]),
+
+  // 8. MESSAGING - CONVERSATIONS
+  conversations: defineTable({
+    participant1Id: v.string(), // First participant (for 1:1 DMs)
+    participant2Id: v.string(), // Second participant (for 1:1 DMs)
+    lastMessageAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_participant1", ["participant1Id"])
+    .index("by_participant2", ["participant2Id"]),
+
+  // 9. MESSAGING - MESSAGES
+  messages: defineTable({
+    conversationId: v.string(), // Reference to conversations table
+    senderId: v.string(),
+    content: v.string(), // Text content
+    imageStorageId: v.optional(v.id("_storage")), // Optional image
+    isUnsent: v.boolean(), // True if message was unsent
+    createdAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_conversation_and_created", ["conversationId", "createdAt"]),
 });

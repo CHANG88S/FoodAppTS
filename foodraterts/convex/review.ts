@@ -1,6 +1,7 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { internal } from "./_generated/api";
 
 export const submitItemReview = mutation({
   args: {
@@ -12,14 +13,14 @@ export const submitItemReview = mutation({
         v.string(), 
         v.array(v.string())
       )
-    ),                 
+    ),                    
     overallRating: v.number(),
     notes: v.string(),
     granularAttributes: v.array(
       v.object({ name: v.string(), value: v.union(v.number(), v.string()) })
     ),
     price: v.optional(v.number()),  
-    imageStorageId: v.optional(v.id("_storage")), // 🔑 Replaced imageUrl with storage ID
+    imageStorageId: v.optional(v.id("_storage")), 
     orderNotes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -71,5 +72,106 @@ export const submitItemReview = mutation({
     });
 
     return { success: true, itemId: item!._id, reviewId };
+  },
+});
+
+// Toggle like on a review
+export const toggleLikeReview = mutation({
+  args: { reviewId: v.id("itemReviews") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    const review = await ctx.db.get(args.reviewId);
+    if (!review) throw new Error("Review not found");
+
+    const currentLikes = review.likes || [];
+    const hasLiked = currentLikes.includes(userId);
+    const updatedLikes = hasLiked
+      ? currentLikes.filter((id: string) => id !== userId)
+      : [...currentLikes, userId];
+
+    await ctx.db.patch(args.reviewId, { likes: updatedLikes, updateLikes: updatedLikes });
+
+    // Create notification for new like (if liking someone else's review)
+    if (!hasLiked && review.userId !== userId) {
+      await ctx.runMutation((internal as any).notifications.createNotificationInternal, {
+        recipientId: review.userId,
+        senderId: userId,
+        type: "like",
+        targetType: "review",
+        targetId: args.reviewId,
+        message: undefined,
+      });
+    }
+  },
+});
+
+// Add a comment to a review
+export const addCommentToReview = mutation({
+  args: {
+    reviewId: v.id("itemReviews"),
+    text: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    const review = await ctx.db.get(args.reviewId);
+    if (!review) throw new Error("Review not found");
+
+    // Get current user info for the comment
+    const user = await ctx.db.get(userId);
+    if (!user) throw new Error("User not found");
+
+    const currentComments = review.comments || [];
+    const newComment = {
+      commentId: Math.random().toString(36).substring(2, 9),
+      userId: userId,
+      userName: user.name || user.username,
+      userHandle: user.username,
+      text: args.text,
+      createdAt: Date.now(),
+    };
+
+    await ctx.db.patch(args.reviewId, {
+      comments: [...currentComments, newComment],
+      updateComments: [...currentComments, newComment],
+    });
+
+    // Create notification for comment (if commenting on someone else's review)
+    if (review.userId !== userId) {
+      await ctx.runMutation((internal as any).notifications.createNotificationInternal, {
+        recipientId: review.userId,
+        senderId: userId,
+        type: "comment",
+        targetType: "review",
+        targetId: args.reviewId,
+        message: args.text,
+      });
+    }
+  },
+});
+
+// Delete a comment from a review
+export const deleteCommentFromReview = mutation({
+  args: {
+    reviewId: v.id("itemReviews"),
+    commentId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    const review = await ctx.db.get(args.reviewId);
+    if (!review) throw new Error("Review not found");
+
+    const currentComments = review.comments || [];
+    const updatedComments = currentComments.filter((c: any) => c.commentId !== args.commentId);
+
+    await ctx.db.patch(args.reviewId, {
+      comments: updatedComments,
+      updateComments: updatedComments,
+    });
   },
 });

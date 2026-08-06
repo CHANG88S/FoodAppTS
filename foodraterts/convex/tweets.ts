@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { internal } from "./_generated/api";
 
 // 1. GENERATE THE UPLOAD URL
 export const generateUploadUrl = mutation({
@@ -45,6 +46,17 @@ export const getUserTweets = query({
   },
 });
 
+export const getTweetsByUserId = query({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("tweets")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .order("desc")
+      .take(20); // Limit to 20 most recent
+  },
+});
+
 export const deleteTweet = mutation({
   args: { tweetId: v.id("tweets") },
   handler: async (ctx, args) => {
@@ -78,12 +90,24 @@ export const toggleLikeTweet = mutation({
       : [...currentLikes, userId];
 
     await ctx.db.patch(args.tweetId, { likes: updatedLikes });
+
+    // Create notification for new like (if liking someone else's tweet)
+    if (!hasLiked && tweet.userId && tweet.userId !== userId) {
+      await ctx.runMutation((internal as any).notifications.createNotificationInternal, {
+        recipientId: tweet.userId,
+        senderId: userId,
+        type: "like",
+        targetType: "tweet",
+        targetId: args.tweetId,
+        message: undefined,
+      });
+    }
   },
 });
 
 // 3. ADD A COMMENT TO A TWEET
 export const addCommentToTweet = mutation({
-  args: { 
+  args: {
     tweetId: v.id("tweets"),
     body: v.string(),
   },
@@ -105,6 +129,18 @@ export const addCommentToTweet = mutation({
     await ctx.db.patch(args.tweetId, {
       comments: [...currentComments, newComment],
     });
+
+    // Create notification for comment (if commenting on someone else's tweet)
+    if (tweet.userId && tweet.userId !== userId) {
+      await ctx.runMutation((internal as any).notifications.createNotificationInternal, {
+        recipientId: tweet.userId,
+        senderId: userId,
+        type: "comment",
+        targetType: "tweet",
+        targetId: args.tweetId,
+        message: args.body,
+      });
+    }
   },
 });
 

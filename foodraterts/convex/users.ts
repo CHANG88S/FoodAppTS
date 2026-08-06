@@ -3,6 +3,7 @@ import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { retrieveAccount, modifyAccountCredentials } from "@convex-dev/auth/server";
+import { Id } from "./_generated/dataModel";
 
 // Helper function to fetch a user document directly
 async function fetchUserViewer(ctx: QueryCtx) {
@@ -126,6 +127,17 @@ export const getInternalUserByUsername = internalQuery({
   },
 });
 
+// Public query to get user by username (for profile viewing)
+export const getUserByUsername = query({
+  args: { username: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("username"), args.username))
+      .first();
+  },
+});
+
 export const patchUserProfile = internalMutation({
   args: {
     userId: v.id("users"),
@@ -140,5 +152,138 @@ export const patchUserProfile = internalMutation({
     if (args.email !== undefined) updates.email = args.email;
 
     await ctx.db.patch(args.userId, updates);
+  },
+});
+
+// Follow System
+export const followUser = mutation({
+  args: { followingId: v.id("users") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+    if (userId === args.followingId) throw new Error("Cannot follow yourself");
+
+    // Check if already following
+    const existing = await ctx.db
+      .query("follows")
+      .withIndex("by_follow_pair", (q) =>
+        q.eq("followerId", userId).eq("followingId", args.followingId)
+      )
+      .first();
+
+    if (existing) return { success: false, message: "Already following" };
+
+    // Create follow relationship
+    await ctx.db.insert("follows", {
+      followerId: userId,
+      followingId: args.followingId,
+      createdAt: Date.now(),
+    });
+
+    // Create notification for the followed user
+    await ctx.db.insert("notifications", {
+      recipientId: args.followingId,
+      senderId: userId,
+      type: "follow",
+      targetType: "user",
+      targetId: undefined,
+      message: undefined,
+      isRead: false,
+      createdAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+export const unfollowUser = mutation({
+  args: { followingId: v.id("users") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    const existing = await ctx.db
+      .query("follows")
+      .withIndex("by_follow_pair", (q) =>
+        q.eq("followerId", userId).eq("followingId", args.followingId)
+      )
+      .first();
+
+    if (!existing) return { success: false, message: "Not following" };
+
+    await ctx.db.delete(existing._id);
+    return { success: true };
+  },
+});
+
+export const isFollowing = query({
+  args: { followingId: v.id("users") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return false;
+
+    const follow = await ctx.db
+      .query("follows")
+      .withIndex("by_follow_pair", (q) =>
+        q.eq("followerId", userId).eq("followingId", args.followingId)
+      )
+      .first();
+
+    return !!follow;
+  },
+});
+
+export const getFollowers = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const follows = await ctx.db
+      .query("follows")
+      .withIndex("by_following", (q) => q.eq("followingId", args.userId))
+      .collect();
+
+    const followers = await Promise.all(
+      follows.map(async (follow) => {
+        const user = await ctx.db.get(follow.followerId as Id<"users">);
+        return user;
+      })
+    );
+
+    return followers.filter(Boolean);
+  },
+});
+
+export const getFollowing = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const follows = await ctx.db
+      .query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", args.userId))
+      .collect();
+
+    const following = await Promise.all(
+      follows.map(async (follow) => {
+        const user = await ctx.db.get(follow.followingId as Id<"users">);
+        return user;
+      })
+    );
+
+    return following.filter(Boolean);
+  },
+});
+
+export const searchUsers = query({
+  args: { query: v.string() },
+  handler: async (ctx, args) => {
+    if (!args.query.trim()) return [];
+
+    const users = await ctx.db.query("users").collect();
+    const queryLower = args.query.toLowerCase();
+
+    return users.filter((u) => {
+      return (
+        u.username?.toLowerCase().includes(queryLower) ||
+        u.name?.toLowerCase().includes(queryLower)
+      );
+    });
   },
 });

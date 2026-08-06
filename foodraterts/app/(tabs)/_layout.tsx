@@ -1,5 +1,6 @@
 import React from 'react';
 import { Tabs, useRouter } from "expo-router";
+import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
     createDrawerNavigator,
@@ -8,12 +9,16 @@ import {
     DrawerItem
 } from '@react-navigation/drawer';
 import { useAuthActions } from '@convex-dev/auth/react';
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import BadgesScreen from '../badges';
 import SettingsScreen from '../settings';
 
 const Drawer = createDrawerNavigator();
 
 function TabLayout() {
+    const unreadCount = useQuery(api.notifications.getUnreadCount);
+
     return (
         <Tabs
             screenOptions={({ route }) => ({
@@ -36,7 +41,36 @@ function TabLayout() {
                         default:
                             iconName = "ellipse";
                     }
-                    return <Ionicons name={iconName} size={24} color={color} />;
+
+                    const showBadge = route.name === "notification" && unreadCount && unreadCount > 0;
+
+                    return (
+                        <View style={{ position: 'relative' }}>
+                            <Ionicons name={iconName} size={24} color={color} />
+                            {showBadge && (
+                                <View style={{
+                                    position: 'absolute',
+                                    top: -4,
+                                    right: -4,
+                                    backgroundColor: '#b01212',
+                                    borderRadius: 10,
+                                    minWidth: 18,
+                                    height: 18,
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    paddingHorizontal: 4,
+                                }}>
+                                    <Text style={{
+                                        color: '#fff',
+                                        fontSize: 10,
+                                        fontWeight: 'bold',
+                                    }}>
+                                        {unreadCount > 99 ? '99+' : unreadCount}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    );
                 },
                 tabBarActiveTintColor: "#000000",
                 tabBarInactiveTintColor: "#000000",
