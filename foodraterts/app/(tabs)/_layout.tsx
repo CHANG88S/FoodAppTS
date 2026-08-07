@@ -42,7 +42,7 @@ function TabLayout() {
                             iconName = "ellipse";
                     }
 
-                    const showBadge = route.name === "notification" && unreadCount && unreadCount > 0;
+                    const showBadge = route.name === "notification" && typeof unreadCount === "number" && unreadCount > 0;
 
                     return (
                         <View style={{ position: 'relative' }}>
@@ -103,7 +103,6 @@ function TabLayout() {
     );
 }
 
-// 🔑 Custom Drawer Content to include Sign Out
 function CustomDrawerContent(props: any) {
     const { signOut } = useAuthActions();
     const router = useRouter();
@@ -132,10 +131,10 @@ function CustomDrawerContent(props: any) {
     );
 }
 
-export default function RootLayout() {
+export default function TabsDrawerLayout() {
     return (
         <Drawer.Navigator
-            drawerContent={(props) => <CustomDrawerContent {...props} />} // 🔑 Pass the custom drawer
+            drawerContent={(props) => <CustomDrawerContent {...props} />}
             screenOptions={{
                 headerShown: false,
                 drawerPosition: 'right',
@@ -151,20 +150,24 @@ export default function RootLayout() {
                 options={{ drawerItemStyle: { display: 'none' } }} 
             />
 
-            <Drawer.Screen 
-                name="Profile Settings" 
-                component={SettingsScreen} 
+            <Drawer.Screen
+                name="settings"
+                component={SettingsScreen}
                 options={{
+                    title: "Profile Settings",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Profile Settings</Text>,
                     drawerIcon: ({ color, size }) => (
                         <Ionicons name="settings-outline" size={size} color={color} />
                     ),
                 }}
             />
-            
-            <Drawer.Screen 
-                name="Badges & Achievements" 
-                component={BadgesScreen} 
+
+            <Drawer.Screen
+                name="badges"
+                component={BadgesScreen}
                 options={{
+                    title: "Badges & Achievements",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Badges & Achievements</Text>,
                     drawerIcon: ({ color, size }) => (
                         <Ionicons name="trophy-outline" size={size} color={color} />
                     ),

@@ -190,7 +190,8 @@ export default function RestaurantDetailScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
       
       {/* Completely removes the native structural header container bar from rendering */}
       <Stack.Screen 
@@ -413,7 +414,24 @@ export default function RestaurantDetailScreen() {
         )}
       </View>
     </ScrollView>
-  );
+
+    {/* Floating Pill Navigation */}
+    <View style={styles.floatingPillContainer}>
+      <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/home")}>
+        <Ionicons name="home" size={24} color="#000000" />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/search")}>
+        <Ionicons name="search" size={24} color="#000000" />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/notification")}>
+        <Ionicons name="heart-outline" size={24} color="#000000" />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/profile")}>
+        <Ionicons name="person-outline" size={24} color="#000000" />
+      </TouchableOpacity>
+    </View>
+  </View>
+);
 }
 
 // Sub-component for individual menu items using storageId directly via getUrl query, with category fallback emoji
@@ -481,15 +499,18 @@ function MenuItemCard({ item, restaurantCategory, restaurantId, router, getCateg
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: "#FAFAFA" 
+  container: {
+    flex: 1,
+    backgroundColor: "#FAFAFA"
   },
-  loadingContainer: { 
-    flex: 1, 
-    justifyContent: "center", 
-    alignItems: "center", 
-    backgroundColor: "#FAFAFA", 
+  scrollView: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FAFAFA",
   },
   heroContainer: { 
     alignItems: 'center', 
@@ -828,9 +849,34 @@ const styles = StyleSheet.create({
     paddingVertical: 8, 
     borderRadius: 8 
   },
-  addDrinkButtonText: { 
-    color: "#FFF", 
-    fontWeight: "600", 
-    fontSize: 12 
-  }
+  addDrinkButtonText: {
+    color: "#FFF",
+    fontWeight: "600",
+    fontSize: 12
+  },
+  floatingPillContainer: {
+    position: "absolute",
+    bottom: 30,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    marginHorizontal: 40,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderWidth: 0.5,
+    borderColor: "rgba(0, 0, 0, 0.1)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 5,
+    paddingBottom: 6,
+    paddingTop: 6,
+  },
+  pillItem: {
+    padding: 4,
+  },
 });

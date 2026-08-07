@@ -1,8 +1,13 @@
 import { ConvexReactClient } from "convex/react";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { Stack } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
+import { useFonts } from "expo-font";
+import { Ionicons } from "@expo/vector-icons";
+import * as SplashScreen from "expo-splash-screen";
+
+SplashScreen.preventAutoHideAsync();
 
 const secureStorage = {
   getItem: async (key: string) => {
@@ -21,24 +26,33 @@ const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
 });
 
 export default function RootLayout() {
+  const [loaded, error] = useFonts({
+    ...Ionicons.font,
+  });
+
+  useEffect(() => {
+    if (loaded || error) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded, error]);
+
+  if (!loaded && !error) {
+    return null;
+  }
+
   return (
     <ConvexAuthProvider client={convex} storage={secureStorage}>
       <Stack>
-        {/* Auth / Splash Landing Gate */}
         <Stack.Screen name="index" options={{ headerShown: false }} />
-        
-        {/* Main Tab Controller (Houses Home, Search, Upload, etc.) */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        
-        {/* 🔥 ADD THIS ROUTE: Handles the sliding stack sheet for individual shops */}
         <Stack.Screen 
           name="restaurant/[id]" 
           options={{ 
             title: "Restaurant Details", 
-            headerTintColor: "#6C3B3B",        // Clean brand tint color matching FoodRater
-            headerStyle: { backgroundColor: "#FAFAF9" }, // Stone-50 background look
+            headerTintColor: "#6C3B3B", 
+            headerStyle: { backgroundColor: "#FAFAF9" },
             headerBackTitle: "Back",
-            headerShadowVisible: false,       // Keeps header transition looking premium and flat
+            headerShadowVisible: false,
           }} 
         />
       </Stack>

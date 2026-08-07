@@ -39,6 +39,16 @@ export default function Profile() {
     const deleteReviewMutation = useMutation(api.items.deleteItemReview);
     const toggleLike = useMutation(api.items.toggleLikeReview);
 
+    // Fetch followers and following counts
+    const followers = useQuery(
+        api.users.getFollowers,
+        currentUser?._id ? { userId: currentUser._id } : "skip"
+    );
+    const following = useQuery(
+        api.users.getFollowing,
+        currentUser?._id ? { userId: currentUser._id } : "skip"
+    );
+
     // Queries & mutations for tweets feature
     const userTweets = useQuery(api.tweets?.getUserTweets) || [];
     const createTweetMutation = useMutation(api.tweets?.createTweet);
@@ -377,11 +387,11 @@ export default function Profile() {
                                     <Text style={styles.statLabel}>Ratings</Text>
                                 </View>
                                 <TouchableOpacity style={styles.statItem} activeOpacity={0.7}>
-                                    <Text style={styles.statNumber}>0</Text>
+                                    <Text style={styles.statNumber}>{followers?.length || 0}</Text>
                                     <Text style={styles.statLabel}>Followers</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.statItem} activeOpacity={0.7}>
-                                    <Text style={styles.statNumber}>0</Text>
+                                    <Text style={styles.statNumber}>{following?.length || 0}</Text>
                                     <Text style={styles.statLabel}>Following</Text>
                                 </TouchableOpacity>
                             </View>

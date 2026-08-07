@@ -314,6 +314,82 @@ export const getUserReviews = query({
   },
 });
 
+export const getUserReviewsByUserId = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const { userId } = args;
+
+    const reviews = await ctx.db
+      .query("itemReviews")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+
+    const activities: any[] = [];
+
+    await Promise.all(
+      reviews.map(async (review: any) => {
+        const item: any = await ctx.db.get(review.itemId);
+        const restaurant: any = item?.restaurantId ? await ctx.db.get(item.restaurantId) : null;
+
+        // Fetch total visits for this restaurant by this user, defaulting to at least 1 visit
+        let actualVisits = 0;
+        if (restaurant && restaurant._id) {
+          const visits = await ctx.db
+            .query("restaurantVisits")
+            .withIndex("by_user_and_restaurant", (q) =>
+              q.eq("userId", userId).eq("restaurantId", restaurant._id)
+            )
+            .collect();
+          actualVisits = visits.length;
+        }
+
+        const visitCount = Math.max(1, actualVisits);
+
+        const createdAt = review.createdAt || review._creationTime || 0;
+        const updatedAt = review.updatedAt || createdAt;
+        const hasBeenUpdated = updatedAt > createdAt + 1000;
+
+        const baseData = {
+          ...review,
+          itemName: item?.itemName || "Menu Item",
+          restaurantName: restaurant?.restaurantName || item?.restaurantName || "",
+          address: restaurant?.address || "",
+          city: restaurant?.city || "",
+          state: restaurant?.state || "",
+          visitCount,
+        };
+
+        // 1. Initial creation entry
+        activities.push({
+          ...baseData,
+          _id: review._id,
+          uniqueKey: `${review._id}-created`,
+          activityType: "rated",
+          timestamp: createdAt,
+          likes: review.likes || [],
+          comments: review.comments || [],
+        });
+
+        // 2. Separate independent entry for updates
+        if (hasBeenUpdated) {
+          activities.push({
+            ...baseData,
+            _id: review._id,
+            uniqueKey: `${review._id}-updated`,
+            activityType: "updated",
+            timestamp: updatedAt,
+            likes: review.updateLikes || [],
+            comments: review.updateComments || [],
+          });
+        }
+      })
+    );
+
+    activities.sort((a, b) => b.timestamp - a.timestamp);
+    return activities;
+  },
+});
+
 export const userHasReviewedRestaurant = query({
   args: { restaurantId: v.id("restaurants") },
   handler: async (ctx, args) => {
