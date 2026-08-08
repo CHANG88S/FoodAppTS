@@ -1134,6 +1134,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderRadius: 16,
         padding: 20,
+        paddingBottom: 30,
         margin: 16,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
@@ -1148,7 +1149,7 @@ const styles = StyleSheet.create({
     },
     cardSubtitle: {
         fontSize: 12,
-        color: '#9CA3AF',
+        color: '#151618',
         marginTop: 2,
         marginBottom: 16,
         lineHeight: 16,

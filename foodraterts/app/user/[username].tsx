@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -137,9 +137,10 @@ export default function PublicProfileScreen() {
 
   // Taste preferences from profile schema
   const userPreferences = userProfile?.preferences || {};
-  const sweetnessPref = userPreferences.sweetness ?? 0.5;
-  const icePref = userPreferences.iceLevel ?? 0.5;
+  const sweetnessPref = userPreferences.sweetness ?? 50;
+  const icePref = userPreferences.iceLevel ?? 50;
   const milkPref = userPreferences.milkBase ?? 'Oat Milk';
+  const themeColor = userPreferences.favoriteColor || '#6c3b3b';
 
   const getSweetnessLabel = (val: number) => {
     if (val === 0) return 'No Sweetness';
@@ -342,7 +343,7 @@ export default function PublicProfileScreen() {
         </View>
 
         {activeTab === 'ACTIVITY' && (
-          <View style={styles.preferenceCard}>
+          <View style={styles.tabCard}>
             <Text style={styles.cardTitle}>Activity Feed</Text>
             <Text style={styles.cardSubtitle}>Recent rating logs published by this user.</Text>
             {userReviews.length === 0 ? (
@@ -414,7 +415,7 @@ export default function PublicProfileScreen() {
         )}
 
         {activeTab === 'TWEETS' && (
-          <View style={styles.preferenceCard}>
+          <View style={styles.tabCard}>
             <Text style={styles.cardTitle}>Tweets</Text>
             <Text style={styles.cardSubtitle}>Posts from this user.</Text>
 
@@ -476,7 +477,7 @@ export default function PublicProfileScreen() {
         )}
 
         {activeTab === 'REVIEWS' && (
-          <View style={styles.preferenceCard}>
+          <View style={styles.tabCard}>
             <Text style={styles.cardTitle}>Reviews</Text>
             <Text style={styles.cardSubtitle}>Submitted item evaluations grouped by establishment.</Text>
 
@@ -669,58 +670,39 @@ export default function PublicProfileScreen() {
         )}
 
         {activeTab === 'PREFERENCES' && (
-          <View style={styles.preferenceCard}>
-            <Text style={styles.cardTitle}>Boba Taste Fingerprint</Text>
-            <Text style={styles.cardSubtitle}>This user&apos;s baseline taste profile preferences.</Text>
-
-            <View style={styles.prefRow}>
-              <View style={styles.prefLabelContainer}>
-                <Text style={styles.prefLabel}>🍯 Sweetness</Text>
-                <Text style={styles.prefValueText}>{getSweetnessLabel(sweetnessPref)}</Text>
+          <View style={[styles.preferenceBobaCard, { backgroundColor: themeColor, shadowOpacity: 0, elevation: 0 }]}>
+            <View style={styles.cardHeaderRow}>
+              <View style={styles.cardHeaderLeft}>
+                <Text style={styles.cardTitle}>My Boba Taste Fingerprint</Text>
+                <Text style={styles.cardSubtitle}>This user&apos;s baseline taste profile preferences.</Text>
               </View>
             </View>
 
-            <View style={styles.prefRow}>
-              <View style={styles.prefLabelContainer}>
-                <Text style={styles.prefLabel}>❄️ Ice Level</Text>
-                <Text style={styles.prefValueText}>{getIceLabel(icePref)}</Text>
-              </View>
-            </View>
-
-            <View style={styles.prefRow}>
-              <Text style={styles.prefLabel}>🥛 Preferred Milk Base</Text>
-              <View style={styles.milkToggleRow}>
-                {['Whole Milk', 'Oat Milk', 'Almond Milk'].map((milk) => (
-                  <View
-                    key={milk}
-                    style={[styles.milkOptionButton, milkPref === milk ? styles.milkSelected : styles.milkUnselected]}
-                  >
-                    <Text style={[styles.milkOptionText, milkPref === milk ? styles.textWhite : styles.textDark]}>
-                      {milk.split(' ')[0]}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            {/* User's Favorite Color as a Drink */}
-            {userPreferences?.favoriteColor && (
-              <View style={styles.drinkColorContainer}>
-                <Text style={styles.drinkColorLabel}>Their Signature Drink Color</Text>
-                <View style={styles.drinkVisualRow}>
-                  <View style={styles.drinkCup}>
-                    <View style={[styles.drinkLiquid, { backgroundColor: userPreferences.favoriteColor }]} />
-                    <View style={styles.drinkLid} />
-                  </View>
-                  <View style={[styles.drinkInfoBox, { borderColor: userPreferences.favoriteColor + '40', backgroundColor: userPreferences.favoriteColor + '10' }]}>
-                    <Ionicons name="color-palette" size={16} color={userPreferences.favoriteColor} />
-                    <Text style={[styles.drinkColorName, { color: userPreferences.favoriteColor }]}>
-                      {COLOR_OPTIONS.find(c => c.value === userPreferences.favoriteColor)?.name || 'Custom Color'}
-                    </Text>
-                  </View>
+            <View style={styles.prefDisplayRow}>
+              <View style={styles.prefDisplayItem}>
+                <Text style={styles.prefDisplayIcon}>🍯</Text>
+                <View style={styles.prefDisplayContent}>
+                  <Text style={styles.prefDisplayLabel}>Sweetness</Text>
+                  <Text style={styles.prefDisplayValue}>{getSweetnessLabel(sweetnessPref)}</Text>
                 </View>
               </View>
-            )}
+
+              <View style={styles.prefDisplayItem}>
+                <Text style={styles.prefDisplayIcon}>❄️</Text>
+                <View style={styles.prefDisplayContent}>
+                  <Text style={styles.prefDisplayLabel}>Ice Level</Text>
+                  <Text style={styles.prefDisplayValue}>{getIceLabel(icePref)}</Text>
+                </View>
+              </View>
+
+              <View style={styles.prefDisplayItem}>
+                <Text style={styles.prefDisplayIcon}>🥛</Text>
+                <View style={styles.prefDisplayContent}>
+                  <Text style={styles.prefDisplayLabel}>Milk Base</Text>
+                  <Text style={styles.prefDisplayValue}>{milkPref}</Text>
+                </View>
+              </View>
+            </View>
           </View>
         )}
       </ScrollView>
@@ -964,12 +946,23 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: "#FFFFFF",
   },
-  preferenceCard: {
+  tabCard: {
     backgroundColor: "white",
     borderRadius: 16,
     padding: 20,
     margin: 16,
     shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  preferenceBobaCard: {
+    borderRadius: 16,
+    padding: 20,
+    paddingBottom: 30,
+    margin: 16,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 4,
@@ -1048,7 +1041,7 @@ const styles = StyleSheet.create({
   tweetFullName: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#1F2937",
+    color: '#1F2937',
     letterSpacing: 0.3,
   },
   tweetUsername: {
@@ -1255,6 +1248,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  deleteIconButton: {
+    padding: 2,
+  },
   reviewItemName: {
     fontSize: 12,
     fontWeight: '700',
@@ -1280,51 +1276,60 @@ const styles = StyleSheet.create({
   prefRow: {
     marginBottom: 20,
   },
-  prefLabelContainer: {
+  cardHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
-  prefLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  prefValueText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#6c3b3b',
-  },
-  milkToggleRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 10,
-  },
-  milkOptionButton: {
+  cardHeaderLeft: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 10,
+  },
+  editButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
     borderWidth: 1,
-  },
-  milkSelected: {
-    backgroundColor: '#6c3b3b',
-    borderColor: '#6c3b3b',
-  },
-  milkUnselected: {
-    backgroundColor: '#F9FAFB',
     borderColor: '#E5E7EB',
   },
-  milkOptionText: {
-    fontSize: 13,
+  editButtonText: {
+    fontSize: 12,
     fontWeight: '600',
+    color: '#6c3b3b',
   },
-  textWhite: {
-    color: 'white',
+  prefDisplayRow: {
+    gap: 12,
   },
-  textDark: {
-    color: '#4B5563',
+  prefDisplayItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  prefDisplayIcon: {
+    fontSize: 24,
+  },
+  prefDisplayContent: {
+    flex: 1,
+  },
+  prefDisplayLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 2,
+  },
+  prefDisplayValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1F2937',
   },
   floatingPillContainer: {
     position: "absolute",
@@ -1405,58 +1410,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF',
-  },
-  drinkColorContainer: {
-    marginTop: 20,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  drinkColorLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 12,
-  },
-  drinkVisualRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  drinkCup: {
-    width: 50,
-    height: 60,
-    position: 'relative',
-  },
-  drinkLiquid: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 50,
-    borderRadius: 8,
-    opacity: 0.8,
-  },
-  drinkLid: {
-    position: 'absolute',
-    top: 0,
-    left: -4,
-    right: -4,
-    height: 10,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 10,
-  },
-  drinkInfoBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  drinkColorName: {
-    fontSize: 13,
-    fontWeight: '700',
   },
 });

@@ -8,12 +8,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const COLOR_OPTIONS = [
     { name: 'No Theme', value: '#FFFFFF' },
-    { name: 'Classic Milk Tea', value: '#C49A6C' },
-    { name: 'Oolong Milk Tea', value: '#D4A574' },
+    { name: 'Classic Milk Tea', value: '#D4A574' },
+    { name: 'Oolong Milk Tea', value: '#E2C097' },
     { name: 'Jasmine Milk Tea', value: '#E8DCC8' },
     { name: 'Matcha Latte', value: '#A8C69F' },
     { name: 'Thai Tea', value: '#FF9966' },
-    { name: 'Taro Milk Tea', value: '#C8A8E8' },
+    { name: 'Taro Milk Tea', value: '#d9bffd' },
 ];
 
 const SWEETNESS_OPTIONS = [
@@ -94,24 +94,26 @@ export default function BobaPreferencesScreen() {
                     <View style={styles.prefRow}>
                         <Text style={styles.prefLabel}>🍯 Sweetness</Text>
                         <View style={styles.optionRow}>
-                            {SWEETNESS_OPTIONS.map((option) => (
-                                <TouchableOpacity
-                                    key={option.value}
-                                    style={[
-                                        styles.optionButton,
-                                        sweetness === option.value ? styles.optionSelected : styles.optionUnselected,
-                                        sweetness === option.value && { borderColor: favoriteColor, backgroundColor: favoriteColor + '20' }
-                                    ]}
-                                    onPress={() => setSweetness(option.value)}
-                                >
-                                    <Text style={[
-                                        styles.optionText,
-                                        sweetness === option.value && { color: favoriteColor }
-                                    ]}>
-                                        {option.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                            {SWEETNESS_OPTIONS.map((option) => {
+                                const isSelected = sweetness === option.value;
+                                return (
+                                    <TouchableOpacity
+                                        key={option.value}
+                                        style={[
+                                            styles.optionButton,
+                                            isSelected ? styles.optionSelected : styles.optionUnselected
+                                        ]}
+                                        onPress={() => setSweetness(option.value)}
+                                    >
+                                        <Text style={[
+                                            styles.optionText,
+                                            isSelected ? styles.optionSelectedText : styles.optionUnselectedText
+                                        ]}>
+                                            {option.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
                         </View>
                     </View>
 
@@ -119,24 +121,26 @@ export default function BobaPreferencesScreen() {
                     <View style={styles.prefRow}>
                         <Text style={styles.prefLabel}>❄️ Ice Level</Text>
                         <View style={styles.optionRow}>
-                            {ICE_OPTIONS.map((option) => (
-                                <TouchableOpacity
-                                    key={option.value}
-                                    style={[
-                                        styles.optionButton,
-                                        iceLevel === option.value ? styles.optionSelected : styles.optionUnselected,
-                                        iceLevel === option.value && { borderColor: favoriteColor, backgroundColor: favoriteColor + '20' }
-                                    ]}
-                                    onPress={() => setIceLevel(option.value)}
-                                >
-                                    <Text style={[
-                                        styles.optionText,
-                                        iceLevel === option.value && { color: favoriteColor }
-                                    ]}>
-                                        {option.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                            {ICE_OPTIONS.map((option) => {
+                                const isSelected = iceLevel === option.value;
+                                return (
+                                    <TouchableOpacity
+                                        key={option.value}
+                                        style={[
+                                            styles.optionButton,
+                                            isSelected ? styles.optionSelected : styles.optionUnselected
+                                        ]}
+                                        onPress={() => setIceLevel(option.value)}
+                                    >
+                                        <Text style={[
+                                            styles.optionText,
+                                            isSelected ? styles.optionSelectedText : styles.optionUnselectedText
+                                        ]}>
+                                            {option.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
                         </View>
                     </View>
 
@@ -144,24 +148,26 @@ export default function BobaPreferencesScreen() {
                     <View style={styles.prefRow}>
                         <Text style={styles.prefLabel}>🥛 Preferred Milk Base</Text>
                         <View style={styles.milkToggleRow}>
-                            {['Whole Milk', 'Oat Milk', 'Almond Milk'].map((milk) => (
-                                <TouchableOpacity
-                                    key={milk}
-                                    style={[
-                                        styles.milkOptionButton,
-                                        milkBase === milk ? styles.milkSelected : styles.milkUnselected,
-                                        milkBase === milk && { borderColor: favoriteColor, backgroundColor: favoriteColor + '20' }
-                                    ]}
-                                    onPress={() => setMilkBase(milk)}
-                                >
-                                    <Text style={[
-                                        styles.milkOptionText,
-                                        milkBase === milk && { color: favoriteColor }
-                                    ]}>
-                                        {milk.split(' ')[0]}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                            {['Whole Milk', 'Oat Milk', 'Almond Milk'].map((milk) => {
+                                const isSelected = milkBase === milk;
+                                return (
+                                    <TouchableOpacity
+                                        key={milk}
+                                        style={[
+                                            styles.milkOptionButton,
+                                            isSelected ? styles.milkSelected : styles.milkUnselected
+                                        ]}
+                                        onPress={() => setMilkBase(milk)}
+                                    >
+                                        <Text style={[
+                                            styles.milkOptionText,
+                                            isSelected ? styles.milkSelectedText : styles.textDark
+                                        ]}>
+                                            {milk.split(' ')[0]}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
                         </View>
                     </View>
                 </View>
@@ -174,31 +180,38 @@ export default function BobaPreferencesScreen() {
                     </Text>
 
                     <View style={styles.colorGrid}>
-                        {COLOR_OPTIONS.map((color) => (
-                            <TouchableOpacity
-                                key={color.value}
-                                style={[
-                                    styles.colorOption,
-                                    favoriteColor === color.value && styles.colorSelected,
-                                    favoriteColor === color.value && {
-                                        borderColor: color.value,
-                                        shadowColor: color.value,
-                                    }
-                                ]}
-                                onPress={() => setFavoriteColor(color.value)}
-                            >
-                                <View style={[styles.colorSwatch, { backgroundColor: color.value }]} />
-                                <Text style={[
-                                    styles.colorName,
-                                    favoriteColor === color.value && { color: color.value, fontWeight: '700' }
-                                ]}>
-                                    {color.name}
-                                </Text>
-                                {favoriteColor === color.value && (
-                                    <Ionicons name="checkmark-circle" size={20} color={color.value} />
-                                )}
-                            </TouchableOpacity>
-                        ))}
+                        {COLOR_OPTIONS.map((color) => {
+                            const isSelected = favoriteColor === color.value;
+                            return (
+                                <TouchableOpacity
+                                    key={color.value}
+                                    style={[
+                                        styles.colorOption,
+                                        isSelected && {
+                                            borderColor: color.value === '#FFFFFF' ? '#9CA3AF' : color.value,
+                                            backgroundColor: color.value === '#FFFFFF' ? '#F3F4F6' : color.value + '15',
+                                            shadowColor: color.value,
+                                            shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: 0.15,
+                                            shadowRadius: 4,
+                                            elevation: 2,
+                                        }
+                                    ]}
+                                    onPress={() => setFavoriteColor(color.value)}
+                                >
+                                    <View style={[styles.colorSwatch, { backgroundColor: color.value }]} />
+                                    <Text style={[
+                                        styles.colorName,
+                                        isSelected && { color: color.value === '#FFFFFF' ? '#1F2937' : color.value, fontWeight: '700' }
+                                    ]}>
+                                        {color.name}
+                                    </Text>
+                                    {isSelected && (
+                                        <Ionicons name="checkmark-circle" size={20} color={color.value === '#FFFFFF' ? '#374151' : color.value} />
+                                    )}
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
 
                     {/* Preview */}
@@ -288,13 +301,12 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         borderRadius: 16,
         borderWidth: 1.5,
-        borderColor: '#E5E7EB',
-        backgroundColor: '#F9FAFB',
         minWidth: 60,
         alignItems: 'center',
     },
     optionSelected: {
-        borderWidth: 1.5,
+        backgroundColor: '#6c3b3b',
+        borderColor: '#6c3b3b',
     },
     optionUnselected: {
         backgroundColor: '#F9FAFB',
@@ -303,6 +315,11 @@ const styles = StyleSheet.create({
     optionText: {
         fontSize: 12,
         fontWeight: '600',
+    },
+    optionSelectedText: {
+        color: '#FFFFFF',
+    },
+    optionUnselectedText: {
         color: '#4B5563',
     },
     milkToggleRow: {
@@ -329,6 +346,12 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '600',
     },
+    milkSelectedText: {
+        color: '#FFFFFF',
+    },
+    textDark: {
+        color: '#4B5563',
+    },
     colorGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -345,17 +368,12 @@ const styles = StyleSheet.create({
         borderColor: '#E5E7EB',
         backgroundColor: '#FFFFFF',
     },
-    colorSelected: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
-    },
     colorSwatch: {
         width: 20,
         height: 20,
         borderRadius: 10,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.1)',
     },
     colorName: {
         fontSize: 12,
@@ -372,19 +390,6 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '600',
         color: '#374151',
-    },
-    previewRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    previewBox: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        borderWidth: 2,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     previewRectangle: {
         height: 100,
