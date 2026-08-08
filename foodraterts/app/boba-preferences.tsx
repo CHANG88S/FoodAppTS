@@ -7,6 +7,7 @@ import { api } from '../convex/_generated/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const COLOR_OPTIONS = [
+    { name: 'No Theme', value: '#FFFFFF' },
     { name: 'Classic Milk Tea', value: '#C49A6C' },
     { name: 'Oolong Milk Tea', value: '#D4A574' },
     { name: 'Jasmine Milk Tea', value: '#E8DCC8' },
