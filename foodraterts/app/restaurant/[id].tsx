@@ -224,24 +224,6 @@ export default function RestaurantDetailScreen() {
           </Text>
         </View>
 
-        {/* Visit Statistics */}
-        {visitStats && (
-          <View style={styles.visitStatsContainer}>
-            <View style={styles.statItem}>
-              <Ionicons name="footsteps" size={16} color="#6c3b3b" />
-              <Text style={styles.statText}>
-                {visitStats.totalVisits || 0} {visitStats.totalVisits === 1 ? 'visit' : 'visits'}
-              </Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Ionicons name="people" size={16} color="#6c3b3b" />
-              <Text style={styles.statText}>
-                {visitStats.uniqueVisitors || 0} {visitStats.uniqueVisitors === 1 ? 'visitor' : 'visitors'}
-              </Text>
-            </View>
-          </View>
-        )}
       </View>
 
       {/* Tab Row Pill Design with Visited Button added to the right of About */}
@@ -260,9 +242,31 @@ export default function RestaurantDetailScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Primary Action Buttons */}
+      <View style={styles.actionRow}>
+        {visitStats && (
+          <View style={styles.statItem}>
+            <Ionicons name="people" size={16} color="#6c3b3b" />
+            <Text style={styles.statText}>
+              {visitStats.totalVisits || 0} {visitStats.totalVisits === 1 ? 'visit' : 'visits'}
+            </Text>
+          </View>
+        )}
+        {dbData.phone && (
+          <TouchableOpacity onPress={() => Linking.openURL(`tel:${dbData.phone}`)} style={styles.actionButton}>
+            <Text style={styles.actionButtonText}>📞 Call Shop</Text>
+          </TouchableOpacity>
+        )}
+        {dbData.website && (
+          <TouchableOpacity onPress={() => Linking.openURL(dbData.website!)} style={styles.actionButton}>
+            <Text style={styles.actionButtonText}>🌐 Website</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
       {/* Localized Menu Search Bar */}
       <View style={styles.searchContainer}>
-        <Ionicons name="search-outline" size={18} color="#9CA3AF" style={styles.searchIcon} />
+        <Ionicons name="search-outline" size={16} color="#9CA3AF" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search Menu Items"
@@ -399,20 +403,6 @@ export default function RestaurantDetailScreen() {
           )}
         </View>
       )}
-
-      {/* Primary Action Buttons */}
-      <View style={styles.actionRow}>
-        {dbData.phone && (
-          <TouchableOpacity onPress={() => Linking.openURL(`tel:${dbData.phone}`)} style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>📞 Call Shop</Text>
-          </TouchableOpacity>
-        )}
-        {dbData.website && (
-          <TouchableOpacity onPress={() => Linking.openURL(dbData.website!)} style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>🌐 Website</Text>
-          </TouchableOpacity>
-        )}
-      </View>
     </ScrollView>
 
     {/* Floating Pill Navigation */}
@@ -512,27 +502,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FAFAFA",
   },
-  heroContainer: { 
-    alignItems: 'center', 
-    paddingBottom: 12,
+  heroContainer: {
+    alignItems: 'center',
+    paddingBottom: 8,
     paddingHorizontal: 20,
-    paddingTop: 60, 
-    position: 'relative' 
+    paddingTop: 55,
+    position: 'relative'
   },
   backButton: {
     position: 'absolute',
     left: 20,
-    top: 58, 
+    top: 53,
     zIndex: 10,
-    padding: 4, 
+    padding: 4,
   },
-  restaurantTitle: { 
-    fontSize: 22, 
-    fontWeight: "800", 
+  restaurantTitle: {
+    fontSize: 22,
+    fontWeight: "800",
     color: "#1F2937",
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: 'center',
-    paddingHorizontal: 36, 
+    paddingHorizontal: 36,
   },
   headerTextAlignmentBlock: {
     alignItems: 'flex-start',
@@ -572,18 +562,18 @@ const styles = StyleSheet.create({
     height: 16,
     backgroundColor: "#E5E7EB",
   },
-  tabRow: { 
-    flexDirection: 'row', 
-    justifyContent: 'center', 
-    gap: 8, 
-    marginTop: 8, 
-    paddingHorizontal: 20 
+  tabRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 6,
+    paddingHorizontal: 20
   },
-  tabPill: { 
-    paddingVertical: 8, 
-    paddingHorizontal: 16, 
-    borderRadius: 20, 
-    backgroundColor: '#E5E7EB' 
+  tabPill: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: '#E5E7EB'
   },
   activeTabPill: { 
     backgroundColor: '#6c3b3b' 
@@ -596,17 +586,17 @@ const styles = StyleSheet.create({
   activeTabText: { 
     color: '#FFFFFF' 
   },
-  searchContainer: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    backgroundColor: "#FFFFFF", 
-    marginHorizontal: 20, 
-    marginTop: 18, 
-    paddingHorizontal: 12, 
-    height: 42, 
-    borderRadius: 20, 
-    borderWidth: 1, 
-    borderColor: "#E5E7EB" 
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    marginHorizontal: 20,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E5E7EB"
   },
   searchIcon: { 
     marginRight: 8 
@@ -616,14 +606,14 @@ const styles = StyleSheet.create({
     fontSize: 14, 
     color: "#374151" 
   },
-  menuSectionHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    paddingHorizontal: 20, 
-    marginTop: 10, 
-    marginBottom: 14, 
-    gap: 12 
+  menuSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 10,
+    gap: 12
   },
   menuSectionTitle: { 
     fontSize: 14, 
@@ -810,24 +800,27 @@ const styles = StyleSheet.create({
     width: 6, 
     backgroundColor: '#D1D5DB' 
   },
-  actionRow: { 
-    flexDirection: "row", 
-    padding: 20, 
-    justifyContent: "center", 
-    gap: 12, 
-    marginTop: 5 
+  actionRow: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    justifyContent: "center",
+    gap: 12,
+    marginTop: 3
   },
-  actionButton: { 
-    flex: 1, 
-    alignItems: 'center', 
-    paddingVertical: 10, 
-    borderRadius: 20, 
-    backgroundColor: "#F3F4F6" 
+  actionButton: {
+    flex: 1,
+    maxWidth: 100,
+    alignItems: 'center',
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 16,
+    backgroundColor: "#F3F4F6"
   },
-  actionButtonText: { 
-    fontSize: 13, 
-    fontWeight: "600", 
-    color: "#6c3b3b" 
+  actionButtonText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#6c3b3b"
   },
   emptyMenuCard: { 
     backgroundColor: "#FFFFFF", 
