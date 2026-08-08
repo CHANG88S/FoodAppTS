@@ -13,6 +13,8 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import BadgesScreen from '../badges';
 import SettingsScreen from '../settings';
+import AccountSettingsScreen from '../account-settings';
+import BobaPreferencesScreen from '../boba-preferences';
 
 const Drawer = createDrawerNavigator();
 
@@ -170,6 +172,30 @@ export default function TabsDrawerLayout() {
                     drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Badges & Achievements</Text>,
                     drawerIcon: ({ color, size }) => (
                         <Ionicons name="trophy-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Drawer.Screen
+                name="account-settings"
+                component={AccountSettingsScreen}
+                options={{
+                    title: "Account Settings",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Account Settings</Text>,
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="person-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Drawer.Screen
+                name="boba-preferences"
+                component={BobaPreferencesScreen}
+                options={{
+                    title: "Boba Preferences",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Boba Preferences</Text>,
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="cafe-outline" size={size} color={color} />
                     ),
                 }}
             />

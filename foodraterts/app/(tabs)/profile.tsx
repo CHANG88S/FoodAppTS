@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -16,19 +16,16 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, Stack } from 'expo-router';
-import Slider from '@react-native-community/slider';
+import { useRouter, Stack, useNavigation, useFocusEffect } from 'expo-router';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { DrawerActions } from '@react-navigation/native';
-import { useNavigation } from 'expo-router';
+
 import { formatCount } from '../../utils/formatters';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
-
-const TABS = ['ACTIVITY', 'TWEETS', 'REVIEWS', 'PREFERENCES'];
 
 export default function Profile() {
     const router = useRouter();
@@ -60,6 +57,7 @@ export default function Profile() {
     const [image, setImage] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState('ACTIVITY');
     const [expandedRestaurant, setExpandedRestaurant] = useState<string | null>(null);
+    const [isAuthModalVisible, setAuthModalVisible] = useState(false);
 
     // Unified Location Filter States
     const [selectedStateFilter, setSelectedStateFilter] = useState<string>('ALL');
@@ -78,24 +76,33 @@ export default function Profile() {
         setExpandedRestaurant(prev => (prev === restaurantName ? null : restaurantName));
     };
 
-    const [sweetnessPref, setSweetnessPref] = useState<number>(0.5); 
-    const [icePref, setIcePref] = useState<number>(0.5);            
-    const [milkPref, setMilkPref] = useState<string>('Oat Milk');
+    // Check if user is authenticated, show modal if not
+    useFocusEffect(
+        useCallback(() => {
+            if (currentUser === null) {
+                setAuthModalVisible(true);
+            }
+        }, [currentUser])
+    );
 
     const getSweetnessLabel = (val: number) => {
-        if (val === 0)   return  '0% (No Sugar)';
-        if (val <= 0.35) return '25% (Light Sugar)';
-        if (val <= 0.50) return '50% (Half Sugar)';
-        if (val <= 0.75) return '75% (Less Sugar)';
-        return '100% (Regular Sugar)';
+        if (val === 0) return 'No Sweetness';
+        if (val === 25) return 'Light';
+        if (val === 50) return 'Half';
+        if (val === 75) return 'Less';
+        if (val === 100) return 'Regular';
+        if (val === 125) return 'Extra';
+        return 'Half'; // default
     };
 
     const getIceLabel = (val: number) => {
         if (val === 0) return 'No Ice';
-        if (val <= 0.25) return 'Light Ice';
-        if (val <= 0.5) return 'Half Ice';
-        if (val <= 0.75) return 'Less Ice';
-        return 'Regular Ice';
+        if (val === 25) return 'Light';
+        if (val === 50) return 'Half';
+        if (val === 75) return 'Less';
+        if (val === 100) return 'Regular';
+        if (val === 125) return 'Extra';
+        return 'Half'; // default
     };
 
     const formatTimestamp = (timestamp: number | undefined) => {
@@ -843,7 +850,7 @@ export default function Profile() {
                                                                 </View>
                                                             </View>
                                                             {review.notes ? (
-                                                                <Text style={styles.reviewNotesText} numberOfLines={2}>"{review.notes}"</Text>
+                                                                <Text style={styles.reviewNotesText} numberOfLines={2}>&ldquo;{review.notes}&rdquo;</Text>
                                                             ) : null}
                                                         </TouchableOpacity>
                                                     ))}
@@ -859,59 +866,64 @@ export default function Profile() {
 
                 {activeTab === 'PREFERENCES' && (
                     <View style={styles.preferenceCard}>
-                        <Text style={styles.cardTitle}>My Boba Taste Fingerprint</Text>
-                        <Text style={styles.cardSubtitle}>Followers use this baseline to match your taste profile reviews.</Text>
-
-                        <View style={styles.prefRow}>
-                            <View style={styles.prefLabelContainer}>
-                                <Text style={styles.prefLabel}>🍯 Sweetness</Text>
-                                <Text style={styles.prefValueText}>{getSweetnessLabel(sweetnessPref)}</Text>
+                        <View style={styles.cardHeaderRow}>
+                            <View style={styles.cardHeaderLeft}>
+                                <Text style={styles.cardTitle}>My Boba Taste Fingerprint</Text>
+                                <Text style={styles.cardSubtitle}>Followers use this baseline to match your taste profile reviews.</Text>
                             </View>
-                            <Slider
-                                style={styles.slider}
-                                minimumValue={0}
-                                maximumValue={1}
-                                step={0.1}
-                                value={sweetnessPref}
-                                onValueChange={setSweetnessPref}
-                                minimumTrackTintColor="#6c3b3b"
-                                maximumTrackTintColor="#E5E7EB"
-                            />
+                            <TouchableOpacity
+                                style={styles.editButton}
+                                onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+                            >
+                                <Ionicons name="pencil-outline" size={16} color="#6c3b3b" />
+                                <Text style={styles.editButtonText}>Edit</Text>
+                            </TouchableOpacity>
                         </View>
 
-                        <View style={styles.prefRow}>
-                            <View style={styles.prefLabelContainer}>
-                                <Text style={styles.prefLabel}>❄️ Ice Level</Text>
-                                <Text style={styles.prefValueText}>{getIceLabel(icePref)}</Text>
+                        <View style={styles.prefDisplayRow}>
+                            <View style={styles.prefDisplayItem}>
+                                <Text style={styles.prefDisplayIcon}>🍯</Text>
+                                <View style={styles.prefDisplayContent}>
+                                    <Text style={styles.prefDisplayLabel}>Sweetness</Text>
+                                    <Text style={styles.prefDisplayValue}>{getSweetnessLabel(currentUser?.preferences?.sweetness ?? 50)}</Text>
+                                </View>
                             </View>
-                            <Slider
-                                style={styles.slider}
-                                minimumValue={0}
-                                maximumValue={1}
-                                step={0.1}
-                                value={icePref}
-                                onValueChange={setIcePref}
-                                minimumTrackTintColor="#6c3b3b"
-                                maximumTrackTintColor="#E5E7EB"
-                            />
+
+                            <View style={styles.prefDisplayItem}>
+                                <Text style={styles.prefDisplayIcon}>❄️</Text>
+                                <View style={styles.prefDisplayContent}>
+                                    <Text style={styles.prefDisplayLabel}>Ice Level</Text>
+                                    <Text style={styles.prefDisplayValue}>{getIceLabel(currentUser?.preferences?.iceLevel ?? 50)}</Text>
+                                </View>
+                            </View>
+
+                            <View style={styles.prefDisplayItem}>
+                                <Text style={styles.prefDisplayIcon}>🥛</Text>
+                                <View style={styles.prefDisplayContent}>
+                                    <Text style={styles.prefDisplayLabel}>Milk Base</Text>
+                                    <Text style={styles.prefDisplayValue}>{currentUser?.preferences?.milkBase || 'Oat Milk'}</Text>
+                                </View>
+                            </View>
                         </View>
 
-                        <View style={styles.prefRow}>
-                            <Text style={styles.prefLabel}>🥛 Preferred Milk Base</Text>
-                            <View style={styles.milkToggleRow}>
-                                {['Whole Milk', 'Oat Milk', 'Almond Milk'].map((milk) => (
-                                    <TouchableOpacity
-                                        key={milk}
-                                        style={[styles.milkOptionButton, milkPref === milk ? styles.milkSelected : styles.milkUnselected]}
-                                        onPress={() => setMilkPref(milk)}
-                                    >
-                                        <Text style={[styles.milkOptionText, milkPref === milk ? styles.textWhite : styles.textDark]}>
-                                            {milk.split(' ')[0]}
+                        {/* Theme Color as Drink Visual */}
+                        {currentUser?.preferences?.favoriteColor && (
+                            <View style={styles.drinkColorContainer}>
+                                <Text style={styles.drinkColorLabel}>My Theme Drink</Text>
+                                <View style={styles.drinkVisualRow}>
+                                    <View style={styles.drinkCup}>
+                                        <View style={[styles.drinkLiquid, { backgroundColor: currentUser.preferences.favoriteColor }]} />
+                                        <View style={styles.drinkLid} />
+                                    </View>
+                                    <View style={[styles.drinkInfoBox, { borderColor: currentUser.preferences.favoriteColor + '40', backgroundColor: currentUser.preferences.favoriteColor + '15' }]}>
+                                        <Ionicons name="color-palette" size={16} color={currentUser.preferences.favoriteColor} />
+                                        <Text style={[styles.drinkColorName, { color: currentUser.preferences.favoriteColor }]}>
+                                            {currentUser.preferences.favoriteColor}
                                         </Text>
-                                    </TouchableOpacity>
-                                ))}
+                                    </View>
+                                </View>
                             </View>
-                        </View>
+                        )}
                     </View>
                 )}
             </ScrollView>
@@ -929,6 +941,49 @@ export default function Profile() {
                             </TouchableOpacity>
                             <TouchableOpacity style={[styles.profileButton, { backgroundColor: '#DC2626' }]} onPress={() => setProfileModalVisible(false)}>
                                 <Text style={styles.textStyle}>Close</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Auth Required Modal */}
+            <Modal
+                visible={isAuthModalVisible}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => {}}
+            >
+                <View style={styles.authModalOverlay}>
+                    <View style={styles.authModalContent}>
+                        <View style={styles.authModalHeader}>
+                            <Ionicons name="lock-closed" size={32} color="#6c3b3b" />
+                            <Text style={styles.authModalTitle}>Authentication Required</Text>
+                        </View>
+
+                        <Text style={styles.authModalMessage}>
+                            You need to be logged in to view your profile. Sign up or login to access all features.
+                        </Text>
+
+                        <View style={styles.authModalActions}>
+                            <TouchableOpacity
+                                style={styles.authModalButton}
+                                onPress={() => {
+                                    setAuthModalVisible(false);
+                                    router.back();
+                                }}
+                            >
+                                <Text style={styles.authModalButtonText}>Go Back</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.authModalButton, styles.authModalPrimaryButton]}
+                                onPress={() => {
+                                    setAuthModalVisible(false);
+                                    router.replace('/');
+                                }}
+                            >
+                                <Text style={styles.authModalPrimaryButtonText}>Sign Up / Login</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -1302,55 +1357,90 @@ const styles = StyleSheet.create({
     prefRow: {
         marginBottom: 20,
     },
-    prefLabelContainer: {
+    cardHeaderRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 6,
+        alignItems: 'flex-start',
+        marginBottom: 16,
     },
-    prefLabel: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#374151',
-    },
-    prefValueText: {
-        fontSize: 13,
-        fontWeight: '700',
-        color: '#6c3b3b',
-    },
-    slider: {
-        width: '100%',
-        height: 30,
-    },
-    milkToggleRow: {
-        flexDirection: 'row',
-        gap: 8,
-        marginTop: 10,
-    },
-    milkOptionButton: {
+    cardHeaderLeft: {
         flex: 1,
-        paddingVertical: 10,
-        borderRadius: 10,
+    },
+    editButton: {
+        flexDirection: 'row',
         alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+        backgroundColor: '#F3F4F6',
         borderWidth: 1,
-    },
-    milkSelected: {
-        backgroundColor: '#6c3b3b',
-        borderColor: '#6c3b3b',
-    },
-    milkUnselected: {
-        backgroundColor: '#F9FAFB',
         borderColor: '#E5E7EB',
     },
-    milkOptionText: {
+    editButtonText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#6c3b3b',
+    },
+    prefDisplayRow: {
+        gap: 12,
+    },
+    prefDisplayItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        backgroundColor: '#F9FAFB',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    prefDisplayIcon: {
+        fontSize: 24,
+    },
+    prefDisplayContent: {
+        flex: 1,
+    },
+    prefDisplayLabel: {
+        fontSize: 12,
+        color: '#6B7280',
+        marginBottom: 2,
+    },
+    prefDisplayValue: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#1F2937',
+    },
+    colorDisplayRow: {
+        marginTop: 16,
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#F3F4F6',
+    },
+    colorDisplayLabel: {
         fontSize: 13,
         fontWeight: '600',
+        color: '#374151',
+        marginBottom: 8,
     },
-    textWhite: {
-        color: 'white',
+    colorDisplaySwatchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
     },
-    textDark: {
-        color: '#4B5563',
+    colorDisplaySwatch: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    colorDisplayValue: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#6B7280',
+        fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     },
     emptyTabContent: {
         paddingVertical: 40,
@@ -1565,5 +1655,113 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         padding: 14,
         alignItems: 'center',
+    },
+    authModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    authModalContent: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 24,
+        width: '100%',
+        maxWidth: 340,
+    },
+    authModalHeader: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 12,
+        marginBottom: 16,
+    },
+    authModalTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1F2937',
+        textAlign: 'center',
+    },
+    authModalMessage: {
+        fontSize: 14,
+        color: '#6B7280',
+        textAlign: 'center',
+        lineHeight: 20,
+        marginBottom: 24,
+    },
+    authModalActions: {
+        gap: 12,
+    },
+    authModalButton: {
+        paddingVertical: 12,
+        borderRadius: 10,
+        alignItems: 'center',
+        backgroundColor: '#F3F4F6',
+    },
+    authModalButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#374151',
+    },
+    authModalPrimaryButton: {
+        backgroundColor: '#6c3b3b',
+    },
+    authModalPrimaryButtonText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#FFFFFF',
+    },
+    drinkColorContainer: {
+        marginTop: 20,
+        paddingTop: 20,
+        borderTopWidth: 1,
+        borderTopColor: '#F3F4F6',
+    },
+    drinkColorLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#374151',
+        marginBottom: 12,
+    },
+    drinkVisualRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    drinkCup: {
+        width: 50,
+        height: 60,
+        position: 'relative',
+    },
+    drinkLiquid: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 50,
+        borderRadius: 8,
+        opacity: 0.8,
+    },
+    drinkLid: {
+        position: 'absolute',
+        top: 0,
+        left: -4,
+        right: -4,
+        height: 10,
+        backgroundColor: '#E5E7EB',
+        borderRadius: 10,
+    },
+    drinkInfoBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    drinkColorName: {
+        fontSize: 13,
+        fontWeight: '700',
     },
 });
