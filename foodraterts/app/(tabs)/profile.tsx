@@ -868,7 +868,7 @@ export default function Profile() {
                 )}
 
                 {activeTab === 'PREFERENCES' && (
-                    <View style={[styles.preferenceBobaCard, { backgroundColor: themeColor + '100', shadowOpacity: 0, elevation: 0 }]}>
+                    <View style={[styles.preferenceBobaCard, { backgroundColor: themeColor, shadowOpacity: 0, elevation: 0 }]}>
                         <View style={styles.cardHeaderRow}>
                             <View style={styles.cardHeaderLeft}>
                                 <Text style={styles.cardTitle}>My Boba Taste Fingerprint</Text>
