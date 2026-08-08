@@ -6,13 +6,13 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { ProfileAvatar } from "../../components/ProfileAvatar";
 import { Id } from "../../convex/_generated/dataModel";
 import { useAuthActions } from "@convex-dev/auth/react";
 
@@ -117,15 +117,13 @@ function UserCard({
   return (
     <TouchableOpacity onPress={() => onPress(user)} activeOpacity={0.7}>
       <View style={styles.userCard}>
-        {user.profilePicture ? (
-          <Image source={{ uri: user.profilePicture }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarPlaceholder]}>
-            <Text style={styles.avatarText}>
-              {(user.name || user.username).charAt(0).toUpperCase()}
-            </Text>
-          </View>
-        )}
+        <ProfileAvatar
+          storageId={user.profilePicture}
+          size={48}
+          variant="brand"
+          fallbackText={user.name || user.username}
+          style={styles.avatar}
+        />
 
         <View style={styles.userInfo}>
           <Text style={styles.username}>

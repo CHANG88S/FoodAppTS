@@ -46,6 +46,15 @@ export const setDisplayedBadge = mutation({
   },
 });
 
+export const setProfilePicture = mutation({
+  args: { imageStorageId: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+    await ctx.db.patch(userId, { profilePicture: args.imageStorageId });
+  },
+});
+
 export const updateProfile = action({
   args: {
     name: v.optional(v.string()),

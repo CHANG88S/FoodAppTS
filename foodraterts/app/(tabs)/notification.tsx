@@ -6,13 +6,13 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { ProfileAvatar } from "../../components/ProfileAvatar";
 import { Id, Doc } from "../../convex/_generated/dataModel";
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 
@@ -151,20 +151,13 @@ export default function NotificationScreen() {
             ]}
           >
             <View style={styles.avatarContainer}>
-              {notification.sender?.profilePicture ? (
-                <Image
-                  source={{ uri: notification.sender.profilePicture }}
-                  style={styles.avatar}
-                />
-              ) : (
-                <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                  <Text style={styles.avatarText}>
-                    {(notification.sender?.name || notification.sender?.username || "?")
-                      .charAt(0)
-                      .toUpperCase()}
-                  </Text>
-                </View>
-              )}
+              <ProfileAvatar
+                storageId={notification.sender?.profilePicture}
+                size={48}
+                variant="brand"
+                fallbackText={notification.sender?.name || notification.sender?.username || "?"}
+                style={styles.avatar}
+              />
               <View style={[styles.iconBadge, getIconBadgeStyle(notification.type)]}>
                 <Ionicons
                   name={getIconName(notification.type)}

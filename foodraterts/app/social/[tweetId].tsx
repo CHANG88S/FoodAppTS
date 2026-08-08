@@ -10,12 +10,12 @@ import {
     Platform,
     Alert,
     StatusBar,
-    Image,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
+import { ProfileAvatar } from '../../components/ProfileAvatar';
 import { formatCount } from '../../utils/formatters';
 
 export default function TweetDetailScreen() {
@@ -89,7 +89,6 @@ export default function TweetDetailScreen() {
         ]);
     };
 
-    const profileImageUri = currentUser?.profilePicture;
     const userHandle = currentUser?.username ? `@${currentUser.username}` : "@user";
     const userFullName = currentUser?.name ? currentUser.name : "User";
 
@@ -112,15 +111,13 @@ export default function TweetDetailScreen() {
                 <ScrollView contentContainerStyle={styles.scrollContent}>
                     <View style={styles.postCard}>
                         <View style={styles.postHeader}>
-                            {profileImageUri ? (
-                                <Image source={{ uri: profileImageUri }} style={styles.tweetAvatar} />
-                            ) : (
-                                <View style={[styles.tweetAvatar, styles.blankAvatarTweet]}>
-                                    <Text style={styles.avatarInitial}>
-                                        {userFullName.charAt(0).toUpperCase()}
-                                    </Text>
-                                </View>
-                            )}
+                            <ProfileAvatar
+                                storageId={currentUser?.profilePicture}
+                                size={42}
+                                variant="light"
+                                fallbackText={userFullName}
+                                style={styles.tweetAvatar}
+                            />
                             <View>
                                 <Text style={styles.postFullName}>{userFullName}</Text>
                                 <Text style={styles.postUsername}>{userHandle}</Text>

@@ -46,6 +46,12 @@ export default function PublicProfileScreen() {
     username: username as string,
   });
 
+  // Resolve stored profile picture (Convex storage id) to a display URL
+  const profilePictureUrl = useQuery(
+    api.images.getPublicUrl,
+    userProfile?.profilePicture ? { storageId: userProfile.profilePicture } : "skip"
+  );
+
   const targetUserId = userProfile?._id;
 
   const followers = useQuery(
@@ -131,7 +137,7 @@ export default function PublicProfileScreen() {
     return date.toLocaleDateString();
   };
 
-  const profileImageUri = userProfile?.profilePicture;
+  const profileImageUri = profilePictureUrl ?? undefined;
   const userHandle = userProfile?.username ? `@${userProfile.username}` : "@user";
   const userFullName = userProfile?.name || null;
 

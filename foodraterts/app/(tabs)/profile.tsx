@@ -8,6 +8,7 @@ import {
     Modal,
     ScrollView,
     Alert,
+    ActivityIndicator,
     Platform,
     StatusBar,
     LayoutAnimation,
@@ -53,8 +54,16 @@ export default function Profile() {
     const deleteTweetMutation = useMutation(api.tweets?.deleteTweet);
     const toggleLikeTweet = useMutation(api.tweets?.toggleLikeTweet);
 
+    // Profile picture: mutation to persist + query to resolve stored storage id to a URL
+    const setProfilePictureMutation = useMutation(api.users.setProfilePicture);
+    const profilePictureUrl = useQuery(
+        api.images.getPublicUrl,
+        currentUser?.profilePicture ? { storageId: currentUser.profilePicture } : "skip"
+    );
+
     const [isProfileModal, setProfileModalVisible] = useState(false);
     const [image, setImage] = useState<string | null>(null);
+    const [isUploadingProfileImage, setIsUploadingProfileImage] = useState(false);
     const [activeTab, setActiveTab] = useState('ACTIVITY');
     const [expandedRestaurant, setExpandedRestaurant] = useState<string | null>(null);
     const [isAuthModalVisible, setAuthModalVisible] = useState(false);
@@ -121,6 +130,37 @@ export default function Profile() {
         return date.toLocaleDateString();
     };
 
+    const uploadProfilePicture = async (asset: ImagePicker.ImagePickerAsset) => {
+        if (!currentUser) {
+            Alert.alert('Error', 'You must be logged in to change your profile picture.');
+            return;
+        }
+        try {
+            setIsUploadingProfileImage(true);
+            const uploadUrl = await generateUploadUrlMutation();
+            const response = await fetch(asset.uri);
+            const blob = await response.blob();
+
+            const uploadResult = await fetch(uploadUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': asset.mimeType || 'image/jpeg' },
+                body: blob,
+            });
+            const json = await uploadResult.json();
+            const storageId = json.storageId;
+
+            await setProfilePictureMutation({ imageStorageId: storageId });
+            Alert.alert('Success', 'Profile picture updated!');
+        } catch (error: any) {
+            console.error(error);
+            // Revert local preview on failure
+            setImage(null);
+            Alert.alert('Error', error.message || 'Failed to update profile picture.');
+        } finally {
+            setIsUploadingProfileImage(false);
+        }
+    };
+
     const pickImage = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
@@ -135,8 +175,10 @@ export default function Profile() {
             quality: 0.8,
         });
         if (!result.canceled) {
-            setImage(result.assets[0].uri);
+            const asset = result.assets[0];
+            setImage(asset.uri);
             setProfileModalVisible(false);
+            await uploadProfilePicture(asset);
         }
     };
 
@@ -154,8 +196,10 @@ export default function Profile() {
             quality: 0.8,
         });
         if (!result.canceled) {
-            setImage(result.assets[0].uri);
+            const asset = result.assets[0];
+            setImage(asset.uri);
             setProfileModalVisible(false);
+            await uploadProfilePicture(asset);
         }
     };
 
@@ -260,7 +304,7 @@ export default function Profile() {
         );
     };
 
-    const profileImageUri = image || currentUser?.profilePicture;
+    const profileImageUri = image || profilePictureUrl || undefined;
     const userHandle = currentUser?.username ? `@${currentUser.username}` : "@user";
     const userFullName = currentUser?.name ? currentUser.name : null;
 
@@ -363,7 +407,7 @@ export default function Profile() {
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.profileSectionUnderHeader}>
                     <View style={styles.profileTopRow}>
-                        <TouchableOpacity onPress={() => setProfileModalVisible(true)} style={styles.imageContainer}>
+                        <TouchableOpacity onPress={() => setProfileModalVisible(true)} disabled={isUploadingProfileImage} style={styles.imageContainer}>
                             {profileImageUri ? (
                                 <Image source={{ uri: profileImageUri }} style={styles.profileImage} />
                             ) : (
@@ -374,6 +418,11 @@ export default function Profile() {
                                 </View>
                             )}
                             <Ionicons name="add-circle" size={26} color="#6c3b3b" style={styles.cameraIconBadge} />
+                            {isUploadingProfileImage && (
+                                <View style={styles.uploadingOverlay}>
+                                    <ActivityIndicator size="large" color="#FFFFFF" />
+                                </View>
+                            )}
                         </TouchableOpacity>
 
                         <View style={styles.middleSection}>
@@ -1042,6 +1091,13 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
         overflow: 'hidden',
+    },
+    uploadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        borderRadius: 38,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     middleSection: {
         flex: 1,
