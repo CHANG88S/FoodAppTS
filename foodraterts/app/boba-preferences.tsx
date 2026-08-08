@@ -206,11 +206,7 @@ export default function BobaPreferencesScreen() {
                     {/* Preview */}
                     <View style={styles.previewSection}>
                         <Text style={styles.previewLabel}>Preview with your color:</Text>
-                        <View style={styles.previewRow}>
-                            <View style={[styles.previewRectangle, { backgroundColor: favoriteColor }]}>
-                                <View style={styles.previewInner} />
-                            </View>
-                        </View>
+                        <View style={[styles.previewRectangle, { backgroundColor: favoriteColor, borderColor: favoriteColor === '#FFFFFF' ? '#E5E7EB' : '#000000' }]} />
                     </View>
                 </View>
 
@@ -393,21 +389,10 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     previewRectangle: {
-        width: 120,
-        height: 80,
+        height: 100,
         borderRadius: 16,
         borderWidth: 2,
-        borderColor: '#000000',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    previewInner: {
-        width: 80,
-        height: 50,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#000000',
-        backgroundColor: '#FFFFFF',
+        alignSelf: 'stretch',
     },
     saveButton: {
         backgroundColor: '#6c3b3b',
