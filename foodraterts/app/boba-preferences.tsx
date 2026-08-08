@@ -207,14 +207,8 @@ export default function BobaPreferencesScreen() {
                     <View style={styles.previewSection}>
                         <Text style={styles.previewLabel}>Preview with your color:</Text>
                         <View style={styles.previewRow}>
-                            <View style={[styles.previewBox, { backgroundColor: favoriteColor + '20', borderColor: favoriteColor }]}>
-                                <Ionicons name="heart" size={24} color={favoriteColor} />
-                            </View>
-                            <View style={[styles.previewBox, { backgroundColor: favoriteColor + '20', borderColor: favoriteColor }]}>
-                                <Ionicons name="star" size={24} color={favoriteColor} />
-                            </View>
-                            <View style={[styles.previewBox, { backgroundColor: favoriteColor + '20', borderColor: favoriteColor }]}>
-                                <Ionicons name="chatbubble" size={24} color={favoriteColor} />
+                            <View style={[styles.previewRectangle, { backgroundColor: favoriteColor }]}>
+                                <View style={styles.previewInner} />
                             </View>
                         </View>
                     </View>
@@ -397,6 +391,23 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    previewRectangle: {
+        width: 120,
+        height: 80,
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: '#000000',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    previewInner: {
+        width: 80,
+        height: 50,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#000000',
+        backgroundColor: '#FFFFFF',
     },
     saveButton: {
         backgroundColor: '#6c3b3b',
