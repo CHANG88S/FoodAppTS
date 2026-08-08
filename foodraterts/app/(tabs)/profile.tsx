@@ -264,6 +264,9 @@ export default function Profile() {
     const userHandle = currentUser?.username ? `@${currentUser.username}` : "@user";
     const userFullName = currentUser?.name ? currentUser.name : null;
 
+    // Dynamic theme color from boba preferences
+    const themeColor = currentUser?.preferences?.favoriteColor || '#6c3b3b';
+
     const badgesDirectory: Record<string, string> = {
         'First Review': '🌟',
     };
@@ -865,7 +868,7 @@ export default function Profile() {
                 )}
 
                 {activeTab === 'PREFERENCES' && (
-                    <View style={styles.preferenceCard}>
+                    <View style={[styles.preferenceBobaCard, { backgroundColor: themeColor + '08' }]}>
                         <View style={styles.cardHeaderRow}>
                             <View style={styles.cardHeaderLeft}>
                                 <Text style={styles.cardTitle}>My Boba Taste Fingerprint</Text>
@@ -1138,6 +1141,17 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
     },
     preferenceCard: {
+        backgroundColor: 'white',
+        borderRadius: 16,
+        padding: 20,
+        margin: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    preferenceBobaCard: {
         backgroundColor: 'white',
         borderRadius: 16,
         padding: 20,
