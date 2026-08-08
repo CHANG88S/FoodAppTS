@@ -26,6 +26,7 @@ export default defineSchema({
         sweetness: v.optional(v.number()),
         iceLevel: v.optional(v.number()),
         milkBase: v.optional(v.string()),
+        favoriteColor: v.optional(v.string()),
         favoriteCuisines: v.optional(v.array(v.string())),
         dietaryRestrictions: v.optional(v.array(v.string())),
         spiceTolerance: v.optional(v.string()),

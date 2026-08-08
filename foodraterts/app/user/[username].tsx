@@ -9,6 +9,7 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
@@ -22,6 +23,17 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 const TABS = ["ACTIVITY", "TWEETS", "REVIEWS", "PREFERENCES"];
+
+const COLOR_OPTIONS = [
+    { name: 'Classic Brown', value: '#6c3b3b' },
+    { name: 'Sakura Pink', value: '#FFB7C5' },
+    { name: 'Matcha Green', value: '#88B04B' },
+    { name: 'Taro Purple', value: '#B39EB5' },
+    { name: 'Ocean Blue', value: '#5DADEC' },
+    { name: 'Sunset Orange', value: '#FFA500' },
+    { name: 'Midnight Black', value: '#2C2C2C' },
+    { name: 'Cream White', value: '#FFF8E7' },
+];
 
 export default function PublicProfileScreen() {
   const router = useRouter();
@@ -65,6 +77,7 @@ export default function PublicProfileScreen() {
 
   const [activeTab, setActiveTab] = useState("ACTIVITY");
   const [expandedRestaurant, setExpandedRestaurant] = useState<string | null>(null);
+  const [isAuthModalVisible, setAuthModalVisible] = useState(false);
 
   // Unified Location Filter States for Reviews tab
   const [selectedStateFilter, setSelectedStateFilter] = useState<string>('ALL');
@@ -78,6 +91,10 @@ export default function PublicProfileScreen() {
   };
 
   const handleFollow = async () => {
+    if (!currentUserId) {
+      setAuthModalVisible(true);
+      return;
+    }
     if (!targetUserId) return;
     try {
       if (isFollowing) {
@@ -91,6 +108,10 @@ export default function PublicProfileScreen() {
   };
 
   const handleMessage = () => {
+    if (!currentUserId) {
+      setAuthModalVisible(true);
+      return;
+    }
     console.log("Navigate to messages");
   };
 
@@ -121,19 +142,23 @@ export default function PublicProfileScreen() {
   const milkPref = userPreferences.milkBase ?? 'Oat Milk';
 
   const getSweetnessLabel = (val: number) => {
-    if (val === 0)   return '0% (No Sugar)';
-    if (val <= 0.35) return '25% (Light Sugar)';
-    if (val <= 0.50) return '50% (Half Sugar)';
-    if (val <= 0.75) return '75% (Less Sugar)';
-    return '100% (Regular Sugar)';
+    if (val === 0) return 'No Sweetness';
+    if (val === 25) return 'Light';
+    if (val === 50) return 'Half';
+    if (val === 75) return 'Less';
+    if (val === 100) return 'Regular';
+    if (val === 125) return 'Extra';
+    return 'Half'; // default
   };
 
   const getIceLabel = (val: number) => {
     if (val === 0) return 'No Ice';
-    if (val <= 0.25) return 'Light Ice';
-    if (val <= 0.5) return 'Half Ice';
-    if (val <= 0.75) return 'Less Ice';
-    return 'Regular Ice';
+    if (val === 25) return 'Light';
+    if (val === 50) return 'Half';
+    if (val === 75) return 'Less';
+    if (val === 100) return 'Regular';
+    if (val === 125) return 'Extra';
+    return 'Half'; // default
   };
 
   const formatRating = (rating: number | undefined) => {
@@ -273,7 +298,8 @@ export default function PublicProfileScreen() {
                 </View>
               </View>
 
-              {currentUserId && userProfile?._id !== currentUserId && (
+              {/* Don't show follow/message buttons on own profile */}
+              {userProfile?._id !== currentUserId && (
                 <View style={styles.actionButtons}>
                   <TouchableOpacity
                     style={[
@@ -628,7 +654,7 @@ export default function PublicProfileScreen() {
                                 </View>
                               </View>
                               {review.notes ? (
-                                <Text style={styles.reviewNotesText} numberOfLines={2}>"{review.notes}"</Text>
+                                <Text style={styles.reviewNotesText} numberOfLines={2}>&ldquo;{review.notes}&rdquo;</Text>
                               ) : null}
                             </View>
                           ))}
@@ -645,7 +671,7 @@ export default function PublicProfileScreen() {
         {activeTab === 'PREFERENCES' && (
           <View style={styles.preferenceCard}>
             <Text style={styles.cardTitle}>Boba Taste Fingerprint</Text>
-            <Text style={styles.cardSubtitle}>This user's baseline taste profile preferences.</Text>
+            <Text style={styles.cardSubtitle}>This user&apos;s baseline taste profile preferences.</Text>
 
             <View style={styles.prefRow}>
               <View style={styles.prefLabelContainer}>
@@ -676,6 +702,25 @@ export default function PublicProfileScreen() {
                 ))}
               </View>
             </View>
+
+            {/* User's Favorite Color as a Drink */}
+            {userPreferences?.favoriteColor && (
+              <View style={styles.drinkColorContainer}>
+                <Text style={styles.drinkColorLabel}>Their Signature Drink Color</Text>
+                <View style={styles.drinkVisualRow}>
+                  <View style={styles.drinkCup}>
+                    <View style={[styles.drinkLiquid, { backgroundColor: userPreferences.favoriteColor }]} />
+                    <View style={styles.drinkLid} />
+                  </View>
+                  <View style={[styles.drinkInfoBox, { borderColor: userPreferences.favoriteColor + '40', backgroundColor: userPreferences.favoriteColor + '10' }]}>
+                    <Ionicons name="color-palette" size={16} color={userPreferences.favoriteColor} />
+                    <Text style={[styles.drinkColorName, { color: userPreferences.favoriteColor }]}>
+                      {COLOR_OPTIONS.find(c => c.value === userPreferences.favoriteColor)?.name || 'Custom Color'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
           </View>
         )}
       </ScrollView>
@@ -695,6 +740,46 @@ export default function PublicProfileScreen() {
           <Ionicons name="person-outline" size={24} color="#000000" />
         </TouchableOpacity>
       </View>
+
+      {/* Auth Required Modal */}
+      <Modal
+        visible={isAuthModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => {}}
+      >
+        <View style={styles.authModalOverlay}>
+          <View style={styles.authModalContent}>
+            <View style={styles.authModalHeader}>
+              <Ionicons name="lock-closed" size={32} color="#6c3b3b" />
+              <Text style={styles.authModalTitle}>Authentication Required</Text>
+            </View>
+
+            <Text style={styles.authModalMessage}>
+              You need to be logged in to follow or message other users.
+            </Text>
+
+            <View style={styles.authModalActions}>
+              <TouchableOpacity
+                style={styles.authModalButton}
+                onPress={() => setAuthModalVisible(false)}
+              >
+                <Text style={styles.authModalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.authModalButton, styles.authModalPrimaryButton]}
+                onPress={() => {
+                  setAuthModalVisible(false);
+                  router.replace('/');
+                }}
+              >
+                <Text style={styles.authModalPrimaryButtonText}>Sign Up / Login</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1265,5 +1350,113 @@ const styles = StyleSheet.create({
   },
   pillItem: {
     padding: 4,
+  },
+  authModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  authModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+  },
+  authModalHeader: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  authModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    textAlign: 'center',
+  },
+  authModalMessage: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  authModalActions: {
+    gap: 12,
+  },
+  authModalButton: {
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+  },
+  authModalButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  authModalPrimaryButton: {
+    backgroundColor: '#6c3b3b',
+  },
+  authModalPrimaryButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  drinkColorContainer: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  drinkColorLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 12,
+  },
+  drinkVisualRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  drinkCup: {
+    width: 50,
+    height: 60,
+    position: 'relative',
+  },
+  drinkLiquid: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 50,
+    borderRadius: 8,
+    opacity: 0.8,
+  },
+  drinkLid: {
+    position: 'absolute',
+    top: 0,
+    left: -4,
+    right: -4,
+    height: 10,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 10,
+  },
+  drinkInfoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  drinkColorName: {
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

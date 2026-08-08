@@ -10,7 +10,7 @@ import { BlurView } from 'expo-blur';
 export default function SettingsScreen() {
   const router = useRouter();
   const currentUser = useQuery(api.users.viewer);
-  const updateProfileProfile = currentUser ? useAction(api.users.updateProfile) : null;
+  const updateProfileProfile = useAction(api.users.updateProfile);
 
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
@@ -124,7 +124,6 @@ export default function SettingsScreen() {
               editable={showEmail}
             />
             
-            {/* Fully masks text underneath with native BlurView when hidden */}
             {!showEmail && (
               <BlurView intensity={85} tint="light" style={styles.blurOverlay}>
                 <Text style={styles.blurPlaceholderText}>••••••••••••••••</Text>
@@ -243,7 +242,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 14,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)', // Solid opaque frost layer masking text
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
   },
   blurPlaceholderText: {
     color: '#9CA3AF',

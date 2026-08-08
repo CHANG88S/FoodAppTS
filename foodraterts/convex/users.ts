@@ -287,3 +287,137 @@ export const searchUsers = query({
     });
   },
 });
+
+// Update user preferences (boba settings, colors, etc.)
+export const updatePreferences = mutation({
+  args: {
+    sweetness: v.optional(v.number()),
+    iceLevel: v.optional(v.number()),
+    milkBase: v.optional(v.string()),
+    favoriteColor: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    const currentUser = await ctx.db.get(userId as any) as any;
+    if (!currentUser) throw new Error("User not found");
+
+    const currentPrefs = currentUser.preferences || {};
+
+    await ctx.db.patch(userId as any, {
+      preferences: {
+        ...currentPrefs,
+        ...(args.sweetness !== undefined && { sweetness: args.sweetness }),
+        ...(args.iceLevel !== undefined && { iceLevel: args.iceLevel }),
+        ...(args.milkBase !== undefined && { milkBase: args.milkBase }),
+        ...(args.favoriteColor !== undefined && { favoriteColor: args.favoriteColor }),
+      },
+    });
+
+    return { success: true };
+  },
+});
+
+// Delete user account
+export const deleteAccount = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    // Delete all related data
+    // Delete follows where user is follower
+    const followsAsFollower = await ctx.db
+      .query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", userId as string))
+      .collect();
+    for (const follow of followsAsFollower) {
+      await ctx.db.delete(follow._id);
+    }
+
+    // Delete follows where user is following
+    const followsAsFollowing = await ctx.db
+      .query("follows")
+      .withIndex("by_following", (q) => q.eq("followingId", userId as string))
+      .collect();
+    for (const follow of followsAsFollowing) {
+      await ctx.db.delete(follow._id);
+    }
+
+    // Delete notifications where user is recipient
+    const notifications = await ctx.db
+      .query("notifications")
+      .withIndex("by_recipient", (q) => q.eq("recipientId", userId as string))
+      .collect();
+    for (const notification of notifications) {
+      await ctx.db.delete(notification._id);
+    }
+
+    // Delete notifications where user is sender
+    const sentNotifications = await ctx.db
+      .query("notifications")
+      .filter((q) => q.eq(q.field("senderId"), userId as string))
+      .collect();
+    for (const notification of sentNotifications) {
+      await ctx.db.delete(notification._id);
+    }
+
+    // Delete user's reviews
+    const reviews = await ctx.db
+      .query("itemReviews")
+      .withIndex("by_user", (q) => q.eq("userId", userId as string))
+      .collect();
+    for (const review of reviews) {
+      await ctx.db.delete(review._id);
+    }
+
+    // Delete user's tweets
+    const tweets = await ctx.db
+      .query("tweets")
+      .withIndex("by_user", (q) => q.eq("userId", userId as string))
+      .collect();
+    for (const tweet of tweets) {
+      await ctx.db.delete(tweet._id);
+    }
+
+    // Delete conversations where user is participant1
+    const conversations1 = await ctx.db
+      .query("conversations")
+      .withIndex("by_participant1", (q) => q.eq("participant1Id", userId as string))
+      .collect();
+    for (const conversation of conversations1) {
+      // Delete messages in this conversation
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_conversation", (q) => q.eq("conversationId", conversation._id as string))
+        .collect();
+      for (const message of messages) {
+        await ctx.db.delete(message._id);
+      }
+      await ctx.db.delete(conversation._id);
+    }
+
+    // Delete conversations where user is participant2
+    const conversations2 = await ctx.db
+      .query("conversations")
+      .withIndex("by_participant2", (q) => q.eq("participant2Id", userId as string))
+      .collect();
+    for (const conversation of conversations2) {
+      // Delete messages in this conversation
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_conversation", (q) => q.eq("conversationId", conversation._id as string))
+        .collect();
+      for (const message of messages) {
+        await ctx.db.delete(message._id);
+      }
+      await ctx.db.delete(conversation._id);
+    }
+
+    // Finally, delete the user
+    await ctx.db.delete(userId as any);
+
+    return { success: true };
+  },
+});
