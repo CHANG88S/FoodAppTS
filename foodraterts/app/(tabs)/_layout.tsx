@@ -15,6 +15,9 @@ import BadgesScreen from '../badges';
 import SettingsScreen from '../settings';
 import AccountSettingsScreen from '../account-settings';
 import BobaPreferencesScreen from '../boba-preferences';
+import PrivacyScreen from '../privacy';
+import TermsScreen from '../terms';
+import HelpScreen from '../help';
 
 const Drawer = createDrawerNavigator();
 
@@ -196,6 +199,42 @@ export default function TabsDrawerLayout() {
                     drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Boba Preferences</Text>,
                     drawerIcon: ({ color, size }) => (
                         <Ionicons name="cafe-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Drawer.Screen
+                name="privacy"
+                component={PrivacyScreen}
+                options={{
+                    title: "Privacy Policy",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Privacy Policy</Text>,
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="shield-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Drawer.Screen
+                name="terms"
+                component={TermsScreen}
+                options={{
+                    title: "Terms of Service",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Terms of Service</Text>,
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="document-text-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Drawer.Screen
+                name="help"
+                component={HelpScreen}
+                options={{
+                    title: "Help & Support",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Help & Support</Text>,
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="help-circle-outline" size={size} color={color} />
                     ),
                 }}
             />

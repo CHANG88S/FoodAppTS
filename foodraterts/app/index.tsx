@@ -160,15 +160,26 @@ const LoginIndex = () => {
         </Text>
       </TouchableOpacity>
       
-      <TouchableOpacity 
-        style={styles.switchModeButton} 
+      <TouchableOpacity
+        style={styles.switchModeButton}
         onPress={handleToggleMode}
       >
         <Text style={styles.switchModeText}>
           {isSignUpMode ? "Already have an account? Login" : "Need an account? Sign Up"}
         </Text>
       </TouchableOpacity>
-      
+
+      <View style={styles.termsRow}>
+        <Text style={styles.termsText}>By continuing, you agree to our </Text>
+        <TouchableOpacity onPress={() => router.push('/terms')}>
+          <Text style={styles.termsLink}>Terms of Service</Text>
+        </TouchableOpacity>
+        <Text style={styles.termsText}> and </Text>
+        <TouchableOpacity onPress={() => router.push('/privacy')}>
+          <Text style={styles.termsLink}>Privacy Policy</Text>
+        </TouchableOpacity>
+      </View>
+
       <TouchableOpacity onPress={handleContinueAsGuest}>
         <Text style={styles.skipText}>Continue as Guest</Text>
       </TouchableOpacity>
@@ -272,6 +283,24 @@ const styles = StyleSheet.create({
     marginTop: 20,
     color: '#9CA3AF',
     fontSize: 14,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+  termsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '90%',
+    marginTop: 12,
+  },
+  termsText: {
+    color: '#6B7280',
+    fontSize: 12,
+  },
+  termsLink: {
+    color: '#6c3b3b',
+    fontSize: 12,
     fontWeight: '600',
     textDecorationLine: 'underline',
   }
