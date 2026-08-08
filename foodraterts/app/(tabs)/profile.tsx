@@ -868,23 +868,30 @@ export default function Profile() {
                 )}
 
                 {activeTab === 'PREFERENCES' && (
-                    <View style={[styles.preferenceBobaCard, { backgroundColor: themeColor + '08', shadowOpacity: 0, elevation: 0 }]}>
-                        <View style={styles.cardHeaderRow}>
+                    <View style={styles.drinkCardContainer}>
+                        {/* Cup Lid */}
+                        <View style={[styles.drinkLid, { backgroundColor: themeColor + '60' }]} />
+                        {/* Cup Body */}
+                        <View style={[styles.drinkCupBody, { backgroundColor: themeColor + '25', borderColor: themeColor + '40' }]}>
+                            {/* Straw */}
+                            <View style={[styles.drinkStraw, { backgroundColor: themeColor }]} />
+
+                            <View style={styles.cardHeaderRow}>
                             <View style={styles.cardHeaderLeft}>
-                                <Text style={styles.cardTitle}>My Boba Taste Fingerprint</Text>
+                                <Text style={[styles.cardTitle, { color: themeColor }]}>My Boba Taste Fingerprint</Text>
                                 <Text style={styles.cardSubtitle}>Followers use this baseline to match your taste profile reviews.</Text>
                             </View>
                             <TouchableOpacity
-                                style={styles.editButton}
+                                style={[styles.editButton, { borderColor: themeColor + '40' }]}
                                 onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
                             >
-                                <Ionicons name="pencil-outline" size={16} color="#6c3b3b" />
-                                <Text style={styles.editButtonText}>Edit</Text>
+                                <Ionicons name="pencil-outline" size={16} color={themeColor} />
+                                <Text style={[styles.editButtonText, { color: themeColor }]}>Edit</Text>
                             </TouchableOpacity>
                         </View>
 
                         <View style={styles.prefDisplayRow}>
-                            <View style={styles.prefDisplayItem}>
+                            <View style={[styles.prefDisplayItem, { borderColor: themeColor + '20' }]}>
                                 <Text style={styles.prefDisplayIcon}>🍯</Text>
                                 <View style={styles.prefDisplayContent}>
                                     <Text style={styles.prefDisplayLabel}>Sweetness</Text>
@@ -892,7 +899,7 @@ export default function Profile() {
                                 </View>
                             </View>
 
-                            <View style={styles.prefDisplayItem}>
+                            <View style={[styles.prefDisplayItem, { borderColor: themeColor + '20' }]}>
                                 <Text style={styles.prefDisplayIcon}>❄️</Text>
                                 <View style={styles.prefDisplayContent}>
                                     <Text style={styles.prefDisplayLabel}>Ice Level</Text>
@@ -900,7 +907,7 @@ export default function Profile() {
                                 </View>
                             </View>
 
-                            <View style={styles.prefDisplayItem}>
+                            <View style={[styles.prefDisplayItem, { borderColor: themeColor + '20' }]}>
                                 <Text style={styles.prefDisplayIcon}>🥛</Text>
                                 <View style={styles.prefDisplayContent}>
                                     <Text style={styles.prefDisplayLabel}>Milk Base</Text>
@@ -911,7 +918,7 @@ export default function Profile() {
 
                         {/* Theme Color as Drink Visual */}
                         {currentUser?.preferences?.favoriteColor && (
-                            <View style={styles.drinkColorContainer}>
+                            <View style={[styles.drinkColorContainer, { borderTopColor: themeColor + '20' }]}>
                                 <Text style={styles.drinkColorLabel}>My Theme Drink</Text>
                                 <View style={styles.drinkVisualRow}>
                                     <View style={styles.drinkCup}>
@@ -927,7 +934,18 @@ export default function Profile() {
                                 </View>
                             </View>
                         )}
+
+                        {/* Boba Pearls at bottom */}
+                        <View style={styles.bobaPearlsContainer}>
+                            {[1,2,3,4,5].map((i) => (
+                                <View key={i} style={[styles.bobaPearl, { backgroundColor: themeColor + '80' }]} />
+                            ))}
+                        </View>
                     </View>
+                    {/* Cup bottom curve */}
+                    <View style={[styles.drinkCupBottom, { backgroundColor: themeColor + '30' }]} />
+                </View>
+            </View>
                 )}
             </ScrollView>
 
@@ -1141,7 +1159,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
     },
     preferenceCard: {
-        backgroundColor: 'red',
+        backgroundColor: 'white',
         borderRadius: 16,
         padding: 20,
         margin: 16,
@@ -1426,36 +1444,6 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#1F2937',
     },
-    colorDisplayRow: {
-        marginTop: 16,
-        paddingTop: 16,
-        borderTopWidth: 1,
-        borderTopColor: '#F3F4F6',
-    },
-    colorDisplayLabel: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#374151',
-        marginBottom: 8,
-    },
-    colorDisplaySwatchContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-    },
-    colorDisplaySwatch: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-    },
-    colorDisplayValue: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#6B7280',
-        fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    },
     emptyTabContent: {
         paddingVertical: 40,
         alignItems: 'center',
@@ -1729,7 +1717,6 @@ const styles = StyleSheet.create({
         marginTop: 20,
         paddingTop: 20,
         borderTopWidth: 1,
-        borderTopColor: '#F3F4F6',
     },
     drinkColorLabel: {
         fontSize: 14,
@@ -1777,5 +1764,55 @@ const styles = StyleSheet.create({
     drinkColorName: {
         fontSize: 13,
         fontWeight: '700',
+    },
+    drinkCardContainer: {
+        margin: 16,
+        position: 'relative',
+    },
+    drinkLid: {
+        height: 12,
+        borderTopLeftRadius: 8,
+        borderTopRightRadius: 8,
+        marginHorizontal: 4,
+    },
+    drinkCupBody: {
+        borderWidth: 2,
+        borderTopWidth: 0,
+        borderRadius: 0,
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+        padding: 20,
+        paddingTop: 16,
+        position: 'relative',
+        overflow: 'hidden',
+    },
+    drinkStraw: {
+        position: 'absolute',
+        top: -30,
+        right: 20,
+        width: 8,
+        height: 100,
+        borderRadius: 4,
+        opacity: 0.9,
+    },
+    bobaPearlsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 8,
+        marginTop: 16,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(0,0,0,0.05)',
+    },
+    bobaPearl: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+    },
+    drinkCupBottom: {
+        height: 16,
+        marginHorizontal: 4,
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
     },
 });
