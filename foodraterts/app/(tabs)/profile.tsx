@@ -422,7 +422,7 @@ export default function Profile() {
                 </View>
 
                 {activeTab === 'ACTIVITY' && (
-                    <View style={styles.preferenceCard}>
+                    <View style={styles.tabCard}>
                         <Text style={styles.cardTitle}>Activity Feed</Text>
                         <Text style={styles.cardSubtitle}>Recent rating logs published to your network.</Text>
                         {userReviews.length === 0 ? (
@@ -520,7 +520,7 @@ export default function Profile() {
                 )}
 
                 {activeTab === 'TWEETS' && (
-                    <View style={styles.preferenceCard}>
+                    <View style={styles.tabCard}>
                         <Text style={styles.cardTitle}>Create Tweet</Text>
                         <Text style={styles.cardSubtitle}>Broadcast a quick status or share a photo with your network.</Text>
 
@@ -652,7 +652,7 @@ export default function Profile() {
                 )}
 
                 {activeTab === 'REVIEWS' && (
-                    <View style={styles.preferenceCard}>
+                    <View style={styles.tabCard}>
                         <Text style={styles.cardTitle}>My Reviews</Text>
                         <Text style={styles.cardSubtitle}>Your submitted item evaluations grouped by establishment.</Text>
 
@@ -887,16 +887,14 @@ export default function Profile() {
                             <View style={styles.prefDisplayItem}>
                                 <Text style={styles.prefDisplayIcon}>🍯</Text>
                                 <View style={styles.prefDisplayContent}>
-                                    <Text style={styles.prefDisplayLabel}>Sweetness</Text>
-                                    <Text style={styles.prefDisplayValue}>{getSweetnessLabel(currentUser?.preferences?.sweetness ?? 50)}</Text>
+                                    <Text style={styles.prefDisplayValue}>{currentUser?.preferences?.sweetness ?? 50} Sweetness</Text>
                                 </View>
                             </View>
 
                             <View style={styles.prefDisplayItem}>
                                 <Text style={styles.prefDisplayIcon}>❄️</Text>
                                 <View style={styles.prefDisplayContent}>
-                                    <Text style={styles.prefDisplayLabel}>Ice Level</Text>
-                                    <Text style={styles.prefDisplayValue}>{getIceLabel(currentUser?.preferences?.iceLevel ?? 50)}</Text>
+                                    <Text style={styles.prefDisplayValue}>{currentUser?.preferences?.iceLevel ?? 50} Ice</Text>
                                 </View>
                             </View>
 
@@ -1121,8 +1119,8 @@ const styles = StyleSheet.create({
     activeTabText: {
         color: '#FFFFFF',
     },
-    preferenceCard: {
-        backgroundColor: 'red',
+    tabCard: {
+        backgroundColor: 'white',
         borderRadius: 16,
         padding: 20,
         margin: 16,
