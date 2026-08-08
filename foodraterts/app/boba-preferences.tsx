@@ -7,14 +7,12 @@ import { api } from '../convex/_generated/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const COLOR_OPTIONS = [
-    { name: 'Classic Brown', value: '#6c3b3b' },
-    { name: 'Sakura Pink', value: '#FFB7C5' },
-    { name: 'Matcha Green', value: '#88B04B' },
-    { name: 'Taro Purple', value: '#B39EB5' },
-    { name: 'Ocean Blue', value: '#5DADEC' },
-    { name: 'Sunset Orange', value: '#FFA500' },
-    { name: 'Midnight Black', value: '#2C2C2C' },
-    { name: 'Cream White', value: '#FFF8E7' },
+    { name: 'Classic Milk Tea', value: '#C49A6C' },
+    { name: 'Oolong Milk Tea', value: '#D4A574' },
+    { name: 'Jasmine Milk Tea', value: '#E8DCC8' },
+    { name: 'Matcha Latte', value: '#A8C69F' },
+    { name: 'Thai Tea', value: '#FF9966' },
+    { name: 'Taro Milk Tea', value: '#C8A8E8' },
 ];
 
 const SWEETNESS_OPTIONS = [
