@@ -887,14 +887,14 @@ export default function Profile() {
                             <View style={styles.prefDisplayItem}>
                                 <Text style={styles.prefDisplayIcon}>🍯</Text>
                                 <View style={styles.prefDisplayContent}>
-                                    <Text style={styles.prefDisplayValue}>{currentUser?.preferences?.sweetness ?? 50} Sweetness</Text>
+                                    <Text style={styles.prefDisplayValue}>{currentUser?.preferences?.sweetness ?? 50}% Sweetness</Text>
                                 </View>
                             </View>
 
                             <View style={styles.prefDisplayItem}>
                                 <Text style={styles.prefDisplayIcon}>❄️</Text>
                                 <View style={styles.prefDisplayContent}>
-                                    <Text style={styles.prefDisplayValue}>{currentUser?.preferences?.iceLevel ?? 50} Ice</Text>
+                                    <Text style={styles.prefDisplayValue}>{currentUser?.preferences?.iceLevel ?? 50}% Ice</Text>
                                 </View>
                             </View>
 
