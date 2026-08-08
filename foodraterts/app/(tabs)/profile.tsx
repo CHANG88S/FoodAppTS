@@ -908,25 +908,6 @@ export default function Profile() {
                                 </View>
                             </View>
                         </View>
-
-                        {/* Theme Color as Drink Visual */}
-                        {currentUser?.preferences?.favoriteColor && (
-                            <View style={styles.drinkColorContainer}>
-                                <Text style={styles.drinkColorLabel}>My Theme Drink</Text>
-                                <View style={styles.drinkVisualRow}>
-                                    <View style={styles.drinkCup}>
-                                        <View style={[styles.drinkLiquid, { backgroundColor: currentUser.preferences.favoriteColor }]} />
-                                        <View style={styles.drinkLid} />
-                                    </View>
-                                    <View style={[styles.drinkInfoBox, { borderColor: currentUser.preferences.favoriteColor + '40', backgroundColor: currentUser.preferences.favoriteColor + '15' }]}>
-                                        <Ionicons name="color-palette" size={16} color={currentUser.preferences.favoriteColor} />
-                                        <Text style={[styles.drinkColorName, { color: currentUser.preferences.favoriteColor }]}>
-                                            {currentUser.preferences.favoriteColor}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </View>
-                        )}
                     </View>
                 )}
             </ScrollView>
