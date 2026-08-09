@@ -21,7 +21,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   // 1. Hook up both backend collections concurrently
-  const restaurants = useQuery(api.restaurants.listAllRestaurants);
+  const restaurants = useQuery(api.restaurants.listAllRestaurants, {});
   const itemSearchResults = useQuery(api.items.searchMenuItems, { searchQuery });
 
   const isSearching = searchQuery.trim().length > 0;
@@ -49,19 +49,39 @@ export default function Home() {
     return "🧋"; // Final fallback
   };
 
+  // Define drink-related categories for filtering
+  const DRINK_CATEGORIES = ['boba', 'cafe', 'coffee', 'tea', 'matcha', 'bubble tea', 'drink', 'juice', 'smoothie', 'dessert', 'bakery', 'yogurt', 'ice cream'];
+
   // 2. BUILD THE UNIFIED SEARCH FEED ARRAY
   const getUnifiedFeed = () => {
     // Flag all restaurant items upfront so they always map via the correct card layout structure
-    const flaggedRestaurants = restaurants?.map((shop: any) => ({ 
-      ...shop, 
-      isRestaurantCard: true 
+    const flaggedRestaurants = restaurants?.map((shop: any) => ({
+      ...shop,
+      isRestaurantCard: true
     })) || [];
+
+    // Helper function to check if a shop category is drink-related
+    const isDrinkCategory = (category?: string): boolean => {
+      if (!category) return false;
+      const lowerCategory = category.toLowerCase();
+      return DRINK_CATEGORIES.some(drinkCat => lowerCategory.includes(drinkCat));
+    };
 
     // STATE A: Not searching? Show the core master directory of spots
     if (!isSearching) {
       return flaggedRestaurants.filter((shop: any) => {
         if (selectedCategory === "All") return true;
-        return shop.category?.toLowerCase().includes(selectedCategory.toLowerCase());
+
+        const shopCategory = shop.category?.toLowerCase() || "";
+
+        if (selectedCategory === "Drink") {
+          return isDrinkCategory(shopCategory);
+        } else if (selectedCategory === "Food") {
+          // Food should show non-drink categories
+          return !isDrinkCategory(shopCategory);
+        }
+
+        return shopCategory.includes(selectedCategory.toLowerCase());
       });
     }
 
@@ -69,16 +89,33 @@ export default function Home() {
     const matchingShops = flaggedRestaurants.filter((shop: any) => {
       const matchesSearch = shop.restaurantName?.toLowerCase().includes(searchQuery.toLowerCase());
       if (!matchesSearch) return false;
+
       if (selectedCategory === "All") return true;
-      return shop.category?.toLowerCase().includes(selectedCategory.toLowerCase());
+
+      const shopCategory = shop.category?.toLowerCase() || "";
+
+      if (selectedCategory === "Drink") {
+        return isDrinkCategory(shopCategory);
+      } else if (selectedCategory === "Food") {
+        return !isDrinkCategory(shopCategory);
+      }
+
+      return shopCategory.includes(selectedCategory.toLowerCase());
     });
 
     const matchingItems = itemSearchResults?.filter((item: any) => {
       if (selectedCategory === "All") return true;
-      
+
       const itemCat = item.category?.toLowerCase().trim() || "";
       const filterCat = selectedCategory.toLowerCase().trim();
-      
+
+      if (selectedCategory === "Drink") {
+        return DRINK_CATEGORIES.some(drinkCat => itemCat.includes(drinkCat));
+      } else if (selectedCategory === "Food") {
+        // For items, food should be non-drink categories
+        return !DRINK_CATEGORIES.some(drinkCat => itemCat.includes(drinkCat));
+      }
+
       return itemCat.includes(filterCat) || filterCat.includes(itemCat);
     }) || [];
 
@@ -191,25 +228,33 @@ export default function Home() {
         )}
       </View>
 
-      {/* Filter Row Pills */}
-      <View style={styles.filterRow}>
-        {["All", "Drink", "Food"].map((category) => (
-          <TouchableOpacity
-            key={category}
-            style={[
-              styles.filterPill, 
-              selectedCategory === category && styles.activeFilterPill
-            ]}
-            onPress={() => setSelectedCategory(category)}
-          >
-            <Text style={[
-              styles.filterText, 
-              selectedCategory === category && styles.activeFilterText
-            ]}>
-              {category === "Drink"  ? "🥤 Drinks" : category === "Food" ? "🍲 Food" : "✨ All"}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      {/* Filter Row Pills & Suggest a Place Button Container */}
+      <View style={styles.filterAndSuggestRow}>
+        <View style={styles.filterRow}>
+          {["All", "Drink", "Food"].map((category) => (
+            <TouchableOpacity
+              key={category}
+              style={[
+                styles.filterPill,
+                selectedCategory === category && styles.activeFilterPill
+              ]}
+              onPress={() => setSelectedCategory(category)}
+            >
+              <Text style={[
+                styles.filterText,
+                selectedCategory === category && styles.activeFilterText
+              ]}>
+                {category === "Drink"  ? "🥤 Drinks" : category === "Food" ? "🍲 Food" : "✨ All"}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Suggest a Place Button */}
+        <TouchableOpacity style={styles.suggestPlaceButton} onPress={() => router.push('/suggest-place')}>
+          <Ionicons name="location-outline" size={16} color="#6c3b3b" />
+          <Text style={styles.suggestPlaceText}>Suggest a Place</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Dynamic List Section Header */}
@@ -346,15 +391,21 @@ const styles = StyleSheet.create({
     fontSize: 16, 
     color: "#374151"
   },
+  filterAndSuggestRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    marginTop: 20,
+  },
   filterRow: { 
     flexDirection: "row", 
-    paddingHorizontal: 20, 
-    marginTop: 20, 
-    gap: 10
+    gap: 8,
+    flexShrink: 1,
   },
   filterPill: { 
-    paddingVertical: 10, 
-    paddingHorizontal: 16, 
+    paddingVertical: 8, 
+    paddingHorizontal: 12, 
     borderRadius: 20, 
     backgroundColor: "#E5E7EB"
   },
@@ -362,12 +413,29 @@ const styles = StyleSheet.create({
     backgroundColor: "#6c3b3b"
   },
   filterText: { 
-    fontSize: 14, 
+    fontSize: 13, 
     fontWeight: "600", 
     color: "#4B5563"
   },
   activeFilterText: { 
     color: "#FFFFFF"
+  },
+  suggestPlaceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#6c3b3b',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    gap: 4,
+    flexShrink: 0,
+  },
+  suggestPlaceText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6c3b3b',
   },
   sectionTitle: { 
     fontSize: 18, 
@@ -465,8 +533,8 @@ const styles = StyleSheet.create({
     marginTop: 40, 
     gap: 10
   },
-  emptyText: { 
-    color: "#9CA3AF", 
+  emptyText: {
+    color: "#9CA3AF",
     fontSize: 14
   }
 });

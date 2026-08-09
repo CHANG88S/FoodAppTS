@@ -290,24 +290,34 @@ export default function RestaurantDetailScreen() {
         )}
       </View>
 
-      {/* Dynamic Filter Section Header */}
+      {/* Dynamic Filter Section Header with Small Plus Button Next to Category */}
       <View style={styles.menuSectionHeader}>
         <Text style={styles.menuSectionTitle}>DRINKS & DISHES</Text>
         
-        <TouchableOpacity 
-          style={styles.dropdownSelector} 
-          onPress={() => setIsDropdownVisible(true)}
-          activeOpacity={0.7}
-        >
-          <Text 
-            style={styles.dropdownSelectorText}
-            numberOfLines={1}
-            ellipsizeMode="tail"
+        <View style={styles.headerRightControls}>
+          <TouchableOpacity 
+            style={styles.dropdownSelector} 
+            onPress={() => setIsDropdownVisible(true)}
+            activeOpacity={0.7}
           >
-            {selectedCategory === "All" ? "🏷️ All Categories" : `📁 ${selectedCategory}`}
-          </Text>
-          <Ionicons name="chevron-down" size={14} color="#6c3b3b" style={styles.dropdownChevron} />
-        </TouchableOpacity>
+            <Text 
+              style={styles.dropdownSelectorText}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {selectedCategory === "All" ? "🏷️ All Categories" : `📁 ${selectedCategory}`}
+            </Text>
+            <Ionicons name="chevron-down" size={14} color="#6c3b3b" style={styles.dropdownChevron} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.smallPlusButton}
+            onPress={() => router.push(`/restaurant/${dbData._id}/add-item`)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add" size={16} color="#6c3b3b" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Dropdown Modal Selector Component overlay */}
@@ -403,21 +413,22 @@ export default function RestaurantDetailScreen() {
           )}
         </View>
       )}
+
     </ScrollView>
 
     {/* Floating Pill Navigation */}
     <View style={styles.floatingPillContainer}>
       <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/home")}>
-        <Ionicons name="home" size={24} color="#000000" />
+        <Ionicons name="home" size={20} color="#000000" />
       </TouchableOpacity>
       <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/search")}>
-        <Ionicons name="search" size={24} color="#000000" />
+        <Ionicons name="search" size={20} color="#000000" />
       </TouchableOpacity>
       <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/notification")}>
-        <Ionicons name="heart-outline" size={24} color="#000000" />
+        <Ionicons name="heart-outline" size={20} color="#000000" />
       </TouchableOpacity>
       <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/profile")}>
-        <Ionicons name="person-outline" size={24} color="#000000" />
+        <Ionicons name="person-outline" size={20} color="#000000" />
       </TouchableOpacity>
     </View>
   </View>
@@ -445,14 +456,16 @@ function MenuItemCard({ item, restaurantCategory, restaurantId, router, getCateg
           />
         ) : (
           <View style={styles.placeholderImageContainer}>
-            <Text style={{ fontSize: 36 }}>{getCategoryEmoji(effectiveCategory)}</Text>
+            <Text style={{ fontSize: 32 }}>{getCategoryEmoji(effectiveCategory)}</Text>
           </View>
         )}
       </View>
 
       <View style={styles.cardContent}>
         <Text style={styles.itemName} numberOfLines={2}>{item.itemName}</Text>
-        
+      </View>
+
+      <View style={styles.bottomSection}>
         <View style={styles.pinnedMetricsRow}>
           <View style={styles.ratingRow}>
             <Text style={styles.ratingText}>
@@ -467,23 +480,23 @@ function MenuItemCard({ item, restaurantCategory, restaurantId, router, getCateg
             <Text style={styles.cardPriceText}></Text> 
           )}
         </View>
-      </View>
 
-      <TouchableOpacity 
-        style={styles.rateButton}
-        activeOpacity={0.7}
-        onPress={() => {
-          router.push({
-            pathname: "/restaurant/rate/[itemId]",
-            params: { 
-              id: restaurantId, 
-              itemId: item._id 
-            }
-          });
-        }}
-      >
-        <Text style={styles.rateButtonText}>RATE ★</Text>
-      </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.rateButton}
+          activeOpacity={0.7}
+          onPress={() => {
+            router.push({
+              pathname: "/restaurant/rate/[itemId]",
+              params: { 
+                id: restaurantId, 
+                itemId: item._id 
+              }
+            });
+          }}
+        >
+          <Text style={styles.rateButtonText}>RATE ★</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -591,7 +604,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     marginHorizontal: 20,
-    marginTop: 12,
+    marginTop: 4,
     paddingHorizontal: 12,
     height: 36,
     borderRadius: 18,
@@ -621,6 +634,12 @@ const styles = StyleSheet.create({
     color: "#1F2937", 
     letterSpacing: 0.5 
   },
+  headerRightControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 1,
+  },
   dropdownSelector: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -630,7 +649,6 @@ const styles = StyleSheet.create({
     borderRadius: 14, 
     gap: 4, 
     flexShrink: 1, 
-    maxWidth: '60%' 
   },
   dropdownSelectorText: { 
     fontSize: 12, 
@@ -640,6 +658,13 @@ const styles = StyleSheet.create({
   },
   dropdownChevron: { 
     flexShrink: 0 
+  },
+  smallPlusButton: {
+    backgroundColor: 'rgba(108, 59, 59, 0.08)',
+    padding: 7,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalOverlay: { 
     flex: 1, 
@@ -693,7 +718,8 @@ const styles = StyleSheet.create({
     width: PAGE_WIDTH, 
     flexDirection: 'row', 
     flexWrap: 'wrap', 
-    justifyContent: 'space-between', 
+    justifyContent: 'flex-start', // Changed from space-between to prevent single items from stretching vertically
+    alignContent: 'flex-start',
     gap: 6, 
     paddingBottom: 10, 
     marginRight: GRID_PADDING * 2 
@@ -706,16 +732,17 @@ const styles = StyleSheet.create({
     alignItems: "center", 
     borderWidth: 1, 
     borderColor: "#F3F4F6", 
-    marginBottom: 4, 
+    marginBottom: 6, 
     elevation: 2, 
     shadowColor: "#000", 
     shadowOffset: { width: 0, height: 1 }, 
     shadowOpacity: 0.05, 
-    shadowRadius: 2 
+    shadowRadius: 2,
+    height: 165, // Fixed height keeps all cards identical regardless of item count per page
   },
   imageWrapperFrame: {
     width: '100%',
-    height: 85,
+    height: 75,
     borderRadius: 8,
     backgroundColor: "#F5F5F4", 
     overflow: 'hidden',
@@ -736,7 +763,7 @@ const styles = StyleSheet.create({
     width: '100%', 
     marginTop: 4, 
     alignItems: 'flex-start', 
-    minHeight: 50 
+    height: 28, // Fixed height ensures text container stays uniform
   },
   itemName: { 
     fontSize: 11, 
@@ -749,7 +776,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', 
     alignItems: 'center', 
     width: '100%', 
-    marginTop: 'auto', 
     paddingTop: 2 
   },
   cardPriceText: { 
@@ -766,6 +792,10 @@ const styles = StyleSheet.create({
     fontSize: 10, 
     fontWeight: '600', 
     color: '#6B7280' 
+  },
+  bottomSection: {
+    width: '100%',
+    marginTop: 'auto',
   },
   rateButton: { 
     backgroundColor: '#6c3b3b', 
@@ -836,11 +866,11 @@ const styles = StyleSheet.create({
     fontSize: 13, 
     marginBottom: 12 
   },
-  addDrinkButton: { 
-    backgroundColor: "#6c3b3b", 
-    paddingHorizontal: 16, 
-    paddingVertical: 8, 
-    borderRadius: 8 
+  addDrinkButton: {
+    backgroundColor: "#6c3b3b",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8
   },
   addDrinkButtonText: {
     color: "#FFF",
@@ -849,15 +879,15 @@ const styles = StyleSheet.create({
   },
   floatingPillContainer: {
     position: "absolute",
-    bottom: 30,
+    bottom: 25,
     left: 0,
     right: 0,
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    marginHorizontal: 40,
-    height: 54,
-    borderRadius: 27,
+    marginHorizontal: 60,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderWidth: 0.5,
     borderColor: "rgba(0, 0, 0, 0.1)",
@@ -866,10 +896,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 5,
-    paddingBottom: 6,
-    paddingTop: 6,
+    paddingBottom: 4,
+    paddingTop: 4,
   },
   pillItem: {
-    padding: 4,
+    padding: 3,
   },
 });

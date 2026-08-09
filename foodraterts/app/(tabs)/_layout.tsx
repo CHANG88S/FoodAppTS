@@ -18,6 +18,8 @@ import BobaPreferencesScreen from '../boba-preferences';
 import PrivacyScreen from '../privacy';
 import TermsScreen from '../terms';
 import HelpScreen from '../help';
+import SuggestPlaceScreen from '../suggest-place';
+import ModerationScreen from '../moderation';
 
 const Drawer = createDrawerNavigator();
 
@@ -111,6 +113,7 @@ function TabLayout() {
 function CustomDrawerContent(props: any) {
     const { signOut } = useAuthActions();
     const router = useRouter();
+    const isStaff = useQuery(api.authz.isStaff) ?? false;
 
     const handleSignOut = async () => {
         try {
@@ -124,7 +127,17 @@ function CustomDrawerContent(props: any) {
     return (
         <DrawerContentScrollView {...props}>
             <DrawerItemList {...props} />
-            <DrawerItem 
+            {isStaff && (
+                <DrawerItem
+                    label="Moderation"
+                    icon={({ size, color }) => (
+                        <Ionicons name="shield-checkmark-outline" size={size} color={color} />
+                    )}
+                    labelStyle={{ fontSize: 15, fontWeight: '500' }}
+                    onPress={() => router.push('/moderation')}
+                />
+            )}
+            <DrawerItem
                 label="Sign Out"
                 icon={({ size }) => (
                     <Ionicons name="log-out-outline" size={size} color="#b01212" />
@@ -175,6 +188,18 @@ export default function TabsDrawerLayout() {
                     drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Badges & Achievements</Text>,
                     drawerIcon: ({ color, size }) => (
                         <Ionicons name="trophy-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Drawer.Screen
+                name="suggest-place"
+                component={SuggestPlaceScreen}
+                options={{
+                    title: "Suggest a Place",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Suggest a Place</Text>,
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="location-outline" size={size} color={color} />
                     ),
                 }}
             />

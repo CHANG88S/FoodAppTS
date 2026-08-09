@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { requireStaff } from "./authz";
 
 export const searchMenuItems = query({
   args: {
@@ -20,10 +21,13 @@ export const addMenuItem = mutation({
     restaurantId: v.id("restaurants"),
     restaurantName: v.string(),
     itemName: v.string(),
-    category: v.optional(v.union(v.string(), v.array(v.string()))),  
+    category: v.optional(v.union(v.string(), v.array(v.string()))),
     price: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    // Staff-only: regular users should use suggestMenuItem instead
+    await requireStaff(ctx);
+
     const existingItem = await ctx.db
       .query("menuItems")
       .withIndex("by_restaurantId", (q) => q.eq("restaurantId", args.restaurantId))

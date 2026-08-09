@@ -124,3 +124,30 @@ export const createNotificationInternal = mutation({
     });
   },
 });
+
+// Shared helper for creating notifications (used by other mutations internally)
+export async function createNotificationForSuggestion(
+  ctx: any,
+  args: {
+    recipientId: string;
+    senderId: string;
+    type: "follow" | "like" | "comment" | "mention" | "suggestion";
+    targetType: "tweet" | "review" | "user" | "suggestion";
+    targetId?: string;
+    message?: string;
+  }
+) {
+  // Don't create notification if sender is recipient
+  if (args.recipientId === args.senderId) return;
+
+  await ctx.db.insert("notifications", {
+    recipientId: args.recipientId,
+    senderId: args.senderId,
+    type: args.type,
+    targetType: args.targetType,
+    targetId: args.targetId,
+    message: args.message,
+    isRead: false,
+    createdAt: Date.now(),
+  });
+}

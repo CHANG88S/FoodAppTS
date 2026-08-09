@@ -9,6 +9,7 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as authz from "../authz.js";
 import type * as http from "../http.js";
 import type * as images from "../images.js";
 import type * as items from "../items.js";
@@ -18,6 +19,7 @@ import type * as restaurantImport from "../restaurantImport.js";
 import type * as restaurants from "../restaurants.js";
 import type * as review from "../review.js";
 import type * as seed from "../seed.js";
+import type * as suggestions from "../suggestions.js";
 import type * as tweets from "../tweets.js";
 import type * as users from "../users.js";
 
@@ -29,6 +31,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  authz: typeof authz;
   http: typeof http;
   images: typeof images;
   items: typeof items;
@@ -38,6 +41,7 @@ declare const fullApi: ApiFromModules<{
   restaurants: typeof restaurants;
   review: typeof review;
   seed: typeof seed;
+  suggestions: typeof suggestions;
   tweets: typeof tweets;
   users: typeof users;
 }>;

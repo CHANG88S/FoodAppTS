@@ -39,35 +39,39 @@ export default defineSchema({
 
   // 1. MASTER RESTAURANT DIRECTORY
   restaurants: defineTable({
-    placeId: v.optional(v.string()),  
-    restaurantName: v.string(),      
-    category: v.optional(v.string()),        
-    city: v.string(),            
-    state: v.string(),            
+    placeId: v.optional(v.string()),
+    restaurantName: v.string(),
+    category: v.optional(v.string()),
+    city: v.string(),
+    state: v.string(),
     address: v.string(),
     phone: v.optional(v.string()),
     hours: v.optional(v.string()),
     logoStorageId: v.optional(v.id("_storage")),
-    status: v.optional(v.string()),   
+    status: v.optional(v.string()),
     website: v.optional(v.string()),
     mapsLocation: v.optional(v.string()),
+    chainRestaurantId: v.optional(v.id("restaurants")), // For chain locations - references parent/original location
+    isChainLocation: v.optional(v.boolean()), // Flag to indicate if this is part of a chain
   })
     .index("by_restaurantName", ["restaurantName"])
-    .index("by_state_and_city", ["state", "city"]),
+    .index("by_state_and_city", ["state", "city"])
+    .index("by_chainRestaurantId", ["chainRestaurantId"]),
 
   // 2. INDIVIDUAL MENU ITEMS (DISHES/DRINKS)
   menuItems: defineTable({
-    restaurantId: v.id("restaurants"), 
-    restaurantName: v.string(),        
-    itemName: v.string(),        
+    restaurantId: v.id("restaurants"),
+    restaurantName: v.string(),
+    itemName: v.string(),
     category: v.optional(
       v.union(
-        v.string(), 
+        v.string(),
         v.array(v.string())
       )
-    ),                 
-    price: v.optional(v.number()),      
-    imageStorageId: v.optional(v.id("_storage")),   
+    ),
+    price: v.optional(v.number()),
+    imageStorageId: v.optional(v.id("_storage")),
+    copiedFromChainId: v.optional(v.id("restaurants")), // Track if this was copied from a chain location
   })
     .index("by_restaurantId", ["restaurantId"])
     .searchIndex("search_item", {
@@ -167,9 +171,15 @@ export default defineSchema({
       v.literal("follow"),
       v.literal("like"),
       v.literal("comment"),
-      v.literal("mention")
+      v.literal("mention"),
+      v.literal("suggestion")
     ),
-    targetType: v.union(v.literal("tweet"), v.literal("review"), v.literal("user")),
+    targetType: v.union(
+      v.literal("tweet"),
+      v.literal("review"),
+      v.literal("user"),
+      v.literal("suggestion")
+    ),
     targetId: v.optional(v.string()), // ID of liked tweet, commented review, etc. (stored as string for flexibility)
     message: v.optional(v.string()), // Custom message (e.g., comment text)
     isRead: v.boolean(),
@@ -199,4 +209,52 @@ export default defineSchema({
   })
     .index("by_conversation", ["conversationId"])
     .index("by_conversation_and_created", ["conversationId", "createdAt"]),
+
+  // 10. PLACE SUGGESTIONS (for moderation queue)
+  placeSuggestions: defineTable({
+    suggestedBy: v.id("users"),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("rejected")
+    ),
+    restaurantName: v.string(),
+    address: v.string(),
+    city: v.string(),
+    state: v.string(),
+    phone: v.optional(v.string()),
+    category: v.optional(v.string()),
+    website: v.optional(v.string()),
+    lat: v.optional(v.number()),
+    lng: v.optional(v.number()),
+    mapsLocation: v.optional(v.string()),
+    reviewedBy: v.optional(v.id("users")),
+    reviewedAt: v.optional(v.number()),
+    note: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_suggester", ["suggestedBy"]),
+
+  // 11. MENU ITEM SUGGESTIONS (for moderation queue)
+  menuItemSuggestions: defineTable({
+    suggestedBy: v.id("users"),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("rejected")
+    ),
+    restaurantId: v.id("restaurants"),
+    restaurantName: v.string(),
+    itemName: v.string(),
+    category: v.optional(v.union(v.string(), v.array(v.string()))),
+    price: v.optional(v.number()),
+    reviewedBy: v.optional(v.id("users")),
+    reviewedAt: v.optional(v.number()),
+    note: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_suggester", ["suggestedBy"])
+    .index("by_restaurantId", ["restaurantId"]),
 });

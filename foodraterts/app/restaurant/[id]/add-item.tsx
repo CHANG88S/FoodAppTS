@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  TextInput, 
-  TouchableOpacity, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
   ActivityIndicator,
-  Alert 
+  Alert
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation } from 'convex/react';
@@ -17,12 +17,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function AddItemScreen() {
   const { id, itemId } = useLocalSearchParams();
   const router = useRouter();
-  
+
   const restaurant = useQuery(api.restaurants.getRestaurantDetails, {
     restaurantId: id as Id<"restaurants">
   });
 
+  const isStaff = useQuery(api.authz.isStaff) ?? false;
+
   const createMenuItem = useMutation(api.items.addMenuItem);
+  const suggestMenuItem = useMutation(api.suggestions.suggestMenuItem);
 
   const [itemName, setItemName] = useState("");
   const [category, setCategory] = useState("Drink"); 
@@ -41,20 +44,36 @@ export default function AddItemScreen() {
 
     setIsSubmitting(true);
     try {
-      await createMenuItem({
-        restaurantId: id as Id<"restaurants">,
-        restaurantName: restaurant.restaurantName,
-        itemName: itemName.trim(),
-        category,
-        price: price ? parseFloat(price) : undefined,
-      });
+      if (isStaff) {
+        // Staff add directly
+        await createMenuItem({
+          restaurantId: id as Id<"restaurants">,
+          restaurantName: restaurant.restaurantName,
+          itemName: itemName.trim(),
+          category,
+          price: price ? parseFloat(price) : undefined,
+        });
 
-      Alert.alert("Success 🎉", `${itemName} added to the menu!`, [
-        { text: "OK", onPress: () => router.back() }
-      ]);
+        Alert.alert("Success 🎉", `${itemName} added to the menu!`, [
+          { text: "OK", onPress: () => router.back() }
+        ]);
+      } else {
+        // Regular users suggest for review
+        await suggestMenuItem({
+          restaurantId: id as Id<"restaurants">,
+          restaurantName: restaurant.restaurantName,
+          itemName: itemName.trim(),
+          category,
+          price: price ? parseFloat(price) : undefined,
+        });
+
+        Alert.alert("Submitted ✅", `${itemName} has been submitted for review. We'll notify you once it's approved!`, [
+          { text: "OK", onPress: () => router.back() }
+        ]);
+      }
     } catch (error) {
       console.error(error);
-      Alert.alert("Submission Failed", "Something went wrong saving your item.");
+      Alert.alert("Submission Failed", "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -100,15 +119,17 @@ export default function AddItemScreen() {
           onChangeText={setPrice}
         />
 
-        <TouchableOpacity 
-          style={styles.submitButton} 
+        <TouchableOpacity
+          style={styles.submitButton}
           onPress={handleSubmit}
           disabled={isSubmitting || !restaurant}
         >
           {isSubmitting ? (
             <ActivityIndicator color="#FFF" />
           ) : (
-            <Text style={styles.submitButtonText}>Save Item to Menu</Text>
+            <Text style={styles.submitButtonText}>
+              {isStaff ? "Add to Menu" : "Suggest Item"}
+            </Text>
           )}
         </TouchableOpacity>
       </View>

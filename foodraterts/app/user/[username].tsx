@@ -716,16 +716,16 @@ export default function PublicProfileScreen() {
       {/* Floating Pill Navigation */}
       <View style={styles.floatingPillContainer}>
         <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/home")}>
-          <Ionicons name="home" size={24} color="#000000" />
+          <Ionicons name="home" size={20} color="#000000" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/search")}>
-          <Ionicons name="search" size={24} color="#000000" />
+          <Ionicons name="search" size={20} color="#000000" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/notification")}>
-          <Ionicons name="heart-outline" size={24} color="#000000" />
+          <Ionicons name="heart-outline" size={20} color="#000000" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/profile")}>
-          <Ionicons name="person-outline" size={24} color="#000000" />
+          <Ionicons name="person-outline" size={20} color="#000000" />
         </TouchableOpacity>
       </View>
 
@@ -1339,15 +1339,15 @@ const styles = StyleSheet.create({
   },
   floatingPillContainer: {
     position: "absolute",
-    bottom: 30,
+    bottom: 25,
     left: 0,
     right: 0,
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    marginHorizontal: 40,
-    height: 54,
-    borderRadius: 27,
+    marginHorizontal: 60,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderWidth: 0.5,
     borderColor: "rgba(0, 0, 0, 0.1)",
@@ -1356,11 +1356,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 5,
-    paddingBottom: 6,
-    paddingTop: 6,
+    paddingBottom: 4,
+    paddingTop: 4,
   },
   pillItem: {
-    padding: 4,
+    padding: 3,
   },
   authModalOverlay: {
     flex: 1,
