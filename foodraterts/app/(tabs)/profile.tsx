@@ -14,6 +14,7 @@ import {
     LayoutAnimation,
     UIManager,
     TextInput,
+    Dimensions,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +22,22 @@ import { useRouter, Stack, useNavigation, useFocusEffect } from 'expo-router';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { DrawerActions } from '@react-navigation/native';
+
+// Conditionally import Mapbox to avoid crashes when native module isn't available
+let Mapbox: any = null;
+let MapView: any = null;
+let Camera: any = null;
+let PointAnnotation: any = null;
+
+try {
+    const mapboxModule = require('@rnmapbox/maps');
+    Mapbox = mapboxModule.default;
+    MapView = mapboxModule.MapView;
+    Camera = mapboxModule.Camera;
+    PointAnnotation = mapboxModule.PointAnnotation;
+} catch (error) {
+    console.warn('Mapbox not available:', error);
+}
 
 import { formatCount } from '../../utils/formatters';
 
@@ -67,6 +84,9 @@ export default function Profile() {
     const [activeTab, setActiveTab] = useState('ACTIVITY');
     const [expandedRestaurant, setExpandedRestaurant] = useState<string | null>(null);
     const [isAuthModalVisible, setAuthModalVisible] = useState(false);
+
+    // Map/List View Toggle for Reviews tab
+    const [reviewsViewMode, setReviewsViewMode] = useState<'list' | 'map'>('list');
 
     // Unified Location Filter States
     const [selectedStateFilter, setSelectedStateFilter] = useState<string>('ALL');
@@ -404,7 +424,10 @@ export default function Profile() {
                 </View>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContainer}
+                scrollEnabled={activeTab !== 'REVIEWS' || reviewsViewMode !== 'map'}
+            >
                 <View style={styles.profileSectionUnderHeader}>
                     <View style={styles.profileTopRow}>
                         <TouchableOpacity onPress={() => setProfileModalVisible(true)} disabled={isUploadingProfileImage} style={styles.imageContainer}>
@@ -702,8 +725,26 @@ export default function Profile() {
 
                 {activeTab === 'REVIEWS' && (
                     <View style={styles.tabCard}>
-                        <Text style={styles.cardTitle}>My Reviews</Text>
-                        <Text style={styles.cardSubtitle}>Your submitted item evaluations grouped by establishment.</Text>
+                        <View style={styles.cardHeaderRow}>
+                            <View style={styles.cardHeaderLeft}>
+                                <Text style={styles.cardTitle}>My Reviews</Text>
+                                <Text style={styles.cardSubtitle}>Your submitted item evaluations grouped by establishment.</Text>
+                            </View>
+                            {/* View Toggle Button */}
+                            <TouchableOpacity
+                                style={styles.viewToggleButton}
+                                onPress={() => setReviewsViewMode(reviewsViewMode === 'list' ? 'map' : 'list')}
+                            >
+                                <Ionicons
+                                    name={reviewsViewMode === 'list' ? 'map-outline' : 'list-outline'}
+                                    size={16}
+                                    color="#6c3b3b"
+                                />
+                                <Text style={styles.viewToggleText}>
+                                    {reviewsViewMode === 'list' ? 'Map View' : 'List View'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
 
                         {/* Unified Location Filter Dropdown */}
                         {uniqueReviews.length > 0 && (
@@ -821,7 +862,7 @@ export default function Profile() {
                                 <Ionicons name="star-outline" size={32} color="#9CA3AF" />
                                 <Text style={styles.emptyTabText}>No reviews match your location filter.</Text>
                             </View>
-                        ) : (
+                        ) : reviewsViewMode === 'list' ? (
                             <View style={[styles.dropdownContainer, { marginTop: 12 }]}>
                                 {Object.entries(groupedReviews).map(([restaurantName, items]: [string, any[]]) => {
                                     const isExpanded = expandedRestaurant === restaurantName;
@@ -911,6 +952,55 @@ export default function Profile() {
                                         </View>
                                     );
                                 })}
+                            </View>
+                        ) : (
+                            <View style={styles.mapContainer}>
+                                {MapView && filteredReviews.some((review: any) => review.lat && review.lng) ? (
+                                    <MapView
+                                        style={styles.map}
+                                        styleURL="mapbox://styles/mapbox/streets-v12"
+                                    >
+                                        <Camera
+                                            zoomLevel={10}
+                                            centerCoordinate={[
+                                                filteredReviews.find((r: any) => r.lat && r.lng)?.lng || -122.4194,
+                                                filteredReviews.find((r: any) => r.lat && r.lng)?.lat || 37.7749,
+                                            ]}
+                                        />
+                                        {filteredReviews.map((review: any, index: number) => {
+                                            if (review.lat && review.lng && PointAnnotation) {
+                                                return (
+                                                    <PointAnnotation
+                                                        key={`marker-${index}`}
+                                                        id={`marker-${index}`}
+                                                        coordinate={[review.lng, review.lat]}
+                                                    >
+                                                        <View style={{ backgroundColor: '#FFFFFF', padding: 4, borderRadius: 4 }}>
+                                                            <Text style={{ fontSize: 10, fontWeight: '700' }}>{review.restaurantName}</Text>
+                                                        </View>
+                                                    </PointAnnotation>
+                                                );
+                                            }
+                                            return null;
+                                        })}
+                                    </MapView>
+                                ) : !MapView ? (
+                                    <View style={styles.mapPlaceholderContainer}>
+                                        <Ionicons name="construct-outline" size={48} color="#9CA3AF" />
+                                        <Text style={styles.mapPlaceholderTitle}>Map Not Available</Text>
+                                        <Text style={styles.mapPlaceholderText}>
+                                            The map module requires a custom native build.
+                                        </Text>
+                                    </View>
+                                ) : (
+                                    <View style={styles.mapPlaceholderContainer}>
+                                        <Ionicons name="map-outline" size={48} color="#9CA3AF" />
+                                        <Text style={styles.mapPlaceholderTitle}>No Location Data</Text>
+                                        <Text style={styles.mapPlaceholderText}>
+                                            The restaurants you've reviewed don't have coordinates yet.
+                                        </Text>
+                                    </View>
+                                )}
                             </View>
                         )}
                     </View>
@@ -1209,6 +1299,61 @@ const styles = StyleSheet.create({
         marginTop: 2,
         marginBottom: 16,
         lineHeight: 16,
+    },
+    viewToggleButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+        backgroundColor: '#F3F4F6',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    viewToggleText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#6c3b3b',
+    },
+    mapContainer: {
+        marginTop: 12,
+        height: 400,
+        borderRadius: 12,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    map: {
+        width: '100%',
+        height: '100%',
+    },
+    mapPlaceholderContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+        backgroundColor: '#F9FAFB',
+    },
+    mapPlaceholderTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1F2937',
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    mapPlaceholderText: {
+        fontSize: 14,
+        color: '#6B7280',
+        textAlign: 'center',
+        marginBottom: 4,
+        lineHeight: 20,
+    },
+    mapPlaceholderSubtext: {
+        fontSize: 12,
+        color: '#9CA3AF',
+        textAlign: 'center',
+        marginTop: 8,
     },
     filterDropdownWrapperSingle: {
         position: 'relative',

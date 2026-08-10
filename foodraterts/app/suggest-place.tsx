@@ -18,10 +18,20 @@ const CATEGORIES = [
   'Bubble Tea',
   'Tea Shop',
   'Coffee',
-  'Bakery',
-  'Restaurant',
   'Cafe',
+  'Bakery',
   'Dessert',
+  'Sushi',
+  'Ramen',
+  'BBQ',
+  'Korean BBQ',
+  'Buffet',
+  'Burger',
+  'Donut',
+  'Ice Cream',
+  'Yogurt',
+  'Shabu',
+  'Restaurant',
   'Other',
 ];
 
@@ -40,7 +50,7 @@ export default function SuggestPlaceScreen() {
   const suggestPlace = useMutation(api.suggestions.suggestPlace);
 
   const handleSubmit = async () => {
-    if (!restaurantName.trim() || !address.trim() || !city.trim() || !state.trim()) {
+    if (!restaurantName.trim() || !address.trim() || !city.trim() || !state.trim() || !category.trim()) {
       Alert.alert('Error', 'Please fill in all required fields.');
       return;
     }
@@ -53,7 +63,7 @@ export default function SuggestPlaceScreen() {
         city: city.trim(),
         state: state.trim(),
         phone: phone.trim() || undefined,
-        category: category || undefined,
+        category: category.trim(),
         website: website.trim() || undefined,
       });
 
@@ -135,7 +145,7 @@ export default function SuggestPlaceScreen() {
           keyboardType="phone-pad"
         />
 
-        <Text style={styles.label}>Category (Optional)</Text>
+        <Text style={styles.label}>Category *</Text>
         <View style={styles.categoryGrid}>
           {CATEGORIES.map((cat) => (
             <TouchableOpacity

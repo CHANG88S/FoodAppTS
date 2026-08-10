@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as authz from "../authz.js";
+import type * as geocoding from "../geocoding.js";
 import type * as http from "../http.js";
 import type * as images from "../images.js";
 import type * as items from "../items.js";
@@ -32,6 +33,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   authz: typeof authz;
+  geocoding: typeof geocoding;
   http: typeof http;
   images: typeof images;
   items: typeof items;

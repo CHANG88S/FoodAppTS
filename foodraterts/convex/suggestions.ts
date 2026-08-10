@@ -218,6 +218,35 @@ export const approvePlaceSuggestionWithChain = mutation({
 
     const placeId = `suggested:${suggestion._id}`;
 
+    // Create the new restaurant with geocoding if coordinates not provided
+    let lat = suggestion.lat;
+    let lng = suggestion.lng;
+
+    // If coordinates are not provided in suggestion, geocode the address
+    if (!lat || !lng) {
+      try {
+        const mapboxToken = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
+        if (mapboxToken) {
+          const fullAddress = `${suggestion.address}, ${suggestion.city}, ${suggestion.state}, USA`;
+          const response = await fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullAddress)}.json?access_token=${mapboxToken}`
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.features && data.features.length > 0) {
+              const [longitude, latitude] = data.features[0].center;
+              lat = latitude;
+              lng = longitude;
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Geocoding failed during restaurant creation:", error);
+        // Continue with restaurant creation even if geocoding fails
+      }
+    }
+
     // Create the new restaurant
     const newRestaurantId = await ctx.db.insert("restaurants", {
       placeId,
@@ -231,6 +260,9 @@ export const approvePlaceSuggestionWithChain = mutation({
       mapsLocation: suggestion.mapsLocation,
       chainRestaurantId: args.chainRestaurantId,
       isChainLocation: !!args.chainRestaurantId,
+      // Include coordinates (from suggestion or from geocoding)
+      lat,
+      lng,
     });
 
     // Copy menu items if requested and chain restaurant provided

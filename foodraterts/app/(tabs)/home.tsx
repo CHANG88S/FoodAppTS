@@ -16,15 +16,24 @@ import { api } from "../../convex/_generated/api";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function Home() {
-  const router = useRouter(); 
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [zipcode, setZipcode] = useState("");
+  const [selectedRadius, setSelectedRadius] = useState<number | null>(null);
+
+  const isSearching = searchQuery.trim().length > 0;
+  const isFilteringByLocation = zipcode.trim().length === 5 && selectedRadius !== null;
 
   // 1. Hook up both backend collections concurrently
   const restaurants = useQuery(api.restaurants.listAllRestaurants, {});
   const itemSearchResults = useQuery(api.items.searchMenuItems, { searchQuery });
-
-  const isSearching = searchQuery.trim().length > 0;
+  const filteredRestaurants = useQuery(
+    api.restaurants.filterRestaurantsByDistance,
+    isFilteringByLocation
+      ? { zipcode: zipcode.trim(), radiusMiles: selectedRadius! }
+      : "skip"
+  );
 
   // 🔑 HELPER FUNCTION: Returns a dynamic emoji matching your restaurant category
   const getCategoryEmoji = (categoryString?: string): string => {
@@ -54,8 +63,13 @@ export default function Home() {
 
   // 2. BUILD THE UNIFIED SEARCH FEED ARRAY
   const getUnifiedFeed = () => {
+    // Determine which restaurant dataset to use based on location filtering
+    const restaurantDataSource = isFilteringByLocation && filteredRestaurants
+      ? filteredRestaurants
+      : restaurants;
+
     // Flag all restaurant items upfront so they always map via the correct card layout structure
-    const flaggedRestaurants = restaurants?.map((shop: any) => ({
+    const flaggedRestaurants = restaurantDataSource?.map((shop: any) => ({
       ...shop,
       isRestaurantCard: true
     })) || [];
@@ -69,20 +83,24 @@ export default function Home() {
 
     // STATE A: Not searching? Show the core master directory of spots
     if (!isSearching) {
-      return flaggedRestaurants.filter((shop: any) => {
-        if (selectedCategory === "All") return true;
+      let filtered = flaggedRestaurants.filter((shop: any) => {
+        // Apply category filter
+        if (selectedCategory !== "All") {
+          const shopCategory = shop.category?.toLowerCase() || "";
 
-        const shopCategory = shop.category?.toLowerCase() || "";
-
-        if (selectedCategory === "Drink") {
-          return isDrinkCategory(shopCategory);
-        } else if (selectedCategory === "Food") {
-          // Food should show non-drink categories
-          return !isDrinkCategory(shopCategory);
+          if (selectedCategory === "Drink") {
+            if (!isDrinkCategory(shopCategory)) return false;
+          } else if (selectedCategory === "Food") {
+            if (isDrinkCategory(shopCategory)) return false;
+          } else {
+            if (!shopCategory.includes(selectedCategory.toLowerCase())) return false;
+          }
         }
 
-        return shopCategory.includes(selectedCategory.toLowerCase());
+        return true;
       });
+
+      return filtered;
     }
 
     // STATE B: Active searching? Combine restaurant name matches and item name matches
@@ -90,17 +108,20 @@ export default function Home() {
       const matchesSearch = shop.restaurantName?.toLowerCase().includes(searchQuery.toLowerCase());
       if (!matchesSearch) return false;
 
-      if (selectedCategory === "All") return true;
+      // Apply category filter
+      if (selectedCategory !== "All") {
+        const shopCategory = shop.category?.toLowerCase() || "";
 
-      const shopCategory = shop.category?.toLowerCase() || "";
-
-      if (selectedCategory === "Drink") {
-        return isDrinkCategory(shopCategory);
-      } else if (selectedCategory === "Food") {
-        return !isDrinkCategory(shopCategory);
+        if (selectedCategory === "Drink") {
+          if (!isDrinkCategory(shopCategory)) return false;
+        } else if (selectedCategory === "Food") {
+          if (isDrinkCategory(shopCategory)) return false;
+        } else {
+          if (!shopCategory.includes(selectedCategory.toLowerCase())) return false;
+        }
       }
 
-      return shopCategory.includes(selectedCategory.toLowerCase());
+      return true;
     });
 
     const matchingItems = itemSearchResults?.filter((item: any) => {
@@ -195,7 +216,7 @@ export default function Home() {
     </TouchableOpacity>
   );
 
-  const isLoading = restaurants === undefined || (isSearching && itemSearchResults === undefined);
+  const isLoading = restaurants === undefined || (isSearching && itemSearchResults === undefined) || (isFilteringByLocation && filteredRestaurants === undefined);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -257,9 +278,57 @@ export default function Home() {
         </TouchableOpacity>
       </View>
 
+      {/* Location Filter Row */}
+      <View style={styles.locationFilterRow}>
+        <View style={styles.zipcodeContainer}>
+          <Ionicons name="location" size={16} color="#6B7280" style={styles.locationIcon} />
+          <TextInput
+            style={styles.zipcodeInput}
+            placeholder="Zipcode"
+            placeholderTextColor="#9CA3AF"
+            value={zipcode}
+            onChangeText={setZipcode}
+            keyboardType="number-pad"
+            maxLength={5}
+          />
+        </View>
+
+        <View style={styles.radiusRow}>
+          {[10, 25, 50, 100].map((radius) => (
+            <TouchableOpacity
+              key={radius}
+              style={[
+                styles.radiusPill,
+                selectedRadius === radius && styles.activeRadiusPill
+              ]}
+              onPress={() => setSelectedRadius(radius)}
+              disabled={!zipcode.trim()}
+            >
+              <Text style={[
+                styles.radiusText,
+                selectedRadius === radius && styles.activeRadiusText
+              ]}>
+                {radius}mi
+              </Text>
+            </TouchableOpacity>
+          ))}
+          {selectedRadius !== null && (
+            <TouchableOpacity
+              style={styles.clearRadiusButton}
+              onPress={() => {
+                setSelectedRadius(null);
+                setZipcode("");
+              }}
+            >
+              <Ionicons name="close-circle" size={16} color="#6B7280" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       {/* Dynamic List Section Header */}
       <Text style={styles.sectionTitle}>
-        {isSearching ? "🔍 Combined Search Matches" : "✨ 20 Local Spots"}
+        {isSearching ? "🔍 Combined Search Matches" : "✨ Featured Spots"}
       </Text>
 
       {isLoading ? (
@@ -282,7 +351,11 @@ export default function Home() {
             <View style={styles.emptyContainer}>
               <Ionicons name="search-outline" size={48} color="#D1D5DB" />
               <Text style={styles.emptyText}>
-                No shops or menu items match your search entry.
+                {isFilteringByLocation
+                  ? `No spots found within ${selectedRadius} miles of ${zipcode}. Try expanding your radius or a different zipcode.`
+                  : isSearching
+                  ? "No shops or menu items match your search entry."
+                  : "No spots found matching your criteria."}
               </Text>
             </View>
           }
@@ -436,6 +509,59 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#6c3b3b',
+  },
+  locationFilterRow: {
+    paddingHorizontal: 20,
+    marginTop: 12,
+  },
+  zipcodeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+    marginBottom: 8,
+  },
+  locationIcon: {
+    marginRight: 8,
+  },
+  zipcodeInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#374151',
+  },
+  radiusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  radiusPill: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: '#E5E7EB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  activeRadiusPill: {
+    backgroundColor: '#6c3b3b',
+    borderColor: '#6c3b3b',
+  },
+  radiusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  activeRadiusText: {
+    color: '#FFFFFF',
+  },
+  clearRadiusButton: {
+    padding: 4,
+    marginLeft: 4,
   },
   sectionTitle: { 
     fontSize: 18, 
