@@ -88,8 +88,8 @@ export default function Profile() {
     // Map/List View Toggle for Reviews tab
     const [reviewsViewMode, setReviewsViewMode] = useState<'list' | 'map'>('list');
 
-    // Selected marker for popup
-    const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
+    // Selected review modal popup state for map pins
+    const [selectedPinReview, setSelectedPinReview] = useState<any | null>(null);
 
     // Unified Location Filter States
     const [selectedStateFilter, setSelectedStateFilter] = useState<string>('ALL');
@@ -391,23 +391,23 @@ export default function Profile() {
     // Full 9-tier ranking color & icon system (without text labels)
     const getVisitBadgeStyle = (count: number) => {
         if (count >= 500) {
-            return { bg: '#FDF4FF', border: '#F5D0FE', text: '#86198F', }; // chosen one for 1 visit
+            return { bg: '#FDF4FF', border: '#F5D0FE', text: '#86198F', }; 
         } else if (count >= 250) {
-            return { bg: '#FFF1F2', border: '#FECDD3', text: '#9F1239', }; // grandmaster for 1 visit
+            return { bg: '#FFF1F2', border: '#FECDD3', text: '#9F1239', }; 
         } else if (count >= 100) {
-            return { bg: '#FAF5FF', border: '#E9D5FF', text: '#6B21A8', }; // master for 1 visit
+            return { bg: '#FAF5FF', border: '#E9D5FF', text: '#6B21A8', }; 
         } else if (count >= 50) {
-            return { bg: '#ECFDF5', border: '#A7F3D0', text: '#065F46', }; // diamond for 1 visit
+            return { bg: '#ECFDF5', border: '#A7F3D0', text: '#065F46', }; 
         } else if (count >= 20) {
-            return { bg: '#F0FDF4', border: '#BBF7D0', text: '#166534', }; // plat for 1 visit
+            return { bg: '#F0FDF4', border: '#BBF7D0', text: '#166534', }; 
         } else if (count >= 10) {
-            return { bg: '#FEF3C7', border: '#FDE68A', text: '#B45309', }; // gold for 1 visit
+            return { bg: '#FEF3C7', border: '#FDE68A', text: '#B45309', }; 
         } else if (count >= 5) {
-            return { bg: '#F3F4F6', border: '#E5E7EB', text: '#374151', }; // silver for 1 visit
+            return { bg: '#F3F4F6', border: '#E5E7EB', text: '#374151', }; 
         } else if (count >= 2) {
-            return { bg: '#FFF7ED', border: '#FFEDD5', text: '#C2410C' }; // bronze for 1 visit
+            return { bg: '#FFF7ED', border: '#FFEDD5', text: '#C2410C' }; 
         } else {
-            return { bg: '#666768', border: '#E2E8F0', text: '#eeeef0' }; // iron for 1 visit
+            return { bg: '#666768', border: '#E2E8F0', text: '#eeeef0' }; 
         }
     };
 
@@ -728,22 +728,22 @@ export default function Profile() {
 
                 {activeTab === 'REVIEWS' && (
                     <View style={styles.tabCard}>
-                        <View style={styles.cardHeaderRow}>
+                        {/* Header Row matching second image layout */}
+                        <View style={styles.reviewsHeaderContainer}>
                             <View style={styles.cardHeaderLeft}>
                                 <Text style={styles.cardTitle}>My Reviews</Text>
                                 <Text style={styles.cardSubtitle}>Your submitted item evaluations grouped by establishment.</Text>
                             </View>
-                            {/* View Toggle Button */}
                             <TouchableOpacity
-                                style={styles.viewToggleButton}
+                                style={styles.mapViewPillButton}
                                 onPress={() => setReviewsViewMode(reviewsViewMode === 'list' ? 'map' : 'list')}
                             >
                                 <Ionicons
                                     name={reviewsViewMode === 'list' ? 'map-outline' : 'list-outline'}
-                                    size={16}
+                                    size={15}
                                     color="#6c3b3b"
                                 />
-                                <Text style={styles.viewToggleText}>
+                                <Text style={styles.mapViewPillText}>
                                     {reviewsViewMode === 'list' ? 'Map View' : 'List View'}
                                 </Text>
                             </TouchableOpacity>
@@ -759,7 +759,7 @@ export default function Profile() {
                                     <Text style={styles.filterButtonText}>
                                         {getLocationButtonLabel()}
                                     </Text>
-                                    <Ionicons name={isLocationDropdownOpen ? "chevron-up" : "chevron-down"} size={14} color="#4B5563" />
+                                    <Ionicons name={isLocationDropdownOpen ? "chevron-up" : "chevron-down"} size={16} color="#4B5563" />
                                 </TouchableOpacity>
 
                                 {isLocationDropdownOpen && (
@@ -962,10 +962,13 @@ export default function Profile() {
                                     <MapView
                                         style={styles.map}
                                         styleURL="mapbox://styles/mapbox/streets-v12"
-                                        onPress={() => setSelectedMarker(null)}
+                                        zoomEnabled={true}
+                                        scrollEnabled={true}
+                                        pitchEnabled={true}
+                                        rotateEnabled={true}
                                     >
                                         <Camera
-                                            zoomLevel={10}
+                                            zoomLevel={12}
                                             centerCoordinate={[
                                                 filteredReviews.find((r: any) => r.lat && r.lng)?.lng || -122.4194,
                                                 filteredReviews.find((r: any) => r.lat && r.lng)?.lat || 37.7749,
@@ -975,30 +978,24 @@ export default function Profile() {
                                             if (review.lat && review.lng && PointAnnotation) {
                                                 return (
                                                     <PointAnnotation
-                                                        key={`marker-${index}`}
-                                                        id={`marker-${index}`}
+                                                        key={`marker-${review._id || index}`}
+                                                        id={`marker-${review._id || index}`}
                                                         coordinate={[review.lng, review.lat]}
-                                                        onSelected={() => setSelectedMarker(`marker-${index}`)}
-                                                        onDeselected={() => setSelectedMarker(null)}
+                                                        onSelected={() => setSelectedPinReview(review)}
                                                     >
-                                                        <View style={styles.mapPinContainer}>
-                                                            <View style={styles.mapPinHead} />
-                                                            <View style={styles.mapPinPoint} />
-                                                        </View>
-
-                                                        {selectedMarker === `marker-${index}` && (
-                                                            <View style={styles.calloutContainer}>
-                                                                <View style={styles.calloutBubble}>
-                                                                    <Text style={styles.calloutTitle}>
-                                                                        {review.restaurantName}
-                                                                    </Text>
-                                                                    <Text style={styles.calloutAddress}>
-                                                                        {review.address || `${review.city}, ${review.state}`}
-                                                                    </Text>
-                                                                    <View style={styles.calloutArrow} />
-                                                                </View>
+                                                        <TouchableOpacity 
+                                                            activeOpacity={0.9}
+                                                            onPress={() => setSelectedPinReview(review)}
+                                                            style={styles.mapPinContainer}
+                                                        >
+                                                            <View style={styles.mapPinBubble}>
+                                                                <Ionicons name="storefront" size={12} color="#FFFFFF" />
+                                                                <Text style={styles.mapPinText} numberOfLines={1}>
+                                                                    {review.restaurantName}
+                                                                </Text>
                                                             </View>
-                                                        )}
+                                                            <View style={styles.mapPinPointer} />
+                                                        </TouchableOpacity>
                                                     </PointAnnotation>
                                                 );
                                             }
@@ -1069,6 +1066,65 @@ export default function Profile() {
                     </View>
                 )}
             </ScrollView>
+
+            {/* Pin Details Modal Popup */}
+            <Modal
+                visible={selectedPinReview !== null}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => setSelectedPinReview(null)}
+            >
+                <View style={styles.authModalOverlay}>
+                    <View style={styles.authModalContent}>
+                        <View style={styles.authModalHeader}>
+                            <Ionicons name="storefront-outline" size={32} color="#6c3b3b" />
+                            <Text style={styles.authModalTitle}>{selectedPinReview?.restaurantName}</Text>
+                        </View>
+
+                        <Text style={styles.authModalMessage}>
+                            Reviewed Item: <Text style={{ fontWeight: '700' }}>{selectedPinReview?.itemName}</Text>
+                            {'\n'}Rating: ⭐ {formatRating(selectedPinReview?.overallRating)} / 5.0
+                            {selectedPinReview?.notes ? `\n\n"${selectedPinReview.notes}"` : ''}
+                        </Text>
+
+                        <View style={styles.authModalActions}>
+                            <TouchableOpacity
+                                style={styles.authModalButton}
+                                onPress={() => {
+                                    const rId = selectedPinReview?.restaurantId;
+                                    setSelectedPinReview(null);
+                                    if (rId) router.push(`/restaurant/${rId}`);
+                                }}
+                            >
+                                <Text style={styles.authModalButtonText}>View Restaurant Page</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.authModalButton, styles.authModalPrimaryButton]}
+                                onPress={() => {
+                                    const revId = selectedPinReview?._id;
+                                    setSelectedPinReview(null);
+                                    if (revId) {
+                                        router.push({
+                                            pathname: '/restaurant/post/[reviewId]',
+                                            params: { reviewId: revId, activityType: selectedPinReview?.activityType || 'review' }
+                                        });
+                                    }
+                                }}
+                            >
+                                <Text style={styles.authModalPrimaryButtonText}>View Full Review</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={{ paddingVertical: 8, alignItems: 'center', marginTop: 4 }}
+                                onPress={() => setSelectedPinReview(null)}
+                            >
+                                <Text style={{ fontSize: 13, color: '#6B7280', fontWeight: '600' }}>Close</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
 
             <Modal visible={isProfileModal} animationType="slide" transparent={true} onRequestClose={() => setProfileModalVisible(false)}>
                 <View style={styles.modalProfileView}>
@@ -1321,19 +1377,30 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         lineHeight: 16,
     },
-    viewToggleButton: {
+    reviewsHeaderContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 12,
+    },
+    mapViewPillButton: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 16,
-        backgroundColor: '#F3F4F6',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+        backgroundColor: '#F9FAFB',
         borderWidth: 1,
         borderColor: '#E5E7EB',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
     },
-    viewToggleText: {
-        fontSize: 12,
+    mapViewPillText: {
+        fontSize: 13,
         fontWeight: '600',
         color: '#6c3b3b',
     },
@@ -1379,85 +1446,39 @@ const styles = StyleSheet.create({
     mapPinContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        width: 40,
-        height: 40,
     },
-    mapPinHead: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: '#DC2626',
-        borderWidth: 2,
-        borderColor: '#FFFFFF',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 6,
-    },
-    mapPinPoint: {
-        width: 0,
-        height: 0,
-        marginTop: -4,
-        marginLeft: 14,
-        borderLeftWidth: 6,
-        borderLeftColor: 'transparent',
-        borderRightWidth: 6,
-        borderRightColor: 'transparent',
-        borderTopWidth: 12,
-        borderTopColor: '#DC2626',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
-        elevation: 4,
-    },
-    calloutContainer: {
-        position: 'absolute',
-        top: -60,
-        left: -70,
-        width: 140,
+    mapPinBubble: {
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-    },
-    calloutBubble: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 8,
-        padding: 8,
+        backgroundColor: '#6c3b3b',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        gap: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
         elevation: 5,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        minWidth: 120,
     },
-    calloutTitle: {
+    mapPinText: {
+        color: '#FFFFFF',
         fontSize: 11,
         fontWeight: '700',
-        color: '#1F2937',
-        marginBottom: 2,
-        textAlign: 'center',
+        maxWidth: 120,
     },
-    calloutAddress: {
-        fontSize: 9,
-        color: '#6B7280',
-        textAlign: 'center',
-    },
-    calloutArrow: {
-        position: 'absolute',
-        bottom: -8,
-        left: '50%',
-        marginLeft: -8,
+    mapPinPointer: {
         width: 0,
         height: 0,
-        borderLeftWidth: 8,
+        backgroundColor: 'transparent',
+        borderStyle: 'solid',
+        borderLeftWidth: 5,
+        borderRightWidth: 5,
+        borderTopWidth: 6,
         borderLeftColor: 'transparent',
-        borderRightWidth: 8,
         borderRightColor: 'transparent',
-        borderTopWidth: 8,
-        borderTopColor: '#FFFFFF',
+        borderTopColor: '#6c3b3b',
+        marginTop: -1,
     },
     filterDropdownWrapperSingle: {
         position: 'relative',
@@ -1469,16 +1490,17 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         backgroundColor: '#F3F4F6',
-        paddingVertical: 10,
-        paddingHorizontal: 14,
-        borderRadius: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 12,
         borderWidth: 1,
         borderColor: '#E5E7EB',
+        marginBottom: 8,
     },
     filterButtonText: {
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: '600',
-        color: '#374151',
+        color: '#1F2937',
     },
     dropdownMenuListSingle: {
         position: 'absolute',
@@ -1653,9 +1675,6 @@ const styles = StyleSheet.create({
         color: '#6B7280',
         fontStyle: 'italic',
     },
-    prefRow: {
-        marginBottom: 20,
-    },
     cardHeaderRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -1710,36 +1729,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '700',
         color: '#1F2937',
-    },
-    colorDisplayRow: {
-        marginTop: 16,
-        paddingTop: 16,
-        borderTopWidth: 1,
-        borderTopColor: '#F3F4F6',
-    },
-    colorDisplayLabel: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#374151',
-        marginBottom: 8,
-    },
-    colorDisplaySwatchContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-    },
-    colorDisplaySwatch: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-    },
-    colorDisplayValue: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#6B7280',
-        fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     },
     emptyTabContent: {
         paddingVertical: 40,
@@ -2009,58 +1998,5 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '700',
         color: '#FFFFFF',
-    },
-    drinkColorContainer: {
-        marginTop: 20,
-        paddingTop: 20,
-        borderTopWidth: 1,
-        borderTopColor: '#F3F4F6',
-    },
-    drinkColorLabel: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#374151',
-        marginBottom: 12,
-    },
-    drinkVisualRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 16,
-    },
-    drinkCup: {
-        width: 50,
-        height: 60,
-        position: 'relative',
-    },
-    drinkLiquid: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 50,
-        borderRadius: 8,
-        opacity: 0.8,
-    },
-    drinkLid: {
-        position: 'absolute',
-        top: 0,
-        left: -4,
-        right: -4,
-        height: 10,
-        backgroundColor: '#E5E7EB',
-        borderRadius: 10,
-    },
-    drinkInfoBox: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        paddingVertical: 10,
-        paddingHorizontal: 14,
-        borderRadius: 12,
-        borderWidth: 1,
-    },
-    drinkColorName: {
-        fontSize: 13,
-        fontWeight: '700',
     },
 });

@@ -94,6 +94,9 @@ export default function PublicProfileScreen() {
   // Map/List View Toggle for Reviews tab
   const [reviewsViewMode, setReviewsViewMode] = useState<'list' | 'map'>('list');
 
+  // Selected review modal popup state for map pins
+  const [selectedPinReview, setSelectedPinReview] = useState<any | null>(null);
+
   // Unified Location Filter States for Reviews tab
   const [selectedStateFilter, setSelectedStateFilter] = useState<string>('ALL');
   const [selectedCityFilter, setSelectedCityFilter] = useState<string>('ALL');
@@ -706,6 +709,10 @@ export default function PublicProfileScreen() {
                   <MapView
                     style={styles.map}
                     styleURL="mapbox://styles/mapbox/streets-v12"
+                    zoomEnabled={true}
+                    scrollEnabled={true}
+                    pitchEnabled={true}
+                    rotateEnabled={true}
                   >
                     <Camera
                       zoomLevel={12}
@@ -721,13 +728,13 @@ export default function PublicProfileScreen() {
                             key={`marker-${review._id || index}`}
                             id={`marker-${review._id || index}`}
                             coordinate={[review.lng, review.lat]}
-                            onSelected={() => {
-                              if (review.itemId) {
-                                router.push(`/restaurant/rate/${review.itemId}`);
-                              }
-                            }}
+                            onSelected={() => setSelectedPinReview(review)}
                           >
-                            <View style={styles.mapPinContainer}>
+                            <TouchableOpacity 
+                              activeOpacity={0.9}
+                              onPress={() => setSelectedPinReview(review)}
+                              style={styles.mapPinContainer}
+                            >
                               <View style={styles.mapPinBubble}>
                                 <Ionicons name="storefront" size={12} color="#FFFFFF" />
                                 <Text style={styles.mapPinText} numberOfLines={1}>
@@ -735,7 +742,7 @@ export default function PublicProfileScreen() {
                                 </Text>
                               </View>
                               <View style={styles.mapPinPointer} />
-                            </View>
+                            </TouchableOpacity>
                           </PointAnnotation>
                         );
                       }
@@ -801,6 +808,65 @@ export default function PublicProfileScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Pin Details Modal Popup */}
+      <Modal
+        visible={selectedPinReview !== null}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setSelectedPinReview(null)}
+      >
+        <View style={styles.authModalOverlay}>
+          <View style={styles.authModalContent}>
+            <View style={styles.authModalHeader}>
+              <Ionicons name="storefront-outline" size={32} color="#6c3b3b" />
+              <Text style={styles.authModalTitle}>{selectedPinReview?.restaurantName}</Text>
+            </View>
+
+            <Text style={styles.authModalMessage}>
+              Reviewed Item: <Text style={{ fontWeight: '700' }}>{selectedPinReview?.itemName}</Text>
+              {'\n'}Rating: ⭐ {formatRating(selectedPinReview?.overallRating)} / 5.0
+              {selectedPinReview?.notes ? `\n\n"${selectedPinReview.notes}"` : ''}
+            </Text>
+
+            <View style={styles.authModalActions}>
+              <TouchableOpacity
+                style={styles.authModalButton}
+                onPress={() => {
+                  const rId = selectedPinReview?.restaurantId;
+                  setSelectedPinReview(null);
+                  if (rId) router.push(`/restaurant/${rId}`);
+                }}
+              >
+                <Text style={styles.authModalButtonText}>View Restaurant Page</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.authModalButton, styles.authModalPrimaryButton]}
+                onPress={() => {
+                  const revId = selectedPinReview?._id;
+                  setSelectedPinReview(null);
+                  if (revId) {
+                    router.push({
+                      pathname: '/restaurant/post/[reviewId]',
+                      params: { reviewId: revId, activityType: selectedPinReview?.activityType || 'review' }
+                    });
+                  }
+                }}
+              >
+                <Text style={styles.authModalPrimaryButtonText}>View Full Review</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{ paddingVertical: 8, alignItems: 'center', marginTop: 4 }}
+                onPress={() => setSelectedPinReview(null)}
+              >
+                <Text style={{ fontSize: 13, color: '#6B7280', fontWeight: '600' }}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Floating Pill Navigation */}
       <View style={styles.floatingPillContainer}>
@@ -1070,7 +1136,7 @@ const styles = StyleSheet.create({
   },
   cardSubtitle: {
     fontSize: 12,
-    color: "#9CA3AF",
+    color: "#151618",
     marginTop: 2,
     marginBottom: 16,
     lineHeight: 16,
