@@ -51,6 +51,8 @@ export default defineSchema({
     status: v.optional(v.string()),
     website: v.optional(v.string()),
     mapsLocation: v.optional(v.string()),
+    lat: v.optional(v.number()),
+    lng: v.optional(v.number()),
     chainRestaurantId: v.optional(v.id("restaurants")), // For chain locations - references parent/original location
     isChainLocation: v.optional(v.boolean()), // Flag to indicate if this is part of a chain
   })

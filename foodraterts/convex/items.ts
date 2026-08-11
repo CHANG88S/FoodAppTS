@@ -284,6 +284,8 @@ export const getUserReviews = query({
           address: restaurant?.address || "",
           city: restaurant?.city || "",
           state: restaurant?.state || "",
+          lat: restaurant?.lat,
+          lng: restaurant?.lng,
           visitCount,
         };
 
@@ -360,6 +362,8 @@ export const getUserReviewsByUserId = query({
           address: restaurant?.address || "",
           city: restaurant?.city || "",
           state: restaurant?.state || "",
+          lat: restaurant?.lat,
+          lng: restaurant?.lng,
           visitCount,
         };
 

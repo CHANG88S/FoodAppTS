@@ -10,6 +10,7 @@ import {
   Platform,
   UIManager,
   Modal,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
@@ -18,22 +19,27 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { formatCount } from "../../utils/formatters";
 
+// Conditionally import Mapbox to avoid crashes when native module isn't available
+let Mapbox: any = null;
+let MapView: any = null;
+let Camera: any = null;
+let PointAnnotation: any = null;
+
+try {
+  const mapboxModule = require('@rnmapbox/maps');
+  Mapbox = mapboxModule.default;
+  MapView = mapboxModule.MapView;
+  Camera = mapboxModule.Camera;
+  PointAnnotation = mapboxModule.PointAnnotation;
+} catch (error) {
+  console.warn('Mapbox not available:', error);
+}
+
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 const TABS = ["ACTIVITY", "TWEETS", "REVIEWS", "PREFERENCES"];
-
-const COLOR_OPTIONS = [
-    { name: 'Classic Brown', value: '#6c3b3b' },
-    { name: 'Sakura Pink', value: '#FFB7C5' },
-    { name: 'Matcha Green', value: '#88B04B' },
-    { name: 'Taro Purple', value: '#B39EB5' },
-    { name: 'Ocean Blue', value: '#5DADEC' },
-    { name: 'Sunset Orange', value: '#FFA500' },
-    { name: 'Midnight Black', value: '#2C2C2C' },
-    { name: 'Cream White', value: '#FFF8E7' },
-];
 
 export default function PublicProfileScreen() {
   const router = useRouter();
@@ -84,6 +90,9 @@ export default function PublicProfileScreen() {
   const [activeTab, setActiveTab] = useState("ACTIVITY");
   const [expandedRestaurant, setExpandedRestaurant] = useState<string | null>(null);
   const [isAuthModalVisible, setAuthModalVisible] = useState(false);
+
+  // Map/List View Toggle for Reviews tab
+  const [reviewsViewMode, setReviewsViewMode] = useState<'list' | 'map'>('list');
 
   // Unified Location Filter States for Reviews tab
   const [selectedStateFilter, setSelectedStateFilter] = useState<string>('ALL');
@@ -155,7 +164,7 @@ export default function PublicProfileScreen() {
     if (val === 75) return 'Less';
     if (val === 100) return 'Regular';
     if (val === 125) return 'Extra';
-    return 'Half'; // default
+    return 'Half';
   };
 
   const getIceLabel = (val: number) => {
@@ -165,7 +174,7 @@ export default function PublicProfileScreen() {
     if (val === 75) return 'Less';
     if (val === 100) return 'Regular';
     if (val === 125) return 'Extra';
-    return 'Half'; // default
+    return 'Half';
   };
 
   const formatRating = (rating: number | undefined) => {
@@ -263,7 +272,10 @@ export default function PublicProfileScreen() {
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        scrollEnabled={activeTab !== 'REVIEWS' || reviewsViewMode !== 'map'}
+      >
         <View style={styles.profileSectionUnderHeader}>
           <View style={styles.profileTopRow}>
             <View style={styles.imageContainer}>
@@ -305,7 +317,6 @@ export default function PublicProfileScreen() {
                 </View>
               </View>
 
-              {/* Don't show follow/message buttons on own profile */}
               {userProfile?._id !== currentUserId && (
                 <View style={styles.actionButtons}>
                   <TouchableOpacity
@@ -484,8 +495,26 @@ export default function PublicProfileScreen() {
 
         {activeTab === 'REVIEWS' && (
           <View style={styles.tabCard}>
-            <Text style={styles.cardTitle}>Reviews</Text>
-            <Text style={styles.cardSubtitle}>Submitted item evaluations grouped by establishment.</Text>
+            <View style={styles.cardHeaderRow}>
+              <View style={styles.cardHeaderLeft}>
+                <Text style={styles.cardTitle}>Reviews</Text>
+                <Text style={styles.cardSubtitle}>Submitted item evaluations grouped by establishment.</Text>
+              </View>
+              {/* View Toggle Button */}
+              <TouchableOpacity
+                style={styles.viewToggleButton}
+                onPress={() => setReviewsViewMode(reviewsViewMode === 'list' ? 'map' : 'list')}
+              >
+                <Ionicons
+                  name={reviewsViewMode === 'list' ? 'map-outline' : 'list-outline'}
+                  size={16}
+                  color="#6c3b3b"
+                />
+                <Text style={styles.viewToggleText}>
+                  {reviewsViewMode === 'list' ? 'Map View' : 'List View'}
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             {uniqueReviews.length > 0 && (
               <View style={styles.filterDropdownWrapperSingle}>
@@ -598,7 +627,7 @@ export default function PublicProfileScreen() {
                 <Ionicons name="star-outline" size={32} color="#9CA3AF" />
                 <Text style={styles.emptyTabText}>No reviews match your location filter.</Text>
               </View>
-            ) : (
+            ) : reviewsViewMode === 'list' ? (
               <View style={[styles.dropdownContainer, { marginTop: 12 }]}>
                 {Object.entries(groupedReviews).map(([restaurantName, items]: [string, any[]]) => {
                   const isExpanded = expandedRestaurant === restaurantName;
@@ -670,6 +699,66 @@ export default function PublicProfileScreen() {
                     </View>
                   );
                 })}
+              </View>
+            ) : (
+              <View style={styles.mapContainer}>
+                {MapView && filteredReviews.some((review: any) => review.lat && review.lng) ? (
+                  <MapView
+                    style={styles.map}
+                    styleURL="mapbox://styles/mapbox/streets-v12"
+                  >
+                    <Camera
+                      zoomLevel={12}
+                      centerCoordinate={[
+                        filteredReviews.find((r: any) => r.lat && r.lng)?.lng || -122.4194,
+                        filteredReviews.find((r: any) => r.lat && r.lng)?.lat || 37.7749,
+                      ]}
+                    />
+                    {filteredReviews.map((review: any, index: number) => {
+                      if (review.lat && review.lng && PointAnnotation) {
+                        return (
+                          <PointAnnotation
+                            key={`marker-${review._id || index}`}
+                            id={`marker-${review._id || index}`}
+                            coordinate={[review.lng, review.lat]}
+                            onSelected={() => {
+                              if (review.itemId) {
+                                router.push(`/restaurant/rate/${review.itemId}`);
+                              }
+                            }}
+                          >
+                            <View style={styles.mapPinContainer}>
+                              <View style={styles.mapPinBubble}>
+                                <Ionicons name="storefront" size={12} color="#FFFFFF" />
+                                <Text style={styles.mapPinText} numberOfLines={1}>
+                                  {review.restaurantName}
+                                </Text>
+                              </View>
+                              <View style={styles.mapPinPointer} />
+                            </View>
+                          </PointAnnotation>
+                        );
+                      }
+                      return null;
+                    })}
+                  </MapView>
+                ) : !MapView ? (
+                  <View style={styles.mapPlaceholderContainer}>
+                    <Ionicons name="construct-outline" size={48} color="#9CA3AF" />
+                    <Text style={styles.mapPlaceholderTitle}>Map Not Available</Text>
+                    <Text style={styles.mapPlaceholderText}>
+                      The map module requires a custom native build.
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.mapPlaceholderContainer}>
+                    <Ionicons name="map-outline" size={48} color="#9CA3AF" />
+                    <Text style={styles.mapPlaceholderTitle}>No Location Data</Text>
+                    <Text style={styles.mapPlaceholderText}>
+                      The restaurants reviewed by this user don't have coordinates yet.
+                    </Text>
+                  </View>
+                )}
               </View>
             )}
           </View>
@@ -986,6 +1075,107 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     lineHeight: 16,
   },
+  cardHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 16,
+  },
+  cardHeaderLeft: {
+    flex: 1,
+  },
+  viewToggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  viewToggleText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6c3b3b',
+  },
+  mapContainer: {
+    marginTop: 12,
+    height: 400,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  map: {
+    width: '100%',
+    height: '100%',
+  },
+  mapPinContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mapPinBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#6c3b3b',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  mapPinText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+    maxWidth: 120,
+  },
+  mapPinPointer: {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: 5,
+    borderRightWidth: 5,
+    borderTopWidth: 6,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#6c3b3b',
+    marginTop: -1,
+  },
+  mapPlaceholderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#F9FAFB',
+  },
+  mapPlaceholderTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  mapPlaceholderText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 4,
+    lineHeight: 20,
+  },
+  mapPlaceholderSubtext: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    marginTop: 8,
+  },
   emptyTabContent: {
     paddingVertical: 40,
     alignItems: "center",
@@ -1254,9 +1444,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  deleteIconButton: {
-    padding: 2,
-  },
   reviewItemName: {
     fontSize: 12,
     fontWeight: '700',
@@ -1278,34 +1465,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#6B7280',
     fontStyle: 'italic',
-  },
-  prefRow: {
-    marginBottom: 20,
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  cardHeaderLeft: {
-    flex: 1,
-  },
-  editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  editButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6c3b3b',
   },
   prefDisplayRow: {
     gap: 12,

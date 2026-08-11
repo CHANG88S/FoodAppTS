@@ -88,6 +88,9 @@ export default function Profile() {
     // Map/List View Toggle for Reviews tab
     const [reviewsViewMode, setReviewsViewMode] = useState<'list' | 'map'>('list');
 
+    // Selected marker for popup
+    const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
+
     // Unified Location Filter States
     const [selectedStateFilter, setSelectedStateFilter] = useState<string>('ALL');
     const [selectedCityFilter, setSelectedCityFilter] = useState<string>('ALL');
@@ -959,6 +962,7 @@ export default function Profile() {
                                     <MapView
                                         style={styles.map}
                                         styleURL="mapbox://styles/mapbox/streets-v12"
+                                        onPress={() => setSelectedMarker(null)}
                                     >
                                         <Camera
                                             zoomLevel={10}
@@ -974,10 +978,27 @@ export default function Profile() {
                                                         key={`marker-${index}`}
                                                         id={`marker-${index}`}
                                                         coordinate={[review.lng, review.lat]}
+                                                        onSelected={() => setSelectedMarker(`marker-${index}`)}
+                                                        onDeselected={() => setSelectedMarker(null)}
                                                     >
-                                                        <View style={{ backgroundColor: '#FFFFFF', padding: 4, borderRadius: 4 }}>
-                                                            <Text style={{ fontSize: 10, fontWeight: '700' }}>{review.restaurantName}</Text>
+                                                        <View style={styles.mapPinContainer}>
+                                                            <View style={styles.mapPinHead} />
+                                                            <View style={styles.mapPinPoint} />
                                                         </View>
+
+                                                        {selectedMarker === `marker-${index}` && (
+                                                            <View style={styles.calloutContainer}>
+                                                                <View style={styles.calloutBubble}>
+                                                                    <Text style={styles.calloutTitle}>
+                                                                        {review.restaurantName}
+                                                                    </Text>
+                                                                    <Text style={styles.calloutAddress}>
+                                                                        {review.address || `${review.city}, ${review.state}`}
+                                                                    </Text>
+                                                                    <View style={styles.calloutArrow} />
+                                                                </View>
+                                                            </View>
+                                                        )}
                                                     </PointAnnotation>
                                                 );
                                             }
@@ -1354,6 +1375,89 @@ const styles = StyleSheet.create({
         color: '#9CA3AF',
         textAlign: 'center',
         marginTop: 8,
+    },
+    mapPinContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 40,
+        height: 40,
+    },
+    mapPinHead: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: '#DC2626',
+        borderWidth: 2,
+        borderColor: '#FFFFFF',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 6,
+    },
+    mapPinPoint: {
+        width: 0,
+        height: 0,
+        marginTop: -4,
+        marginLeft: 14,
+        borderLeftWidth: 6,
+        borderLeftColor: 'transparent',
+        borderRightWidth: 6,
+        borderRightColor: 'transparent',
+        borderTopWidth: 12,
+        borderTopColor: '#DC2626',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        elevation: 4,
+    },
+    calloutContainer: {
+        position: 'absolute',
+        top: -60,
+        left: -70,
+        width: 140,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    calloutBubble: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 8,
+        padding: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 5,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        minWidth: 120,
+    },
+    calloutTitle: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#1F2937',
+        marginBottom: 2,
+        textAlign: 'center',
+    },
+    calloutAddress: {
+        fontSize: 9,
+        color: '#6B7280',
+        textAlign: 'center',
+    },
+    calloutArrow: {
+        position: 'absolute',
+        bottom: -8,
+        left: '50%',
+        marginLeft: -8,
+        width: 0,
+        height: 0,
+        borderLeftWidth: 8,
+        borderLeftColor: 'transparent',
+        borderRightWidth: 8,
+        borderRightColor: 'transparent',
+        borderTopWidth: 8,
+        borderTopColor: '#FFFFFF',
     },
     filterDropdownWrapperSingle: {
         position: 'relative',

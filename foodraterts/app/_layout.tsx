@@ -6,6 +6,7 @@ import * as SecureStore from "expo-secure-store";
 import { useFonts } from "expo-font";
 import { Ionicons } from "@expo/vector-icons";
 import * as SplashScreen from "expo-splash-screen";
+import Mapbox from '@rnmapbox/maps';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -34,6 +35,9 @@ export default function RootLayout() {
     if (loaded || error) {
       SplashScreen.hideAsync();
     }
+
+    // Set Mapbox access token
+    Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN || '');
   }, [loaded, error]);
 
   if (!loaded && !error) {
