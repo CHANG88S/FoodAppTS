@@ -272,14 +272,13 @@ export default function ChatScreen() {
   };
 
   const otherUserName = otherUser?.name || otherUser?.username || 'User';
-  const otherUserPicture = otherUser?.profilePicture;
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <Stack.Screen
           options={{
@@ -492,7 +491,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 12 : 12, // Provides clear padding above home bar indicator
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',

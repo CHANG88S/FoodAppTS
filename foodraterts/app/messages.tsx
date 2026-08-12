@@ -15,6 +15,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
 import { formatTimestamp } from '../utils/formatters';
+import MessageProfileSheet from '../components/MessageProfileSheet';
 
 type TabType = 'messages' | 'general' | 'requests';
 
@@ -22,12 +23,58 @@ export default function MessagesScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('messages');
   const [refreshing, setRefreshing] = useState(false);
+  const [profileSheetVisible, setProfileSheetVisible] = useState(false);
+  const [selectedProfileUserId, setSelectedProfileUserId] = useState<string | null>(null);
+  const [selectedProfileUsername, setSelectedProfileUsername] = useState<string | null>(null);
 
   const conversations = useQuery(api.messaging.listConversations, { tab: activeTab }) || [];
   const unreadCount = useQuery(api.messaging.getUnreadCount) || 0;
   const currentUser = useQuery(api.users.viewer);
 
+  // Collect all profile picture storage IDs to fetch public URLs in bulk
+  const profileStorageIds = conversations
+    .map((c: any) => c?.otherUser?.profilePicture)
+    .filter((id: string | undefined) => id && !id.startsWith('http'));
+
+  const profileImageUrls = useQuery(
+    api.images.getPublicUrls,
+    profileStorageIds.length > 0 ? { storageIds: profileStorageIds } : "skip"
+  ) || {};
+
   const markAsRead = useMutation(api.messaging.markMessagesAsRead);
+
+  const handleProfilePress = (userId: string, username: string) => {
+    setSelectedProfileUserId(userId);
+    setSelectedProfileUsername(username);
+    setProfileSheetVisible(true);
+  };
+
+  const handleCloseProfileSheet = () => {
+    setProfileSheetVisible(false);
+    setSelectedProfileUserId(null);
+    setSelectedProfileUsername(null);
+  };
+
+  const handleMessageFromProfile = () => {
+    if (selectedProfileUserId) {
+      const conversation = conversations.find((c: any) => c.otherUser?._id === selectedProfileUserId);
+      if (conversation) {
+        handleCloseProfileSheet();
+        router.push({
+          pathname: '/messages/[conversationId]' as any,
+          params: { conversationId: conversation._id, otherUserId: selectedProfileUserId }
+        } as any);
+      }
+    }
+  };
+
+  const handleViewFullProfile = (username: string) => {
+    handleCloseProfileSheet();
+    router.push({
+      pathname: '/user/[username]' as any,
+      params: { username }
+    } as any);
+  };
 
   useEffect(() => {
     if (activeTab === 'messages') {
@@ -37,12 +84,15 @@ export default function MessagesScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // Trigger refetch
     setRefreshing(false);
   };
 
   const renderConversation = ({ item }: { item: any }) => {
     if (!item.otherUser) return null;
+
+    const rawPic = item.otherUser.profilePicture;
+    // Resolve storage ID to public URL or use raw URI if it's already an http link
+    const avatarUri = rawPic ? (rawPic.startsWith('http') ? rawPic : profileImageUrls[rawPic]) : null;
 
     const lastMessageText = item.lastMessage
       ? item.lastMessage.isUnsent
@@ -57,17 +107,14 @@ export default function MessagesScreen() {
       : '';
 
     return (
-      <TouchableOpacity
-        style={styles.conversationItem}
-        onPress={() => router.push({
-          pathname: '/messages/[conversationId]' as any,
-          params: { conversationId: item._id, otherUserId: item.otherUser._id }
-        } as any)}
-      >
-        <View style={styles.avatarContainer}>
-          {item.otherUser.profilePicture ? (
+      <View style={styles.conversationItem}>
+        <TouchableOpacity
+          onPress={() => handleProfilePress(item.otherUser._id, item.otherUser.username)}
+          style={styles.avatarContainer}
+        >
+          {avatarUri ? (
             <Image
-              source={{ uri: item.otherUser.profilePicture }}
+              source={{ uri: avatarUri }}
               style={styles.avatar}
             />
           ) : (
@@ -77,13 +124,23 @@ export default function MessagesScreen() {
               </Text>
             </View>
           )}
-        </View>
+        </TouchableOpacity>
 
-        <View style={styles.conversationContent}>
+        <TouchableOpacity
+          style={styles.conversationContent}
+          onPress={() => router.push({
+            pathname: '/messages/[conversationId]' as any,
+            params: { conversationId: item._id, otherUserId: item.otherUser._id }
+          } as any)}
+        >
           <View style={styles.conversationHeader}>
-            <Text style={styles.username}>
-              {item.otherUser.name || item.otherUser.username}
-            </Text>
+            <TouchableOpacity
+              onPress={() => handleProfilePress(item.otherUser._id, item.otherUser.username)}
+            >
+              <Text style={styles.username}>
+                {item.otherUser.name || item.otherUser.username}
+              </Text>
+            </TouchableOpacity>
             {timestamp && (
               <Text style={styles.timestamp}>{timestamp}</Text>
             )}
@@ -94,8 +151,8 @@ export default function MessagesScreen() {
               {lastMessageText}
             </Text>
           </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -122,12 +179,13 @@ export default function MessagesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.safeContainer} edges={["bottom"]}>
       <Stack.Screen options={{
         headerShown: true,
         title: 'Messages',
         headerStyle: { backgroundColor: '#FFFFFF' },
         headerTitleStyle: { color: '#1F2937', fontWeight: '700' },
+        headerShadowVisible: false,
       }} />
 
       <View style={styles.tabsContainer}>
@@ -156,12 +214,25 @@ export default function MessagesScreen() {
           </View>
         }
       />
+
+      {/* Instagram-style Profile Sheet */}
+      {selectedProfileUserId && selectedProfileUsername && currentUser && (
+        <MessageProfileSheet
+          visible={profileSheetVisible}
+          userId={selectedProfileUserId}
+          username={selectedProfileUsername}
+          onClose={handleCloseProfileSheet}
+          onMessagePress={handleMessageFromProfile}
+          onViewFullProfile={handleViewFullProfile}
+          currentUserId={currentUser._id}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeContainer: {
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
@@ -171,6 +242,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E5E7EB',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
   },
   tab: {
     flexDirection: 'row',
@@ -178,9 +250,7 @@ const styles = StyleSheet.create({
     marginRight: 24,
     position: 'relative',
   },
-  activeTab: {
-    // Active tab styling
-  },
+  activeTab: {},
   tabText: {
     fontSize: 16,
     fontWeight: '600',
@@ -205,6 +275,8 @@ const styles = StyleSheet.create({
   },
   listContent: {
     flexGrow: 1,
+    paddingTop: 4,
+    paddingBottom: 90,
   },
   conversationItem: {
     flexDirection: 'row',
@@ -213,6 +285,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
   },
   avatarContainer: {
     marginRight: 12,
