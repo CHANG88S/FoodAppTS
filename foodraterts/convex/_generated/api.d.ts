@@ -14,6 +14,7 @@ import type * as geocoding from "../geocoding.js";
 import type * as http from "../http.js";
 import type * as images from "../images.js";
 import type * as items from "../items.js";
+import type * as messaging from "../messaging.js";
 import type * as notifications from "../notifications.js";
 import type * as query from "../query.js";
 import type * as restaurantImport from "../restaurantImport.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   images: typeof images;
   items: typeof items;
+  messaging: typeof messaging;
   notifications: typeof notifications;
   query: typeof query;
   restaurantImport: typeof restaurantImport;

@@ -20,11 +20,13 @@ import TermsScreen from '../terms';
 import HelpScreen from '../help';
 import SuggestPlaceScreen from '../suggest-place';
 import ModerationScreen from '../moderation';
+import MessagesScreen from '../messages';
 
 const Drawer = createDrawerNavigator();
 
 function TabLayout() {
     const unreadCount = useQuery(api.notifications.getUnreadCount);
+    const messagesUnreadCount = useQuery(api.messaging.getUnreadCount);
 
     return (
         <Tabs
@@ -200,6 +202,18 @@ export default function TabsDrawerLayout() {
                     drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Suggest a Place</Text>,
                     drawerIcon: ({ color, size }) => (
                         <Ionicons name="location-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Drawer.Screen
+                name="messages"
+                component={MessagesScreen}
+                options={{
+                    title: "Messages",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Messages</Text>,
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="mail-outline" size={size} color={color} />
                     ),
                 }}
             />

@@ -15,10 +15,10 @@ export default defineSchema({
     profilePicture: v.optional(v.string()),
     city: v.optional(v.string()),
     role: v.union(
-      v.literal("user"), 
-      v.literal("moderator"), 
-      v.literal("admin"), 
-      v.literal("developer"), 
+      v.literal("user"),
+      v.literal("moderator"),
+      v.literal("admin"),
+      v.literal("developer"),
       v.literal("owner")
     ),
     preferences: v.optional(
@@ -33,6 +33,7 @@ export default defineSchema({
       })
     ),
     displayedBadge: v.optional(v.string()),
+    lastCheckedMessagesAt: v.optional(v.number()),
   })
     .index("by_email", ["email"])
     .index("by_role", ["role"]),

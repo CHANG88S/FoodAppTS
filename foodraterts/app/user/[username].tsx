@@ -125,12 +125,25 @@ export default function PublicProfileScreen() {
     }
   };
 
-  const handleMessage = () => {
+  const handleMessage = async () => {
     if (!currentUserId) {
       setAuthModalVisible(true);
       return;
     }
-    console.log("Navigate to messages");
+    if (!targetUserId) return;
+
+    try {
+      // Start a conversation with the user
+      router.push({
+        pathname: '/messages/[conversationId]' as any,
+        params: {
+          conversationId: `${currentUserId}-${targetUserId}`,
+          otherUserId: targetUserId
+        }
+      } as any);
+    } catch (error) {
+      console.error("Message navigation error:", error);
+    }
   };
 
   const formatTimestamp = (timestamp: number | undefined) => {

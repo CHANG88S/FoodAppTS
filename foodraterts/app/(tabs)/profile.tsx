@@ -418,8 +418,14 @@ export default function Profile() {
             <View style={styles.topHeaderBar}>
                 <View style={{ width: 24 }} />
                 <View style={styles.headerRightContainer}>
-                    <TouchableOpacity 
-                        onPress={() => navigation.dispatch(DrawerActions.openDrawer())} 
+                    <TouchableOpacity
+                        onPress={() => router.push('/messages' as any)}
+                        style={styles.headerIconButton}
+                    >
+                        <Ionicons name="mail-outline" size={24} color="#1F2937" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
                         style={styles.headerIconButton}
                     >
                         <Ionicons name="menu-outline" size={24} color="#1F2937" />
@@ -740,7 +746,7 @@ export default function Profile() {
                             >
                                 <Ionicons
                                     name={reviewsViewMode === 'list' ? 'map-outline' : 'list-outline'}
-                                    size={15}
+                                    size={16}
                                     color="#6c3b3b"
                                 />
                                 <Text style={styles.mapViewPillText}>
@@ -759,7 +765,7 @@ export default function Profile() {
                                     <Text style={styles.filterButtonText}>
                                         {getLocationButtonLabel()}
                                     </Text>
-                                    <Ionicons name={isLocationDropdownOpen ? "chevron-up" : "chevron-down"} size={16} color="#4B5563" />
+                                    <Ionicons name={isLocationDropdownOpen ? "chevron-up" : "chevron-down"} size={14} color="#4B5563" />
                                 </TouchableOpacity>
 
                                 {isLocationDropdownOpen && (
@@ -1067,40 +1073,43 @@ export default function Profile() {
                 )}
             </ScrollView>
 
-            {/* Pin Details Modal Popup */}
+            {/* Split Modal Popup for Map Pin Actions */}
             <Modal
                 visible={selectedPinReview !== null}
                 animationType="fade"
                 transparent={true}
                 onRequestClose={() => setSelectedPinReview(null)}
             >
-                <View style={styles.authModalOverlay}>
-                    <View style={styles.authModalContent}>
-                        <View style={styles.authModalHeader}>
-                            <Ionicons name="storefront-outline" size={32} color="#6c3b3b" />
-                            <Text style={styles.authModalTitle}>{selectedPinReview?.restaurantName}</Text>
+                <View style={styles.splitModalOverlay}>
+                    <View style={styles.splitModalContainer}>
+                        <View style={styles.splitModalHeader}>
+                            <Ionicons name="storefront" size={24} color="#6c3b3b" />
+                            <Text style={styles.splitModalTitle} numberOfLines={1}>{selectedPinReview?.restaurantName}</Text>
+                            <Text style={styles.splitModalSubtitle} numberOfLines={1}>
+                                Reviewed: {selectedPinReview?.itemName} (⭐ {formatRating(selectedPinReview?.overallRating)})
+                            </Text>
                         </View>
 
-                        <Text style={styles.authModalMessage}>
-                            Reviewed Item: <Text style={{ fontWeight: '700' }}>{selectedPinReview?.itemName}</Text>
-                            {'\n'}Rating: ⭐ {formatRating(selectedPinReview?.overallRating)} / 5.0
-                            {selectedPinReview?.notes ? `\n\n"${selectedPinReview.notes}"` : ''}
-                        </Text>
-
-                        <View style={styles.authModalActions}>
+                        <View style={styles.splitCardsRow}>
                             <TouchableOpacity
-                                style={styles.authModalButton}
+                                style={styles.splitCard}
+                                activeOpacity={0.8}
                                 onPress={() => {
                                     const rId = selectedPinReview?.restaurantId;
                                     setSelectedPinReview(null);
                                     if (rId) router.push(`/restaurant/${rId}`);
                                 }}
                             >
-                                <Text style={styles.authModalButtonText}>View Restaurant Page</Text>
+                                <View style={styles.splitCardIconBox}>
+                                    <Ionicons name="business-outline" size={32} color="#6c3b3b" />
+                                </View>
+                                <Text style={styles.splitCardTitle}>Restaurant</Text>
+                                <Text style={styles.splitCardDesc}>View establishment & menu</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
-                                style={[styles.authModalButton, styles.authModalPrimaryButton]}
+                                style={styles.splitCard}
+                                activeOpacity={0.8}
                                 onPress={() => {
                                     const revId = selectedPinReview?._id;
                                     setSelectedPinReview(null);
@@ -1112,16 +1121,20 @@ export default function Profile() {
                                     }
                                 }}
                             >
-                                <Text style={styles.authModalPrimaryButtonText}>View Full Review</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={{ paddingVertical: 8, alignItems: 'center', marginTop: 4 }}
-                                onPress={() => setSelectedPinReview(null)}
-                            >
-                                <Text style={{ fontSize: 13, color: '#6B7280', fontWeight: '600' }}>Close</Text>
+                                <View style={styles.splitCardIconBox}>
+                                    <Ionicons name="star-outline" size={32} color="#6c3b3b" />
+                                </View>
+                                <Text style={styles.splitCardTitle}>Full Review</Text>
+                                <Text style={styles.splitCardDesc}>View ratings & notes</Text>
                             </TouchableOpacity>
                         </View>
+
+                        <TouchableOpacity
+                            style={styles.splitModalCloseButton}
+                            onPress={() => setSelectedPinReview(null)}
+                        >
+                            <Text style={styles.splitModalCloseText}>Cancel</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
@@ -1998,5 +2011,93 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '700',
         color: '#FFFFFF',
+    },
+    /* Split Modal Styles */
+    splitModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    splitModalContainer: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 24,
+        padding: 24,
+        width: '100%',
+        maxWidth: 380,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 8,
+    },
+    splitModalHeader: {
+        alignItems: 'center',
+        marginBottom: 20,
+        width: '100%',
+    },
+    splitModalTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1F2937',
+        marginTop: 8,
+        textAlign: 'center',
+    },
+    splitModalSubtitle: {
+        fontSize: 12,
+        color: '#6B7280',
+        marginTop: 4,
+        textAlign: 'center',
+    },
+    splitCardsRow: {
+        flexDirection: 'row',
+        gap: 12,
+        width: '100%',
+        marginBottom: 20,
+    },
+    splitCard: {
+        flex: 1,
+        backgroundColor: '#F9FAFB',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 16,
+        padding: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    splitCardIconBox: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: '#F3F4F6',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 12,
+    },
+    splitCardTitle: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#1F2937',
+        marginBottom: 4,
+    },
+    splitCardDesc: {
+        fontSize: 10,
+        color: '#6B7280',
+        textAlign: 'center',
+        lineHeight: 14,
+    },
+    splitModalCloseButton: {
+        width: '100%',
+        paddingVertical: 12,
+        borderRadius: 12,
+        backgroundColor: '#F3F4F6',
+        alignItems: 'center',
+    },
+    splitModalCloseText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#374151',
     },
 });

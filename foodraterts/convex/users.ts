@@ -147,6 +147,14 @@ export const getUserByUsername = query({
   },
 });
 
+// Public query to get user by ID (for messaging, etc.)
+export const getUser = query({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.userId as Id<"users">);
+  },
+});
+
 export const patchUserProfile = internalMutation({
   args: {
     userId: v.id("users"),

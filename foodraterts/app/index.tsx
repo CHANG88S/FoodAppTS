@@ -41,15 +41,27 @@ const LoginIndex = () => {
     if (!hasMinPassword) {
       return Alert.alert("Error", "Password must be at least 8 characters long.");
     }
-    
+
     setLoading(true);
     try {
+      // First sign out any existing session to clear cached credentials
+      try {
+        await signOut();
+      } catch (e) {
+        // Ignore errors if already signed out
+        console.log("No existing session to sign out");
+      }
+
+      // Small delay to ensure the sign out is processed
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       if (isSignUpMode) {
         await signIn("password", { email, password, username, name, flow: "signUp" });
         Alert.alert('Account Created!', 'Welcome to FoodRater!');
       } else {
         await signIn("password", { email, password, flow: "signIn" });
       }
+
       router.replace('/(tabs)/home');
     } catch (error: any) {
       console.error(error);
@@ -60,12 +72,27 @@ const LoginIndex = () => {
   };
 
   const handleContinueAsGuest = async () => {
+    setLoading(true);
     try {
-      await signOut();
-    } catch (e) {
-      // Ignore errors if already signed out
+      // Sign out any existing session first
+      try {
+        await signOut();
+      } catch (e) {
+        // Ignore errors if already signed out
+        console.log("No existing session to sign out");
+      }
+
+      // Small delay to ensure sign out is processed
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      router.replace('/(tabs)/home');
+    } catch (error: any) {
+      console.error("Guest access error:", error);
+      // Still allow guest access even if sign out fails
+      router.replace('/(tabs)/home');
+    } finally {
+      setLoading(false);
     }
-    router.replace('/(tabs)/home');
   };
 
   const handleToggleMode = () => {
