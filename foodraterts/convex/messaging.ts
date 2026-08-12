@@ -72,7 +72,14 @@ export const listConversations = query({
       }
 
       case "general": {
-        // All conversations but without triggering notifications
+        // All conversations except those with followed users (to avoid duplication)
+        const following = await ctx.db
+          .query("follows")
+          .withIndex("by_follower", (q) => q.eq("followerId", userId))
+          .collect();
+
+        const followingIds = following.map(f => f.followingId);
+
         const allConversations = await ctx.db
           .query("conversations")
           .filter((q) =>
@@ -84,8 +91,16 @@ export const listConversations = query({
           .order("desc")
           .take(50);
 
+        // Filter out conversations with followed users (they're in Messages tab)
+        const filteredConversations = allConversations.filter(conv => {
+          const otherParticipantId = conv.participant1Id === userId
+            ? conv.participant2Id
+            : conv.participant1Id;
+          return !followingIds.includes(otherParticipantId);
+        });
+
         const enrichedConversations = await Promise.all(
-          allConversations.map(async (conv) => {
+          filteredConversations.map(async (conv) => {
             const otherParticipantId = conv.participant1Id === userId
               ? conv.participant2Id
               : conv.participant1Id;
@@ -474,5 +489,42 @@ export const generateUploadUrl = mutation({
     if (!userId) throw new Error("Unauthorized");
 
     return await ctx.storage.generateUploadUrl();
+  },
+});
+
+// Search users by username or name
+export const searchUsers = query({
+  args: {
+    searchQuery: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const searchTerm = args.searchQuery.toLowerCase().trim();
+
+    if (searchTerm.length < 2) return [];
+
+    // Search all users except current user
+    const allUsers = await ctx.db
+      .query("users")
+      .filter((q) => q.neq(q.field("_id"), userId))
+      .collect();
+
+    // Filter by username or name containing search term
+    const matchingUsers = allUsers.filter(user => {
+      const username = user.username?.toLowerCase() || "";
+      const name = user.name?.toLowerCase() || "";
+
+      return username.includes(searchTerm) || name.includes(searchTerm);
+    });
+
+    // Return limited results
+    return matchingUsers.slice(0, 20).map(user => ({
+      _id: user._id,
+      username: user.username,
+      name: user.name,
+      profilePicture: user.profilePicture,
+    }));
   },
 });

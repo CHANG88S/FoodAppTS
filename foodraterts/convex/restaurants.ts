@@ -33,6 +33,7 @@ function zipcodeToCoordinates(zipcode: string): { lat: number; lng: number } | n
     116: { lat: 40.6100, lng: -73.9600 },
     117: { lat: 40.7000, lng: -73.8100 },
     118: { lat: 40.6300, lng: -73.9400 },
+    119: { lat: 41.0300, lng: -73.7700 },
 
     // California
     900: { lat: 34.0522, lng: -118.2437 },
@@ -95,6 +96,17 @@ function zipcodeToCoordinates(zipcode: string): { lat: number; lng: number } | n
     959: { lat: 39.4400, lng: -121.4400 },
     960: { lat: 40.5800, lng: -122.3900 },
     961: { lat: 39.3200, lng: -120.1900 },
+
+    // Additional major regions
+    600: { lat: 41.8781, lng: -87.6298 },  // Chicago area
+    700: { lat: 29.9511, lng: -90.0715 },  // New Orleans area
+    800: { lat: 39.7392, lng: -104.9903 }, // Denver area
+    850: { lat: 33.4484, lng: -112.0740 }, // Phoenix area
+    750: { lat: 32.7767, lng: -96.7970 },  // Dallas area
+    770: { lat: 29.7604, lng: -95.3698 },  // Houston area
+    300: { lat: 33.7490, lng: -84.3880 },   // Atlanta area
+    400: { lat: 38.2542, lng: -85.7594 },  // Louisville area
+    500: { lat: 41.6005, lng: -93.6091 },  // Des Moines area
   };
 
   return zipcodeRegions[first3] || null;
@@ -451,9 +463,25 @@ export const filterRestaurantsByDistance = query({
   },
 });
 
+// Helper function to extract zipcode from address using regex
+function extractZipcodeFromAddress(address: string, city: string, state: string): string | null {
+  // Try to find zipcode in address first
+  const zipMatch = address.match(/\b\d{5}(?:-\d{4})?\b/);
+  if (zipMatch) {
+    return zipMatch[0].substring(0, 5); // Return just 5 digits
+  }
+
+  // If not found in address, return null
+  return null;
+}
+
+// Local Extraction (Replaced Mapbox API with Local RegEx + Built-in Map)
 export const geocodeRestaurant = action({
   args: { restaurantId: v.id("restaurants") },
-  handler: async (ctx, args): Promise<{ success: boolean; latitude?: number; longitude?: number; formattedAddress?: string; error?: string }> => {
+  handler: async (ctx, args): Promise<{ success: boolean; latitude?: number; longitude?: number; zipcode?: string; formattedAddress?: string; error?: string }> => {
+    const { requireAdminAction } = await require("./authz");
+    await requireAdminAction(ctx);
+
     const restaurants: any = await ctx.runQuery(api.restaurants.listAllRestaurants, {});
     const restaurant = restaurants.find((r: any) => r._id === args.restaurantId);
 
@@ -464,77 +492,60 @@ export const geocodeRestaurant = action({
       };
     }
 
-    const fullAddress: string = `${restaurant.address}, ${restaurant.city}, ${restaurant.state}, USA`;
+    const fullAddress: string = `${restaurant.address || ""}, ${restaurant.city || ""}, ${restaurant.state || ""}`;
 
-    try {
-      const mapboxToken: string | undefined = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
-      if (!mapboxToken) {
-        return {
-          success: false,
-          error: "Mapbox access token not configured",
-        };
-      }
+    // First try to use existing zipcode, then extract from address
+    let zipcode = restaurant.zipcode;
+    if (!zipcode) {
+      zipcode = extractZipcodeFromAddress(restaurant.address || "", restaurant.city || "", restaurant.state || "");
+    }
 
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullAddress)}.json?access_token=${mapboxToken}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        return {
-          success: false,
-          error: `Mapbox API error: ${response.statusText}`,
-        };
-      }
-
-      const data = await response.json();
-
-      if (data.features && data.features.length > 0) {
-        const feature = data.features[0];
-        const [longitude, latitude] = feature.center;
-
-        await ctx.runMutation(api.geocoding.updateRestaurantCoordinates, {
-          restaurantId: args.restaurantId,
-          lat: latitude,
-          lng: longitude,
-        });
-
-        return {
-          success: true,
-          latitude,
-          longitude,
-          formattedAddress: feature.place_name || fullAddress,
-        };
-      } else {
-        return {
-          success: false,
-          error: "No results found for address",
-        };
-      }
-    } catch (error) {
+    if (!zipcode) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: "No zipcode found. Please ensure address contains a 5-digit zipcode or add zipcode manually.",
       };
     }
+
+    const coords = zipcodeToCoordinates(zipcode);
+    if (!coords) {
+      return {
+        success: false,
+        error: `Coordinates not found for zipcode ${zipcode}. This zipcode region is not in the database yet.`,
+      };
+    }
+
+    await ctx.runMutation(api.geocoding.updateRestaurantCoordinates, {
+      restaurantId: args.restaurantId,
+      lat: coords.lat,
+      lng: coords.lng,
+      zipcode,
+    });
+
+    return {
+      success: true,
+      latitude: coords.lat,
+      longitude: coords.lng,
+      zipcode,
+      formattedAddress: fullAddress,
+    };
   },
 });
 
+// Local Batch Extraction (No external API calls)
 export const batchGeocodeAllRestaurants = action({
   args: {},
   handler: async (ctx): Promise<any> => {
+    const { requireAdminAction } = await require("./authz");
+    await requireAdminAction(ctx);
+
     const restaurants: any = await ctx.runQuery(api.restaurants.listAllRestaurants, {});
-    const restaurantsNeedingGeocoding = restaurants.filter((r: any) => !r.lat || !r.lng);
+    const restaurantsNeedingGeocoding = restaurants.filter((r: any) => !r.lat || !r.lng || !r.zipcode);
 
     const results = {
       total: restaurants.length,
       needingGeocoding: restaurantsNeedingGeocoding.length,
-      alreadyHaveCoordinates: restaurants.filter((r: any) => r.lat && r.lng).length,
+      alreadyHaveCoordinates: restaurants.filter((r: any) => r.lat && r.lng && r.zipcode).length,
       processed: 0,
       successful: 0,
       failed: 0,
@@ -543,23 +554,48 @@ export const batchGeocodeAllRestaurants = action({
 
     for (const restaurant of restaurantsNeedingGeocoding) {
       try {
-        // Use ctx.runAction instead of calling the action directly as a function
-        const geocodeResult: any = await ctx.runAction(api.restaurants.geocodeRestaurant, { restaurantId: restaurant._id });
+        // Try existing zipcode first, then extract from address
+        let zipcode = restaurant.zipcode;
+        if (!zipcode) {
+          zipcode = extractZipcodeFromAddress(
+            restaurant.address || "",
+            restaurant.city || "",
+            restaurant.state || ""
+          );
+        }
 
-        if (geocodeResult.success) {
-          results.successful++;
-        } else {
+        if (!zipcode) {
           results.failed++;
           results.errors.push({
             restaurantId: restaurant._id as string,
             name: restaurant.restaurantName,
-            error: geocodeResult.error || "Unknown error",
+            error: "No zipcode found in address. Please add zipcode manually.",
           });
+          results.processed++;
+          continue;
         }
 
-        results.processed++;
+        const coords = zipcodeToCoordinates(zipcode);
+        if (!coords) {
+          results.failed++;
+          results.errors.push({
+            restaurantId: restaurant._id as string,
+            name: restaurant.restaurantName,
+            error: `Zipcode ${zipcode} not in coordinates database. Please add manually.`,
+          });
+          results.processed++;
+          continue;
+        }
 
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await ctx.runMutation(api.geocoding.updateRestaurantCoordinates, {
+          restaurantId: restaurant._id,
+          lat: coords.lat,
+          lng: coords.lng,
+          zipcode,
+        });
+
+        results.successful++;
+        results.processed++;
       } catch (error) {
         results.failed++;
         results.errors.push({

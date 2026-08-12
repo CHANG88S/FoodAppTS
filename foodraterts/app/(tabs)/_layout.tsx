@@ -18,9 +18,9 @@ import BobaPreferencesScreen from '../boba-preferences';
 import PrivacyScreen from '../privacy';
 import TermsScreen from '../terms';
 import HelpScreen from '../help';
-import SuggestPlaceScreen from '../suggest-place';
 import ModerationScreen from '../moderation';
 import MessagesScreen from '../messages';
+import AppStatisticsScreen from '../app-statistics';
 
 const Drawer = createDrawerNavigator();
 
@@ -115,7 +115,6 @@ function TabLayout() {
 function CustomDrawerContent(props: any) {
     const { signOut } = useAuthActions();
     const router = useRouter();
-    const isStaff = useQuery(api.authz.isStaff) ?? false;
 
     const handleSignOut = async () => {
         try {
@@ -129,16 +128,6 @@ function CustomDrawerContent(props: any) {
     return (
         <DrawerContentScrollView {...props}>
             <DrawerItemList {...props} />
-            {isStaff && (
-                <DrawerItem
-                    label="Moderation"
-                    icon={({ size, color }) => (
-                        <Ionicons name="shield-checkmark-outline" size={size} color={color} />
-                    )}
-                    labelStyle={{ fontSize: 15, fontWeight: '500' }}
-                    onPress={() => router.push('/moderation')}
-                />
-            )}
             <DrawerItem
                 label="Sign Out"
                 icon={({ size }) => (
@@ -152,6 +141,9 @@ function CustomDrawerContent(props: any) {
 }
 
 export default function TabsDrawerLayout() {
+    const isStaff = useQuery(api.authz.isStaff) ?? false;
+    const isAdmin = useQuery(api.authz.isAdmin) ?? false;
+
     return (
         <Drawer.Navigator
             drawerContent={(props) => <CustomDrawerContent {...props} />}
@@ -194,41 +186,34 @@ export default function TabsDrawerLayout() {
                 }}
             />
 
+
             <Drawer.Screen
-                name="suggest-place"
-                component={SuggestPlaceScreen}
+                name="moderation"
+                component={ModerationScreen}
                 options={{
-                    title: "Suggest a Place",
-                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Suggest a Place</Text>,
+                    title: "Moderation",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Moderation</Text>,
                     drawerIcon: ({ color, size }) => (
-                        <Ionicons name="location-outline" size={size} color={color} />
+                        <Ionicons name="shield-checkmark-outline" size={size} color={color} />
                     ),
+                    drawerItemStyle: { display: isStaff ? 'flex' : 'none' },
                 }}
             />
 
             <Drawer.Screen
-                name="messages"
-                component={MessagesScreen}
+                name="app-statistics"
+                component={AppStatisticsScreen}
                 options={{
-                    title: "Messages",
-                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Messages</Text>,
+                    title: "App Statistics",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>App Statistics</Text>,
                     drawerIcon: ({ color, size }) => (
-                        <Ionicons name="mail-outline" size={size} color={color} />
+                        <Ionicons name="stats-chart-outline" size={size} color={color} />
                     ),
+                    drawerItemStyle: { display: isAdmin ? 'flex' : 'none' },
                 }}
             />
 
-            <Drawer.Screen
-                name="account-settings"
-                component={AccountSettingsScreen}
-                options={{
-                    title: "Account Settings",
-                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Account Settings</Text>,
-                    drawerIcon: ({ color, size }) => (
-                        <Ionicons name="person-outline" size={size} color={color} />
-                    ),
-                }}
-            />
+
 
             <Drawer.Screen
                 name="boba-preferences"
@@ -262,6 +247,19 @@ export default function TabsDrawerLayout() {
                     drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Terms of Service</Text>,
                     drawerIcon: ({ color, size }) => (
                         <Ionicons name="document-text-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+
+
+            <Drawer.Screen
+                name="account-settings"
+                component={AccountSettingsScreen}
+                options={{
+                    title: "Account Settings",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Account Settings</Text>,
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="person-outline" size={size} color={color} />
                     ),
                 }}
             />

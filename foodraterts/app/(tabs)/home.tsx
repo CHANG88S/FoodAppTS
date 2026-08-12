@@ -21,6 +21,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [zipcode, setZipcode] = useState("");
   const [selectedRadius, setSelectedRadius] = useState<number | null>(null);
+  const [radiusDropdownOpen, setRadiusDropdownOpen] = useState(false);
 
   const isSearching = searchQuery.trim().length > 0;
   const isFilteringByLocation = zipcode.trim().length === 5 && selectedRadius !== null;
@@ -280,7 +281,10 @@ export default function Home() {
 
       {/* Location Filter Row */}
       <View style={styles.locationFilterRow}>
-        <View style={styles.zipcodeContainer}>
+        <TouchableOpacity
+          style={styles.zipcodeContainer}
+          onPress={() => setRadiusDropdownOpen(!radiusDropdownOpen)}
+        >
           <Ionicons name="location" size={16} color="#6B7280" style={styles.locationIcon} />
           <TextInput
             style={styles.zipcodeInput}
@@ -290,40 +294,70 @@ export default function Home() {
             onChangeText={setZipcode}
             keyboardType="number-pad"
             maxLength={5}
+            editable={true}
           />
-        </View>
+          <Ionicons
+            name={radiusDropdownOpen ? "chevron-up" : "chevron-down"}
+            size={16}
+            color="#6B7280"
+            style={styles.dropdownIcon}
+          />
+        </TouchableOpacity>
 
-        <View style={styles.radiusRow}>
-          {[10, 25, 50, 100].map((radius) => (
-            <TouchableOpacity
-              key={radius}
-              style={[
-                styles.radiusPill,
-                selectedRadius === radius && styles.activeRadiusPill
-              ]}
-              onPress={() => setSelectedRadius(radius)}
-              disabled={!zipcode.trim()}
-            >
-              <Text style={[
-                styles.radiusText,
-                selectedRadius === radius && styles.activeRadiusText
-              ]}>
-                {radius}mi
-              </Text>
-            </TouchableOpacity>
-          ))}
-          {selectedRadius !== null && (
-            <TouchableOpacity
-              style={styles.clearRadiusButton}
-              onPress={() => {
-                setSelectedRadius(null);
-                setZipcode("");
-              }}
-            >
-              <Ionicons name="close-circle" size={16} color="#6B7280" />
-            </TouchableOpacity>
-          )}
-        </View>
+        {/* Radius Dropdown */}
+        {radiusDropdownOpen && zipcode.trim().length === 5 && (
+          <View style={styles.radiusDropdown}>
+            <View style={styles.dropdownHeader}>
+              <Text style={styles.dropdownTitle}>Search Radius</Text>
+              <TouchableOpacity
+                style={styles.dropdownCloseButton}
+                onPress={() => {
+                  setRadiusDropdownOpen(false);
+                  setSelectedRadius(null);
+                  setZipcode("");
+                }}
+              >
+                <Ionicons name="close-circle" size={16} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.radiusOptions}>
+              {[10, 25, 50, 100].map((radius) => (
+                <TouchableOpacity
+                  key={radius}
+                  style={[
+                    styles.radiusOption,
+                    selectedRadius === radius && styles.activeRadiusOption
+                  ]}
+                  onPress={() => {
+                    setSelectedRadius(radius);
+                    setRadiusDropdownOpen(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.radiusOptionText,
+                    selectedRadius === radius && styles.activeRadiusOptionText
+                  ]}>
+                    {radius} miles
+                  </Text>
+                  {selectedRadius === radius && (
+                    <Ionicons name="checkmark" size={16} color="#6c3b3b" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Selected Radius Display */}
+        {!radiusDropdownOpen && selectedRadius !== null && (
+          <TouchableOpacity
+            style={styles.selectedRadiusPill}
+            onPress={() => setRadiusDropdownOpen(true)}
+          >
+            <Text style={styles.selectedRadiusText}>{selectedRadius}mi</Text>
+            <Ionicons name="chevron-down" size={16} color="#6B7280" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Dynamic List Section Header */}
@@ -532,36 +566,78 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: '#374151',
+    paddingVertical: 0,
   },
-  radiusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
+  dropdownIcon: {
+    marginLeft: 8,
   },
-  radiusPill: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    backgroundColor: '#E5E7EB',
+  radiusDropdown: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  activeRadiusPill: {
+  dropdownHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  dropdownTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  dropdownCloseButton: {
+    padding: 4,
+  },
+  radiusOptions: {
+    marginTop: 8,
+  },
+  radiusOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  activeRadiusOption: {
+    backgroundColor: '#FEF2F2',
+  },
+  radiusOptionText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  activeRadiusOptionText: {
+    color: '#6c3b3b',
+    fontWeight: '600',
+  },
+  selectedRadiusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#6c3b3b',
-    borderColor: '#6c3b3b',
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    gap: 4,
   },
-  radiusText: {
+  selectedRadiusText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#6B7280',
-  },
-  activeRadiusText: {
     color: '#FFFFFF',
-  },
-  clearRadiusButton: {
-    padding: 4,
-    marginLeft: 4,
   },
   sectionTitle: { 
     fontSize: 18, 

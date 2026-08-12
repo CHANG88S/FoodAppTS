@@ -8,6 +8,9 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
+  TextInput,
+  Modal,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
@@ -26,10 +29,13 @@ export default function MessagesScreen() {
   const [profileSheetVisible, setProfileSheetVisible] = useState(false);
   const [selectedProfileUserId, setSelectedProfileUserId] = useState<string | null>(null);
   const [selectedProfileUsername, setSelectedProfileUsername] = useState<string | null>(null);
+  const [searchModalVisible, setSearchModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const conversations = useQuery(api.messaging.listConversations, { tab: activeTab }) || [];
   const unreadCount = useQuery(api.messaging.getUnreadCount) || 0;
   const currentUser = useQuery(api.users.viewer);
+  const searchResults = useQuery(api.messaging.searchUsers, { searchQuery }) || [];
 
   // Collect all profile picture storage IDs to fetch public URLs in bulk
   const profileStorageIds = conversations
@@ -186,6 +192,14 @@ export default function MessagesScreen() {
         headerStyle: { backgroundColor: '#FFFFFF' },
         headerTitleStyle: { color: '#1F2937', fontWeight: '700' },
         headerShadowVisible: false,
+        headerRight: () => (
+          <TouchableOpacity
+            onPress={() => setSearchModalVisible(true)}
+            style={styles.headerPlusButton}
+          >
+            <Ionicons name="add-circle-outline" size={24} color="#6c3b3b" />
+          </TouchableOpacity>
+        ),
       }} />
 
       <View style={styles.tabsContainer}>
@@ -208,7 +222,7 @@ export default function MessagesScreen() {
             <Text style={styles.emptyText}>No conversations yet</Text>
             <Text style={styles.emptySubtext}>
               {activeTab === 'messages' && 'Start following users to see their messages here'}
-              {activeTab === 'general' && 'Messages from all conversations will appear here'}
+              {activeTab === 'general' && 'Other conversations will appear here'}
               {activeTab === 'requests' && 'Messages from users you don\'t follow appear here'}
             </Text>
           </View>
@@ -227,6 +241,81 @@ export default function MessagesScreen() {
           currentUserId={currentUser._id}
         />
       )}
+
+      {/* Search Users Modal */}
+      <Modal
+        visible={searchModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setSearchModalVisible(false)}
+      >
+        <View style={styles.searchModalOverlay}>
+          <View style={styles.searchModalContent}>
+            <View style={styles.searchHeader}>
+              <Text style={styles.searchTitle}>New Message</Text>
+              <TouchableOpacity onPress={() => setSearchModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.searchInputContainer}>
+              <Ionicons name="search" size={20} color="#6B7280" style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search users..."
+                placeholderTextColor="#9CA3AF"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoFocus
+              />
+            </View>
+
+            <ScrollView style={styles.searchResults} keyboardShouldPersistTaps={false}>
+              {searchQuery.length >= 2 ? (
+                searchResults.map((user) => (
+                  <TouchableOpacity
+                    key={user._id}
+                    style={styles.searchResultItem}
+                    onPress={() => {
+                      setSearchModalVisible(false);
+                      handleProfilePress(user._id, user.username);
+                    }}
+                  >
+                    <View style={styles.searchResultAvatar}>
+                      {user.profilePicture ? (
+                        <Image source={{ uri: user.profilePicture }} style={styles.searchAvatar} />
+                      ) : (
+                        <View style={[styles.searchAvatar, styles.searchBlankAvatar]}>
+                          <Text style={styles.searchAvatarInitial}>
+                            {(user.name || user.username || "U").charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.searchResultInfo}>
+                      <Text style={styles.searchResultName}>
+                        {user.name || user.username}
+                      </Text>
+                      <Text style={styles.searchResultUsername}>
+                        @{user.username}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View style={styles.searchEmpty}>
+                  <Text style={styles.searchEmptyText}>
+                    {searchQuery.length < 2
+                      ? 'Type at least 2 characters to search'
+                      : 'No users found'}
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -354,5 +443,106 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  headerPlusButton: {
+    marginRight: 16,
+    padding: 4,
+  },
+  searchModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  searchModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+  },
+  searchHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  searchTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1F2937',
+    paddingVertical: 8,
+  },
+  searchResults: {
+    flex: 1,
+  },
+  searchResultItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  searchResultAvatar: {
+    marginRight: 12,
+  },
+  searchAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  searchBlankAvatar: {
+    backgroundColor: '#E5E7EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchAvatarInitial: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#6c3b3b',
+  },
+  searchResultInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  searchResultName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 2,
+  },
+  searchResultUsername: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  searchEmpty: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  searchEmptyText: {
+    fontSize: 16,
+    color: '#9CA3AF',
+    textAlign: 'center',
   },
 });

@@ -46,6 +46,7 @@ export default defineSchema({
     city: v.string(),
     state: v.string(),
     address: v.string(),
+    zipcode: v.optional(v.string()),
     phone: v.optional(v.string()),
     hours: v.optional(v.string()),
     logoStorageId: v.optional(v.id("_storage")),
