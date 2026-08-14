@@ -1,0 +1,1 @@
+{"nodes": [{"id": "convex_component_agent_config", "label": "OpenAI Agent Configuration", "file_type": "code", "source_file": "foodraterts/.agents/skills/convex-create-component/agents/openai.yaml", "source_location": null}], "edges": [], "hyperedges": []}

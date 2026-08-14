@@ -1,0 +1,1027 @@
+{
+  ".claude/settings.json": {
+    "mtime": 1786153235.9071803,
+    "ast_hash": "be0109eaecaffc20afdd57658cc95a9d",
+    "semantic_hash": "be0109eaecaffc20afdd57658cc95a9d"
+  },
+  "foodraterts/.claude/settings.json": {
+    "mtime": 1786153224.8813405,
+    "ast_hash": "be0109eaecaffc20afdd57658cc95a9d",
+    "semantic_hash": "be0109eaecaffc20afdd57658cc95a9d"
+  },
+  "foodraterts/.vscode/settings.json": {
+    "mtime": 1780719326.6194506,
+    "ast_hash": "6e76420ff638c714d3bfdf36e8c2dd4c",
+    "semantic_hash": "6e76420ff638c714d3bfdf36e8c2dd4c"
+  },
+  "foodraterts/android/app/build.gradle": {
+    "mtime": 1786420407.3740056,
+    "ast_hash": "ef1526d9e42b5322f72e00abd3af3ecb",
+    "semantic_hash": "ef1526d9e42b5322f72e00abd3af3ecb"
+  },
+  "foodraterts/android/app/src/main/java/com/chang88s/foodraterts/MainActivity.kt": {
+    "mtime": 1786420407.2981317,
+    "ast_hash": "35a765ca67ccc59111e4fef189a9bba3",
+    "semantic_hash": "35a765ca67ccc59111e4fef189a9bba3"
+  },
+  "foodraterts/android/app/src/main/java/com/chang88s/foodraterts/MainApplication.kt": {
+    "mtime": 1786420405.6983752,
+    "ast_hash": "413244c28fb51b9e7bd3e56c907f0f96",
+    "semantic_hash": "413244c28fb51b9e7bd3e56c907f0f96"
+  },
+  "foodraterts/android/build.gradle": {
+    "mtime": 1786420407.3730066,
+    "ast_hash": "f55dca84670c0abadd3b3aeaa5cba1c4",
+    "semantic_hash": "f55dca84670c0abadd3b3aeaa5cba1c4"
+  },
+  "foodraterts/android/gradlew": {
+    "mtime": 499162500.0,
+    "ast_hash": "cf6bb46b25d0768b3929c9b1377bf481",
+    "semantic_hash": "cf6bb46b25d0768b3929c9b1377bf481"
+  },
+  "foodraterts/android/settings.gradle": {
+    "mtime": 1786420407.3750057,
+    "ast_hash": "e8486f58cb82407a1b72f21c84d52af4",
+    "semantic_hash": "e8486f58cb82407a1b72f21c84d52af4"
+  },
+  "foodraterts/app.json": {
+    "mtime": 1786326562.3398128,
+    "ast_hash": "1205e1c9841822890d177d3240baaca4",
+    "semantic_hash": "1205e1c9841822890d177d3240baaca4"
+  },
+  "foodraterts/app/(tabs)/_layout.tsx": {
+    "mtime": 1786541469.2893693,
+    "ast_hash": "201251a37027e49fe7e29cf1c475ae10",
+    "semantic_hash": "201251a37027e49fe7e29cf1c475ae10"
+  },
+  "foodraterts/app/(tabs)/home.tsx": {
+    "mtime": 1786537199.5988407,
+    "ast_hash": "3e9a76afd9d7132676166e126394a3dd",
+    "semantic_hash": "3e9a76afd9d7132676166e126394a3dd"
+  },
+  "foodraterts/app/(tabs)/notification.tsx": {
+    "mtime": 1786185993.6683471,
+    "ast_hash": "4fb389b84570528d6fe56b888e8ff4d8",
+    "semantic_hash": "4fb389b84570528d6fe56b888e8ff4d8"
+  },
+  "foodraterts/app/(tabs)/profile.tsx": {
+    "mtime": 1786515141.164479,
+    "ast_hash": "f2787911297fa9bf93261dd1123dbeb6",
+    "semantic_hash": "f2787911297fa9bf93261dd1123dbeb6"
+  },
+  "foodraterts/app/(tabs)/search.tsx": {
+    "mtime": 1786265626.5827072,
+    "ast_hash": "2fff91caccbe77c241a82caf4b633a9d",
+    "semantic_hash": "2fff91caccbe77c241a82caf4b633a9d"
+  },
+  "foodraterts/app/_layout.tsx": {
+    "mtime": 1786316671.6409166,
+    "ast_hash": "fe7f8a5318a4db42d552f90b340252be",
+    "semantic_hash": "fe7f8a5318a4db42d552f90b340252be"
+  },
+  "foodraterts/app/account-settings.tsx": {
+    "mtime": 1786147007.3739254,
+    "ast_hash": "30bb22f6faa100cbcf88d695debb1fce",
+    "semantic_hash": "30bb22f6faa100cbcf88d695debb1fce"
+  },
+  "foodraterts/app/app-statistics.tsx": {
+    "mtime": 1786541676.7808032,
+    "ast_hash": "3435f402ab6da65f90df187ade3d8f88",
+    "semantic_hash": "3435f402ab6da65f90df187ade3d8f88"
+  },
+  "foodraterts/app/badges.tsx": {
+    "mtime": 1785488029.2874207,
+    "ast_hash": "fb2859d8921aa205595581ec662ab574",
+    "semantic_hash": "fb2859d8921aa205595581ec662ab574"
+  },
+  "foodraterts/app/boba-preferences.tsx": {
+    "mtime": 1786162795.616125,
+    "ast_hash": "486ab27d234cbbfd4ebc02185dc82d25",
+    "semantic_hash": "486ab27d234cbbfd4ebc02185dc82d25"
+  },
+  "foodraterts/app/help.tsx": {
+    "mtime": 1786220841.8869774,
+    "ast_hash": "043325ca817555d1958323a7b2be3f82",
+    "semantic_hash": "043325ca817555d1958323a7b2be3f82"
+  },
+  "foodraterts/app/index.tsx": {
+    "mtime": 1786516644.4151468,
+    "ast_hash": "4f009e1b52fb340028b944f703354489",
+    "semantic_hash": "4f009e1b52fb340028b944f703354489"
+  },
+  "foodraterts/app/messages.tsx": {
+    "mtime": 1786538136.3418336,
+    "ast_hash": "acebf65f56129cf38fe0d4894544e214",
+    "semantic_hash": "acebf65f56129cf38fe0d4894544e214"
+  },
+  "foodraterts/app/messages/[conversationId].tsx": {
+    "mtime": 1786526127.002357,
+    "ast_hash": "ff988f09be6bfbddd9aa0b2eb0523572",
+    "semantic_hash": "ff988f09be6bfbddd9aa0b2eb0523572"
+  },
+  "foodraterts/app/moderation.tsx": {
+    "mtime": 1786273898.3906274,
+    "ast_hash": "ba04a6d0e85d45650892a7dd6277643c",
+    "semantic_hash": "ba04a6d0e85d45650892a7dd6277643c"
+  },
+  "foodraterts/app/privacy.tsx": {
+    "mtime": 1786220829.323175,
+    "ast_hash": "3bcb447edecbcc2e6274405293dc89a5",
+    "semantic_hash": "3bcb447edecbcc2e6274405293dc89a5"
+  },
+  "foodraterts/app/register.tsx": {
+    "mtime": 1755866394.228611,
+    "ast_hash": "a8554f15bd73ac9cbcc2e8ad42e18cb5",
+    "semantic_hash": "a8554f15bd73ac9cbcc2e8ad42e18cb5"
+  },
+  "foodraterts/app/restaurant/[id].tsx": {
+    "mtime": 1786270008.890188,
+    "ast_hash": "fc6b07c86d02aecbb25318d09dcf89a1",
+    "semantic_hash": "fc6b07c86d02aecbb25318d09dcf89a1"
+  },
+  "foodraterts/app/restaurant/[id]/add-item.tsx": {
+    "mtime": 1786226273.6687994,
+    "ast_hash": "02d591bff482c2a602f45ad2bb763129",
+    "semantic_hash": "02d591bff482c2a602f45ad2bb763129"
+  },
+  "foodraterts/app/restaurant/post/[reviewId].tsx": {
+    "mtime": 1785206197.6490011,
+    "ast_hash": "a4929680b3fdb83bb5ba4d4781ca454e",
+    "semantic_hash": "a4929680b3fdb83bb5ba4d4781ca454e"
+  },
+  "foodraterts/app/restaurant/rate/[itemId].tsx": {
+    "mtime": 1785194779.1772335,
+    "ast_hash": "4f4f4b0c892046398756cbc7b26e9160",
+    "semantic_hash": "4f4f4b0c892046398756cbc7b26e9160"
+  },
+  "foodraterts/app/settings.tsx": {
+    "mtime": 1786100021.2711177,
+    "ast_hash": "60d735d16a670fc447febbbcb7a0e151",
+    "semantic_hash": "60d735d16a670fc447febbbcb7a0e151"
+  },
+  "foodraterts/app/social/[tweetId].tsx": {
+    "mtime": 1786186008.6586857,
+    "ast_hash": "78c6ef2ffd8e28a4c51778e5d741b4ad",
+    "semantic_hash": "78c6ef2ffd8e28a4c51778e5d741b4ad"
+  },
+  "foodraterts/app/suggest-place.tsx": {
+    "mtime": 1786315299.7659354,
+    "ast_hash": "3fe75bafe5988c5d39a1ee1fa3560b7c",
+    "semantic_hash": "3fe75bafe5988c5d39a1ee1fa3560b7c"
+  },
+  "foodraterts/app/terms.tsx": {
+    "mtime": 1786220836.1848974,
+    "ast_hash": "9ad797165169cb44820e55310f792011",
+    "semantic_hash": "9ad797165169cb44820e55310f792011"
+  },
+  "foodraterts/app/user/[username].tsx": {
+    "mtime": 1786536649.8517616,
+    "ast_hash": "6b4a14f0f83e152cda3e91208d6ac063",
+    "semantic_hash": "6b4a14f0f83e152cda3e91208d6ac063"
+  },
+  "foodraterts/components/CategoryButtons.tsx": {
+    "mtime": 1758316573.2636583,
+    "ast_hash": "069e482313144c9b920d009f56c36be8",
+    "semantic_hash": "069e482313144c9b920d009f56c36be8"
+  },
+  "foodraterts/components/ImageUploader.tsx": {
+    "mtime": 1785837090.6374657,
+    "ast_hash": "e3103450e600c784f323525415c5152c",
+    "semantic_hash": "e3103450e600c784f323525415c5152c"
+  },
+  "foodraterts/components/MessageProfileSheet.tsx": {
+    "mtime": 1786526929.1673584,
+    "ast_hash": "cae1ab505a5e55d2be56080280d60cf8",
+    "semantic_hash": "cae1ab505a5e55d2be56080280d60cf8"
+  },
+  "foodraterts/components/ProfileAvatar.tsx": {
+    "mtime": 1786185914.6110446,
+    "ast_hash": "ce388f9c226478fd3f6041527c0f20c8",
+    "semantic_hash": "ce388f9c226478fd3f6041527c0f20c8"
+  },
+  "foodraterts/components/RatingMenu.tsx": {
+    "mtime": 1760400108.2556603,
+    "ast_hash": "0d82af4d220f39246f8793decc45be12",
+    "semantic_hash": "0d82af4d220f39246f8793decc45be12"
+  },
+  "foodraterts/convex.json": {
+    "mtime": 1785473432.576926,
+    "ast_hash": "4d94a470d062a9c703ac96843672c3e6",
+    "semantic_hash": "4d94a470d062a9c703ac96843672c3e6"
+  },
+  "foodraterts/convex/_generated/ai/ai-files.state.json": {
+    "mtime": 1785908694.7587032,
+    "ast_hash": "7342668900948c90f046058067cdf0eb",
+    "semantic_hash": "7342668900948c90f046058067cdf0eb"
+  },
+  "foodraterts/convex/_generated/api.d.ts": {
+    "mtime": 1786515086.6905036,
+    "ast_hash": "e6763de2d770372f1f2684e992e4ad54",
+    "semantic_hash": "e6763de2d770372f1f2684e992e4ad54"
+  },
+  "foodraterts/convex/_generated/api.js": {
+    "mtime": 1780706538.6061878,
+    "ast_hash": "ea14005171d3e17b1b28a7139ad36d62",
+    "semantic_hash": "ea14005171d3e17b1b28a7139ad36d62"
+  },
+  "foodraterts/convex/_generated/dataModel.d.ts": {
+    "mtime": 1781117231.9648683,
+    "ast_hash": "af87bff09394971f8debeb5b8e9f8a70",
+    "semantic_hash": "af87bff09394971f8debeb5b8e9f8a70"
+  },
+  "foodraterts/convex/_generated/server.d.ts": {
+    "mtime": 1780706539.6600964,
+    "ast_hash": "a6d3e29e1cd98c6a0ebcf82d5074009e",
+    "semantic_hash": "a6d3e29e1cd98c6a0ebcf82d5074009e"
+  },
+  "foodraterts/convex/_generated/server.js": {
+    "mtime": 1780706539.6460848,
+    "ast_hash": "cfc7a4ed084119abac0e51d79f525f4f",
+    "semantic_hash": "cfc7a4ed084119abac0e51d79f525f4f"
+  },
+  "foodraterts/convex/auth.config.ts": {
+    "mtime": 1785029775.2383294,
+    "ast_hash": "737d1309953433c3c451334399bd7989",
+    "semantic_hash": "737d1309953433c3c451334399bd7989"
+  },
+  "foodraterts/convex/auth.ts": {
+    "mtime": 1785046294.7990243,
+    "ast_hash": "0dd2f96db425c8b077160c74758107b7",
+    "semantic_hash": "0dd2f96db425c8b077160c74758107b7"
+  },
+  "foodraterts/convex/authz.ts": {
+    "mtime": 1786538492.8549228,
+    "ast_hash": "1d9886770d980ea669121b44053713eb",
+    "semantic_hash": "1d9886770d980ea669121b44053713eb"
+  },
+  "foodraterts/convex/geocoding.ts": {
+    "mtime": 1786541052.4936044,
+    "ast_hash": "4280c70cad7883b2d9db370a947f8906",
+    "semantic_hash": "4280c70cad7883b2d9db370a947f8906"
+  },
+  "foodraterts/convex/http.ts": {
+    "mtime": 1785029871.6814432,
+    "ast_hash": "9aedce2db3ff137981cc7f6b6b8ac13b",
+    "semantic_hash": "9aedce2db3ff137981cc7f6b6b8ac13b"
+  },
+  "foodraterts/convex/images.ts": {
+    "mtime": 1786514800.8704123,
+    "ast_hash": "60136cb8805e6edc9a18560bfd51157a",
+    "semantic_hash": "60136cb8805e6edc9a18560bfd51157a"
+  },
+  "foodraterts/convex/items.ts": {
+    "mtime": 1786315967.0733032,
+    "ast_hash": "c70dafe04e603ab8272d3b8137073329",
+    "semantic_hash": "c70dafe04e603ab8272d3b8137073329"
+  },
+  "foodraterts/convex/messaging.ts": {
+    "mtime": 1786537073.3631773,
+    "ast_hash": "33af72ec81829759b1af290955a683b3",
+    "semantic_hash": "33af72ec81829759b1af290955a683b3"
+  },
+  "foodraterts/convex/notifications.ts": {
+    "mtime": 1786244275.8119564,
+    "ast_hash": "4754a703558f7d04105207ba2033e8c2",
+    "semantic_hash": "4754a703558f7d04105207ba2033e8c2"
+  },
+  "foodraterts/convex/query.ts": {
+    "mtime": 1784027589.5013554,
+    "ast_hash": "b9500e83a921c59746f9887b81c12db8",
+    "semantic_hash": "b9500e83a921c59746f9887b81c12db8"
+  },
+  "foodraterts/convex/restaurantImport.ts": {
+    "mtime": 1785836849.5687773,
+    "ast_hash": "de28203a4a76d67b704a3fddd8878ead",
+    "semantic_hash": "de28203a4a76d67b704a3fddd8878ead"
+  },
+  "foodraterts/convex/restaurants.ts": {
+    "mtime": 1786539926.5003986,
+    "ast_hash": "fbcdcfda9e80c7018a8065c60472e3a6",
+    "semantic_hash": "fbcdcfda9e80c7018a8065c60472e3a6"
+  },
+  "foodraterts/convex/review.ts": {
+    "mtime": 1785906454.597723,
+    "ast_hash": "b4351dbf612c25bc8ba6c974cd122434",
+    "semantic_hash": "b4351dbf612c25bc8ba6c974cd122434"
+  },
+  "foodraterts/convex/schema.ts": {
+    "mtime": 1786537131.0273314,
+    "ast_hash": "dc7871266c1cb8c4c2dec601aaa8c2b1",
+    "semantic_hash": "dc7871266c1cb8c4c2dec601aaa8c2b1"
+  },
+  "foodraterts/convex/seed.ts": {
+    "mtime": 1785843860.8745658,
+    "ast_hash": "ba1dc6c5d624faa7c0ea22b617823a2d",
+    "semantic_hash": "ba1dc6c5d624faa7c0ea22b617823a2d"
+  },
+  "foodraterts/convex/suggestions.ts": {
+    "mtime": 1786325318.2278988,
+    "ast_hash": "3879649d6f44eebcabb0d8d3c68e5402",
+    "semantic_hash": "3879649d6f44eebcabb0d8d3c68e5402"
+  },
+  "foodraterts/convex/tsconfig.json": {
+    "mtime": 1780706528.4034278,
+    "ast_hash": "b4aff9f76abb56464900e5b3ab6b4c87",
+    "semantic_hash": "b4aff9f76abb56464900e5b3ab6b4c87"
+  },
+  "foodraterts/convex/tweets.ts": {
+    "mtime": 1785921804.0438442,
+    "ast_hash": "221b28dcf9ce2a8503c91b48cb226dd4",
+    "semantic_hash": "221b28dcf9ce2a8503c91b48cb226dd4"
+  },
+  "foodraterts/convex/users.ts": {
+    "mtime": 1786514753.5648334,
+    "ast_hash": "cbc5cfbc15fe78063134e2728ef28204",
+    "semantic_hash": "cbc5cfbc15fe78063134e2728ef28204"
+  },
+  "foodraterts/data/ca-boba-shops.json": {
+    "mtime": 1785364834.3900685,
+    "ast_hash": "4bde6b41374edb49f3d94d75c36eb077",
+    "semantic_hash": "4bde6b41374edb49f3d94d75c36eb077"
+  },
+  "foodraterts/data/categories.ts": {
+    "mtime": 1756096871.8258014,
+    "ast_hash": "a9413547465209cf84936d2d84d9fd33",
+    "semantic_hash": "a9413547465209cf84936d2d84d9fd33"
+  },
+  "foodraterts/eas.json": {
+    "mtime": 1754045275.1986723,
+    "ast_hash": "b0ae420a1f6426e4355a3ee4dcb3e8a2",
+    "semantic_hash": "b0ae420a1f6426e4355a3ee4dcb3e8a2"
+  },
+  "foodraterts/eslint.config.js": {
+    "mtime": 499162500.0,
+    "ast_hash": "560a864580ad8107fbbf8d6d452c82fe",
+    "semantic_hash": "560a864580ad8107fbbf8d6d452c82fe"
+  },
+  "foodraterts/hooks/useMapboxGeocoding.ts": {
+    "mtime": 1786325352.4580336,
+    "ast_hash": "14387844c7c114cd05d9a17b7ec519df",
+    "semantic_hash": "14387844c7c114cd05d9a17b7ec519df"
+  },
+  "foodraterts/metro.config.js": {
+    "mtime": 1780312692.6399581,
+    "ast_hash": "1d6c30de75c3e148af4ece0094d446a4",
+    "semantic_hash": "1d6c30de75c3e148af4ece0094d446a4"
+  },
+  "foodraterts/package.json": {
+    "mtime": 1786621790.8003983,
+    "ast_hash": "6f9124556cdc8032e228a33bc3a7007d",
+    "semantic_hash": "6f9124556cdc8032e228a33bc3a7007d"
+  },
+  "foodraterts/restaurants.json": {
+    "mtime": 1786325244.1516755,
+    "ast_hash": "e20cdcfd538e3f7ea8f65824400ef869",
+    "semantic_hash": "e20cdcfd538e3f7ea8f65824400ef869"
+  },
+  "foodraterts/scripts/geocode-restaurants.js": {
+    "mtime": 1786325684.8536339,
+    "ast_hash": "9a7a27dbc23c57024e3329288191ded3",
+    "semantic_hash": "9a7a27dbc23c57024e3329288191ded3"
+  },
+  "foodraterts/scripts/scrape-ca-boba.mjs": {
+    "mtime": 1785364576.6649425,
+    "ast_hash": "0f88292f8f9f980ae2c38eb4236f30a4",
+    "semantic_hash": "0f88292f8f9f980ae2c38eb4236f30a4"
+  },
+  "foodraterts/skills-lock.json": {
+    "mtime": 1785908694.5405152,
+    "ast_hash": "9f068049cfc84b836c04e46f2fda6df4",
+    "semantic_hash": "9f068049cfc84b836c04e46f2fda6df4"
+  },
+  "foodraterts/styles/unistyle.ts": {
+    "mtime": 1755170784.4562266,
+    "ast_hash": "4caddb5b27a3d059ac5e515e6c4f1b9a",
+    "semantic_hash": "4caddb5b27a3d059ac5e515e6c4f1b9a"
+  },
+  "foodraterts/tsconfig.json": {
+    "mtime": 1780312717.2943294,
+    "ast_hash": "a30a219aa97f27b7a3bc05e1c7b25c93",
+    "semantic_hash": "a30a219aa97f27b7a3bc05e1c7b25c93"
+  },
+  "foodraterts/utils/formatters.ts": {
+    "mtime": 1786514958.597904,
+    "ast_hash": "09d14d4fefca1299757653df2cc44674",
+    "semantic_hash": "09d14d4fefca1299757653df2cc44674"
+  },
+  "CLAUDE.md": {
+    "mtime": 1785839895.95325,
+    "ast_hash": "38192a51641acaf3ca4744b629ab3efc",
+    "semantic_hash": "38192a51641acaf3ca4744b629ab3efc"
+  },
+  "README.md": {
+    "mtime": 1784855344.9095454,
+    "ast_hash": "bbe54f00c9532b2484b6a56998e3707e",
+    "semantic_hash": "bbe54f00c9532b2484b6a56998e3707e"
+  },
+  "foodraterts/.agents/skills/convex-add/SKILL.md": {
+    "mtime": 1785908693.6783905,
+    "ast_hash": "db9e164fedb0982b9785a3e60d53fa30",
+    "semantic_hash": "db9e164fedb0982b9785a3e60d53fa30"
+  },
+  "foodraterts/.agents/skills/convex-advisor/SKILL.md": {
+    "mtime": 1785908693.6783905,
+    "ast_hash": "a1203aff96822ab9ffbf7b621e8c757f",
+    "semantic_hash": "a1203aff96822ab9ffbf7b621e8c757f"
+  },
+  "foodraterts/.agents/skills/convex-agent/SKILL.md": {
+    "mtime": 1785908693.6798954,
+    "ast_hash": "8d8ede8894bbac7c8af4f58a926930cf",
+    "semantic_hash": "8d8ede8894bbac7c8af4f58a926930cf"
+  },
+  "foodraterts/.agents/skills/convex-auth/SKILL.md": {
+    "mtime": 1785908693.6809018,
+    "ast_hash": "44ca2d01a64b5dd59ac891032f9bca8d",
+    "semantic_hash": "44ca2d01a64b5dd59ac891032f9bca8d"
+  },
+  "foodraterts/.agents/skills/convex-authz/SKILL.md": {
+    "mtime": 1785908693.6809018,
+    "ast_hash": "1f099dccefbec6a4f6e0b07ae08d82cf",
+    "semantic_hash": "1f099dccefbec6a4f6e0b07ae08d82cf"
+  },
+  "foodraterts/.agents/skills/convex-backup/SKILL.md": {
+    "mtime": 1785908693.6809018,
+    "ast_hash": "df5487f085b5edaa18ac203bf9c6bf63",
+    "semantic_hash": "df5487f085b5edaa18ac203bf9c6bf63"
+  },
+  "foodraterts/.agents/skills/convex-billing/SKILL.md": {
+    "mtime": 1785908693.6824055,
+    "ast_hash": "844dcdff526351160702df886535e33e",
+    "semantic_hash": "844dcdff526351160702df886535e33e"
+  },
+  "foodraterts/.agents/skills/convex-cost/SKILL.md": {
+    "mtime": 1785908693.6824055,
+    "ast_hash": "b14c0fb028f2de66a079cbf8c8ace54d",
+    "semantic_hash": "b14c0fb028f2de66a079cbf8c8ace54d"
+  },
+  "foodraterts/.agents/skills/convex-create-component/SKILL.md": {
+    "mtime": 1785908693.6834104,
+    "ast_hash": "aba5e174ea7c033a711817e7e29adb26",
+    "semantic_hash": "aba5e174ea7c033a711817e7e29adb26"
+  },
+  "foodraterts/.agents/skills/convex-create-component/agents/openai.yaml": {
+    "mtime": 1785908693.6834104,
+    "ast_hash": "0a7ae3f14ed8bbb7a59c8838d8e58bbc",
+    "semantic_hash": "0a7ae3f14ed8bbb7a59c8838d8e58bbc"
+  },
+  "foodraterts/.agents/skills/convex-create-component/references/advanced-patterns.md": {
+    "mtime": 1785908693.6849148,
+    "ast_hash": "c521b78d48ce8ae0bd9613766063e463",
+    "semantic_hash": "c521b78d48ce8ae0bd9613766063e463"
+  },
+  "foodraterts/.agents/skills/convex-create-component/references/hybrid-components.md": {
+    "mtime": 1785908693.6849148,
+    "ast_hash": "927a09d1ec50cffbcbe90c0d3b7145f7",
+    "semantic_hash": "927a09d1ec50cffbcbe90c0d3b7145f7"
+  },
+  "foodraterts/.agents/skills/convex-create-component/references/local-components.md": {
+    "mtime": 1785908693.68592,
+    "ast_hash": "fa7ca7ad7cb3a6599c0ed76ca7da1cf3",
+    "semantic_hash": "fa7ca7ad7cb3a6599c0ed76ca7da1cf3"
+  },
+  "foodraterts/.agents/skills/convex-create-component/references/packaged-components.md": {
+    "mtime": 1785908693.68592,
+    "ast_hash": "f2572e9e30a334c4ca4e96a54f16108b",
+    "semantic_hash": "f2572e9e30a334c4ca4e96a54f16108b"
+  },
+  "foodraterts/.agents/skills/convex-crons/SKILL.md": {
+    "mtime": 1785908693.686924,
+    "ast_hash": "913278f6235b10231ba71b9bdd398591",
+    "semantic_hash": "913278f6235b10231ba71b9bdd398591"
+  },
+  "foodraterts/.agents/skills/convex-deploy-guard/SKILL.md": {
+    "mtime": 1785908693.686924,
+    "ast_hash": "570198cc94389e1c7bf464cb8ab9f3e2",
+    "semantic_hash": "570198cc94389e1c7bf464cb8ab9f3e2"
+  },
+  "foodraterts/.agents/skills/convex-design/SKILL.md": {
+    "mtime": 1785908693.686924,
+    "ast_hash": "89457f090e4374d0738ea9df6f728ccb",
+    "semantic_hash": "89457f090e4374d0738ea9df6f728ccb"
+  },
+  "foodraterts/.agents/skills/convex-docs/SKILL.md": {
+    "mtime": 1785908693.6879203,
+    "ast_hash": "8a48d3ebd4beaf5097d3a41bdf371b78",
+    "semantic_hash": "8a48d3ebd4beaf5097d3a41bdf371b78"
+  },
+  "foodraterts/.agents/skills/convex-domains/SKILL.md": {
+    "mtime": 1785908693.6879203,
+    "ast_hash": "7fdee3fa927fb2a776ac05f62165d33a",
+    "semantic_hash": "7fdee3fa927fb2a776ac05f62165d33a"
+  },
+  "foodraterts/.agents/skills/convex-env/SKILL.md": {
+    "mtime": 1785908693.6879203,
+    "ast_hash": "a7592d5db7bbf278081bea5aa91f6277",
+    "semantic_hash": "a7592d5db7bbf278081bea5aa91f6277"
+  },
+  "foodraterts/.agents/skills/convex-expert/SKILL.md": {
+    "mtime": 1785908693.6889231,
+    "ast_hash": "a75daa79fc4120cebf8fc9b3f745ccdd",
+    "semantic_hash": "a75daa79fc4120cebf8fc9b3f745ccdd"
+  },
+  "foodraterts/.agents/skills/convex-explain-app/SKILL.md": {
+    "mtime": 1785908693.6889231,
+    "ast_hash": "891410e1d0d7d3f5ef017d92c27fe770",
+    "semantic_hash": "891410e1d0d7d3f5ef017d92c27fe770"
+  },
+  "foodraterts/.agents/skills/convex-improve-convex-plugin/SKILL.md": {
+    "mtime": 1785908693.6889231,
+    "ast_hash": "69baa2fa877ba0845caba82aa67cb4a8",
+    "semantic_hash": "69baa2fa877ba0845caba82aa67cb4a8"
+  },
+  "foodraterts/.agents/skills/convex-insights/SKILL.md": {
+    "mtime": 1785908693.6899202,
+    "ast_hash": "c3eef0039ae2cc58631cb5cea6617668",
+    "semantic_hash": "c3eef0039ae2cc58631cb5cea6617668"
+  },
+  "foodraterts/.agents/skills/convex-launch-readiness/SKILL.md": {
+    "mtime": 1785908693.6899202,
+    "ast_hash": "bd22e63577e6b0db9201b9d58dbf7796",
+    "semantic_hash": "bd22e63577e6b0db9201b9d58dbf7796"
+  },
+  "foodraterts/.agents/skills/convex-migrate-rehearse/SKILL.md": {
+    "mtime": 1785908693.6910455,
+    "ast_hash": "c00b378b507ffa9f03e7df205792fb05",
+    "semantic_hash": "c00b378b507ffa9f03e7df205792fb05"
+  },
+  "foodraterts/.agents/skills/convex-migrate/SKILL.md": {
+    "mtime": 1785908693.6910455,
+    "ast_hash": "3516d91be4b43465f58ef84827d073dd",
+    "semantic_hash": "3516d91be4b43465f58ef84827d073dd"
+  },
+  "foodraterts/.agents/skills/convex-monitor/SKILL.md": {
+    "mtime": 1785908693.692047,
+    "ast_hash": "6fa5e5182a78024395d3adaf25da7fd7",
+    "semantic_hash": "6fa5e5182a78024395d3adaf25da7fd7"
+  },
+  "foodraterts/.agents/skills/convex-optimize/SKILL.md": {
+    "mtime": 1785908693.692047,
+    "ast_hash": "465dc77d9bc35314fbc37e6ec4dd3ae6",
+    "semantic_hash": "465dc77d9bc35314fbc37e6ec4dd3ae6"
+  },
+  "foodraterts/.agents/skills/convex-quickstart/SKILL.md": {
+    "mtime": 1785908693.692047,
+    "ast_hash": "18b388633e09ccf84a300930429e445a",
+    "semantic_hash": "18b388633e09ccf84a300930429e445a"
+  },
+  "foodraterts/.agents/skills/convex-quickstart/agents/openai.yaml": {
+    "mtime": 1785908693.6930468,
+    "ast_hash": "488d168fd73397e3f8d84cc2191214bb",
+    "semantic_hash": "488d168fd73397e3f8d84cc2191214bb"
+  },
+  "foodraterts/.agents/skills/convex-reviewer/SKILL.md": {
+    "mtime": 1785908693.6930468,
+    "ast_hash": "4fb66ca599cfd0d77ea234c79be0ada7",
+    "semantic_hash": "4fb66ca599cfd0d77ea234c79be0ada7"
+  },
+  "foodraterts/.agents/skills/convex-seed/SKILL.md": {
+    "mtime": 1785908693.694047,
+    "ast_hash": "f2abd668c8373129742b6471e404c608",
+    "semantic_hash": "f2abd668c8373129742b6471e404c608"
+  },
+  "foodraterts/.agents/skills/convex-self-heal/SKILL.md": {
+    "mtime": 1785908693.694047,
+    "ast_hash": "e9537227923a6aeef767e0798ae09d19",
+    "semantic_hash": "e9537227923a6aeef767e0798ae09d19"
+  },
+  "foodraterts/.agents/skills/convex-sentinel/SKILL.md": {
+    "mtime": 1785908693.694047,
+    "ast_hash": "a231d5bbe27ee01f9e951713a2d910a1",
+    "semantic_hash": "a231d5bbe27ee01f9e951713a2d910a1"
+  },
+  "foodraterts/.agents/skills/convex-suggest/SKILL.md": {
+    "mtime": 1785908693.6950448,
+    "ast_hash": "a7192643b2b48743de9efed8bf4a4901",
+    "semantic_hash": "a7192643b2b48743de9efed8bf4a4901"
+  },
+  "foodraterts/.agents/skills/convex-test/SKILL.md": {
+    "mtime": 1785908693.6950448,
+    "ast_hash": "1dc68a35731e04e19613113decad8596",
+    "semantic_hash": "1dc68a35731e04e19613113decad8596"
+  },
+  "foodraterts/.agents/skills/convex-verify/SKILL.md": {
+    "mtime": 1785908693.6960437,
+    "ast_hash": "14d5a3301359d3e50a585a628025d049",
+    "semantic_hash": "14d5a3301359d3e50a585a628025d049"
+  },
+  "foodraterts/.agents/skills/convex/SKILL.md": {
+    "mtime": 1785908693.6960437,
+    "ast_hash": "954ff4fb387615d794032443a747330f",
+    "semantic_hash": "954ff4fb387615d794032443a747330f"
+  },
+  "foodraterts/.claude/skills/convex-add/SKILL.md": {
+    "mtime": 1785908693.6783905,
+    "ast_hash": "db9e164fedb0982b9785a3e60d53fa30",
+    "semantic_hash": "db9e164fedb0982b9785a3e60d53fa30"
+  },
+  "foodraterts/.claude/skills/convex-advisor/SKILL.md": {
+    "mtime": 1785908693.6783905,
+    "ast_hash": "a1203aff96822ab9ffbf7b621e8c757f",
+    "semantic_hash": "a1203aff96822ab9ffbf7b621e8c757f"
+  },
+  "foodraterts/.claude/skills/convex-agent/SKILL.md": {
+    "mtime": 1785908693.6798954,
+    "ast_hash": "8d8ede8894bbac7c8af4f58a926930cf",
+    "semantic_hash": "8d8ede8894bbac7c8af4f58a926930cf"
+  },
+  "foodraterts/.claude/skills/convex-auth/SKILL.md": {
+    "mtime": 1785908693.6809018,
+    "ast_hash": "44ca2d01a64b5dd59ac891032f9bca8d",
+    "semantic_hash": "44ca2d01a64b5dd59ac891032f9bca8d"
+  },
+  "foodraterts/.claude/skills/convex-authz/SKILL.md": {
+    "mtime": 1785908693.6809018,
+    "ast_hash": "1f099dccefbec6a4f6e0b07ae08d82cf",
+    "semantic_hash": "1f099dccefbec6a4f6e0b07ae08d82cf"
+  },
+  "foodraterts/.claude/skills/convex-backup/SKILL.md": {
+    "mtime": 1785908693.6809018,
+    "ast_hash": "df5487f085b5edaa18ac203bf9c6bf63",
+    "semantic_hash": "df5487f085b5edaa18ac203bf9c6bf63"
+  },
+  "foodraterts/.claude/skills/convex-billing/SKILL.md": {
+    "mtime": 1785908693.6824055,
+    "ast_hash": "844dcdff526351160702df886535e33e",
+    "semantic_hash": "844dcdff526351160702df886535e33e"
+  },
+  "foodraterts/.claude/skills/convex-cost/SKILL.md": {
+    "mtime": 1785908693.6824055,
+    "ast_hash": "b14c0fb028f2de66a079cbf8c8ace54d",
+    "semantic_hash": "b14c0fb028f2de66a079cbf8c8ace54d"
+  },
+  "foodraterts/.claude/skills/convex-create-component/SKILL.md": {
+    "mtime": 1785908693.6834104,
+    "ast_hash": "aba5e174ea7c033a711817e7e29adb26",
+    "semantic_hash": "aba5e174ea7c033a711817e7e29adb26"
+  },
+  "foodraterts/.claude/skills/convex-create-component/agents/openai.yaml": {
+    "mtime": 1785908693.6834104,
+    "ast_hash": "0a7ae3f14ed8bbb7a59c8838d8e58bbc",
+    "semantic_hash": "0a7ae3f14ed8bbb7a59c8838d8e58bbc"
+  },
+  "foodraterts/.claude/skills/convex-create-component/references/advanced-patterns.md": {
+    "mtime": 1785908693.6849148,
+    "ast_hash": "c521b78d48ce8ae0bd9613766063e463",
+    "semantic_hash": "c521b78d48ce8ae0bd9613766063e463"
+  },
+  "foodraterts/.claude/skills/convex-create-component/references/hybrid-components.md": {
+    "mtime": 1785908693.6849148,
+    "ast_hash": "927a09d1ec50cffbcbe90c0d3b7145f7",
+    "semantic_hash": "927a09d1ec50cffbcbe90c0d3b7145f7"
+  },
+  "foodraterts/.claude/skills/convex-create-component/references/local-components.md": {
+    "mtime": 1785908693.68592,
+    "ast_hash": "fa7ca7ad7cb3a6599c0ed76ca7da1cf3",
+    "semantic_hash": "fa7ca7ad7cb3a6599c0ed76ca7da1cf3"
+  },
+  "foodraterts/.claude/skills/convex-create-component/references/packaged-components.md": {
+    "mtime": 1785908693.68592,
+    "ast_hash": "f2572e9e30a334c4ca4e96a54f16108b",
+    "semantic_hash": "f2572e9e30a334c4ca4e96a54f16108b"
+  },
+  "foodraterts/.claude/skills/convex-crons/SKILL.md": {
+    "mtime": 1785908693.686924,
+    "ast_hash": "913278f6235b10231ba71b9bdd398591",
+    "semantic_hash": "913278f6235b10231ba71b9bdd398591"
+  },
+  "foodraterts/.claude/skills/convex-deploy-guard/SKILL.md": {
+    "mtime": 1785908693.686924,
+    "ast_hash": "570198cc94389e1c7bf464cb8ab9f3e2",
+    "semantic_hash": "570198cc94389e1c7bf464cb8ab9f3e2"
+  },
+  "foodraterts/.claude/skills/convex-design/SKILL.md": {
+    "mtime": 1785908693.686924,
+    "ast_hash": "89457f090e4374d0738ea9df6f728ccb",
+    "semantic_hash": "89457f090e4374d0738ea9df6f728ccb"
+  },
+  "foodraterts/.claude/skills/convex-docs/SKILL.md": {
+    "mtime": 1785908693.6879203,
+    "ast_hash": "8a48d3ebd4beaf5097d3a41bdf371b78",
+    "semantic_hash": "8a48d3ebd4beaf5097d3a41bdf371b78"
+  },
+  "foodraterts/.claude/skills/convex-domains/SKILL.md": {
+    "mtime": 1785908693.6879203,
+    "ast_hash": "7fdee3fa927fb2a776ac05f62165d33a",
+    "semantic_hash": "7fdee3fa927fb2a776ac05f62165d33a"
+  },
+  "foodraterts/.claude/skills/convex-env/SKILL.md": {
+    "mtime": 1785908693.6879203,
+    "ast_hash": "a7592d5db7bbf278081bea5aa91f6277",
+    "semantic_hash": "a7592d5db7bbf278081bea5aa91f6277"
+  },
+  "foodraterts/.claude/skills/convex-expert/SKILL.md": {
+    "mtime": 1785908693.6889231,
+    "ast_hash": "a75daa79fc4120cebf8fc9b3f745ccdd",
+    "semantic_hash": "a75daa79fc4120cebf8fc9b3f745ccdd"
+  },
+  "foodraterts/.claude/skills/convex-explain-app/SKILL.md": {
+    "mtime": 1785908693.6889231,
+    "ast_hash": "891410e1d0d7d3f5ef017d92c27fe770",
+    "semantic_hash": "891410e1d0d7d3f5ef017d92c27fe770"
+  },
+  "foodraterts/.claude/skills/convex-improve-convex-plugin/SKILL.md": {
+    "mtime": 1785908693.6889231,
+    "ast_hash": "69baa2fa877ba0845caba82aa67cb4a8",
+    "semantic_hash": "69baa2fa877ba0845caba82aa67cb4a8"
+  },
+  "foodraterts/.claude/skills/convex-insights/SKILL.md": {
+    "mtime": 1785908693.6899202,
+    "ast_hash": "c3eef0039ae2cc58631cb5cea6617668",
+    "semantic_hash": "c3eef0039ae2cc58631cb5cea6617668"
+  },
+  "foodraterts/.claude/skills/convex-launch-readiness/SKILL.md": {
+    "mtime": 1785908693.6899202,
+    "ast_hash": "bd22e63577e6b0db9201b9d58dbf7796",
+    "semantic_hash": "bd22e63577e6b0db9201b9d58dbf7796"
+  },
+  "foodraterts/.claude/skills/convex-migrate-rehearse/SKILL.md": {
+    "mtime": 1785908693.6910455,
+    "ast_hash": "c00b378b507ffa9f03e7df205792fb05",
+    "semantic_hash": "c00b378b507ffa9f03e7df205792fb05"
+  },
+  "foodraterts/.claude/skills/convex-migrate/SKILL.md": {
+    "mtime": 1785908693.6910455,
+    "ast_hash": "3516d91be4b43465f58ef84827d073dd",
+    "semantic_hash": "3516d91be4b43465f58ef84827d073dd"
+  },
+  "foodraterts/.claude/skills/convex-monitor/SKILL.md": {
+    "mtime": 1785908693.692047,
+    "ast_hash": "6fa5e5182a78024395d3adaf25da7fd7",
+    "semantic_hash": "6fa5e5182a78024395d3adaf25da7fd7"
+  },
+  "foodraterts/.claude/skills/convex-optimize/SKILL.md": {
+    "mtime": 1785908693.692047,
+    "ast_hash": "465dc77d9bc35314fbc37e6ec4dd3ae6",
+    "semantic_hash": "465dc77d9bc35314fbc37e6ec4dd3ae6"
+  },
+  "foodraterts/.claude/skills/convex-quickstart/SKILL.md": {
+    "mtime": 1785908693.692047,
+    "ast_hash": "18b388633e09ccf84a300930429e445a",
+    "semantic_hash": "18b388633e09ccf84a300930429e445a"
+  },
+  "foodraterts/.claude/skills/convex-quickstart/agents/openai.yaml": {
+    "mtime": 1785908693.6930468,
+    "ast_hash": "488d168fd73397e3f8d84cc2191214bb",
+    "semantic_hash": "488d168fd73397e3f8d84cc2191214bb"
+  },
+  "foodraterts/.claude/skills/convex-reviewer/SKILL.md": {
+    "mtime": 1785908693.6930468,
+    "ast_hash": "4fb66ca599cfd0d77ea234c79be0ada7",
+    "semantic_hash": "4fb66ca599cfd0d77ea234c79be0ada7"
+  },
+  "foodraterts/.claude/skills/convex-seed/SKILL.md": {
+    "mtime": 1785908693.694047,
+    "ast_hash": "f2abd668c8373129742b6471e404c608",
+    "semantic_hash": "f2abd668c8373129742b6471e404c608"
+  },
+  "foodraterts/.claude/skills/convex-self-heal/SKILL.md": {
+    "mtime": 1785908693.694047,
+    "ast_hash": "e9537227923a6aeef767e0798ae09d19",
+    "semantic_hash": "e9537227923a6aeef767e0798ae09d19"
+  },
+  "foodraterts/.claude/skills/convex-sentinel/SKILL.md": {
+    "mtime": 1785908693.694047,
+    "ast_hash": "a231d5bbe27ee01f9e951713a2d910a1",
+    "semantic_hash": "a231d5bbe27ee01f9e951713a2d910a1"
+  },
+  "foodraterts/.claude/skills/convex-suggest/SKILL.md": {
+    "mtime": 1785908693.6950448,
+    "ast_hash": "a7192643b2b48743de9efed8bf4a4901",
+    "semantic_hash": "a7192643b2b48743de9efed8bf4a4901"
+  },
+  "foodraterts/.claude/skills/convex-test/SKILL.md": {
+    "mtime": 1785908693.6950448,
+    "ast_hash": "1dc68a35731e04e19613113decad8596",
+    "semantic_hash": "1dc68a35731e04e19613113decad8596"
+  },
+  "foodraterts/.claude/skills/convex-verify/SKILL.md": {
+    "mtime": 1785908693.6960437,
+    "ast_hash": "14d5a3301359d3e50a585a628025d049",
+    "semantic_hash": "14d5a3301359d3e50a585a628025d049"
+  },
+  "foodraterts/.claude/skills/convex/SKILL.md": {
+    "mtime": 1785908693.6960437,
+    "ast_hash": "954ff4fb387615d794032443a747330f",
+    "semantic_hash": "954ff4fb387615d794032443a747330f"
+  },
+  "foodraterts/AGENTS.md": {
+    "mtime": 1785908688.474112,
+    "ast_hash": "34281e9ffd842238948717ac9c01f392",
+    "semantic_hash": "34281e9ffd842238948717ac9c01f392"
+  },
+  "foodraterts/CLAUDE.md": {
+    "mtime": 1785908688.4753673,
+    "ast_hash": "34281e9ffd842238948717ac9c01f392",
+    "semantic_hash": "34281e9ffd842238948717ac9c01f392"
+  },
+  "foodraterts/README.md": {
+    "mtime": 499162500.0,
+    "ast_hash": "e22acbc85bc1f0b21dd2d4fbb55488b7",
+    "semantic_hash": "e22acbc85bc1f0b21dd2d4fbb55488b7"
+  },
+  "foodraterts/app/(tabs)/oldprofile.txt": {
+    "mtime": 1785182954.5481763,
+    "ast_hash": "2a8ebaab937279b39ce9d13aed02f699",
+    "semantic_hash": "2a8ebaab937279b39ce9d13aed02f699"
+  },
+  "foodraterts/convex/README.md": {
+    "mtime": 1780706528.3503306,
+    "ast_hash": "3a0f15b8c7f1cc532958811e1ce6d311",
+    "semantic_hash": "3a0f15b8c7f1cc532958811e1ce6d311"
+  },
+  "foodraterts/convex/_generated/ai/guidelines.md": {
+    "mtime": 1785908688.4721172,
+    "ast_hash": "c75920cc3a3d452938c80334f02d8fb4",
+    "semantic_hash": "c75920cc3a3d452938c80334f02d8fb4"
+  },
+  "foodraterts/memory/scrape-food-data-skill.md": {
+    "mtime": 1784377703.9079244,
+    "ast_hash": "4c9f614234e0de8e872206719465c941",
+    "semantic_hash": "4c9f614234e0de8e872206719465c941"
+  },
+  "assets/App Home Page.png": {
+    "mtime": 1784838471.676728,
+    "ast_hash": "e8f72e6aa5e35922d9b76611f8257010",
+    "semantic_hash": "e8f72e6aa5e35922d9b76611f8257010"
+  },
+  "assets/App Menu Page.png": {
+    "mtime": 1784838498.2122073,
+    "ast_hash": "80b0888d49ac18dabe9cb613ec709f6f",
+    "semantic_hash": "80b0888d49ac18dabe9cb613ec709f6f"
+  },
+  "foodraterts/.agents/skills/convex-create-component/assets/icon.svg": {
+    "mtime": 1785908693.6834104,
+    "ast_hash": "750ee31db4186a3a336f1c6376a15221",
+    "semantic_hash": "750ee31db4186a3a336f1c6376a15221"
+  },
+  "foodraterts/.agents/skills/convex-quickstart/assets/icon.svg": {
+    "mtime": 1785908693.6930468,
+    "ast_hash": "ee6d5a57c359c31069c6543131eecfb0",
+    "semantic_hash": "ee6d5a57c359c31069c6543131eecfb0"
+  },
+  "foodraterts/.claude/skills/convex-create-component/assets/icon.svg": {
+    "mtime": 1785908693.6834104,
+    "ast_hash": "750ee31db4186a3a336f1c6376a15221",
+    "semantic_hash": "750ee31db4186a3a336f1c6376a15221"
+  },
+  "foodraterts/.claude/skills/convex-quickstart/assets/icon.svg": {
+    "mtime": 1785908693.6930468,
+    "ast_hash": "ee6d5a57c359c31069c6543131eecfb0",
+    "semantic_hash": "ee6d5a57c359c31069c6543131eecfb0"
+  },
+  "foodraterts/android/app/src/main/res/drawable-hdpi/splashscreen_logo.png": {
+    "mtime": 1786420407.1560507,
+    "ast_hash": "0c84755404f832021b1f66d170f179a0",
+    "semantic_hash": "0c84755404f832021b1f66d170f179a0"
+  },
+  "foodraterts/android/app/src/main/res/drawable-mdpi/splashscreen_logo.png": {
+    "mtime": 1786420407.123353,
+    "ast_hash": "84ccf1552fb812a69258c63394c4795f",
+    "semantic_hash": "84ccf1552fb812a69258c63394c4795f"
+  },
+  "foodraterts/android/app/src/main/res/drawable-xhdpi/splashscreen_logo.png": {
+    "mtime": 1786420407.1570551,
+    "ast_hash": "6b8d1bc96b750958e22de12f084333d0",
+    "semantic_hash": "6b8d1bc96b750958e22de12f084333d0"
+  },
+  "foodraterts/android/app/src/main/res/drawable-xxhdpi/splashscreen_logo.png": {
+    "mtime": 1786420407.1570551,
+    "ast_hash": "55078f480d91440d909713224429deb1",
+    "semantic_hash": "55078f480d91440d909713224429deb1"
+  },
+  "foodraterts/android/app/src/main/res/drawable-xxxhdpi/splashscreen_logo.png": {
+    "mtime": 1786420407.294115,
+    "ast_hash": "0bac937ad847e621fdb518e3011d579d",
+    "semantic_hash": "0bac937ad847e621fdb518e3011d579d"
+  },
+  "foodraterts/android/app/src/main/res/mipmap-hdpi/ic_launcher.webp": {
+    "mtime": 1786420406.6090078,
+    "ast_hash": "6a0c8a8c911178d4a5ecdaa58fd6ff7e",
+    "semantic_hash": "6a0c8a8c911178d4a5ecdaa58fd6ff7e"
+  },
+  "foodraterts/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.webp": {
+    "mtime": 1786420406.6868353,
+    "ast_hash": "a9eb1b05f6149815aa82d3c95c17ede0",
+    "semantic_hash": "a9eb1b05f6149815aa82d3c95c17ede0"
+  },
+  "foodraterts/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.webp": {
+    "mtime": 1786420406.6477754,
+    "ast_hash": "1eefa7a48c8b34d42653113966d7274c",
+    "semantic_hash": "1eefa7a48c8b34d42653113966d7274c"
+  },
+  "foodraterts/android/app/src/main/res/mipmap-mdpi/ic_launcher.webp": {
+    "mtime": 1786420406.6090078,
+    "ast_hash": "511ad31905a7254ce579b6096dfbed57",
+    "semantic_hash": "511ad31905a7254ce579b6096dfbed57"
+  },
+  "foodraterts/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.webp": {
+    "mtime": 1786420406.6868353,
+    "ast_hash": "1fecc6ea0444069e70ad139f47e4c018",
+    "semantic_hash": "1fecc6ea0444069e70ad139f47e4c018"
+  },
+  "foodraterts/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.webp": {
+    "mtime": 1786420406.6477754,
+    "ast_hash": "d7d45915200a13c9760e60aaaac3eeb4",
+    "semantic_hash": "d7d45915200a13c9760e60aaaac3eeb4"
+  },
+  "foodraterts/android/app/src/main/res/mipmap-xhdpi/ic_launcher.webp": {
+    "mtime": 1786420406.6145177,
+    "ast_hash": "3ed26a4297187eac963b43e18c485328",
+    "semantic_hash": "3ed26a4297187eac963b43e18c485328"
+  },
+  "foodraterts/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.webp": {
+    "mtime": 1786420406.6868353,
+    "ast_hash": "9fea8d2eade9efc6b66035cc80059e08",
+    "semantic_hash": "9fea8d2eade9efc6b66035cc80059e08"
+  },
+  "foodraterts/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.webp": {
+    "mtime": 1786420406.6477754,
+    "ast_hash": "bc91a05c866a569d7ab7c94cc3aee79a",
+    "semantic_hash": "bc91a05c866a569d7ab7c94cc3aee79a"
+  },
+  "foodraterts/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.webp": {
+    "mtime": 1786420406.6160216,
+    "ast_hash": "c0919d912697e538f527336365e61b95",
+    "semantic_hash": "c0919d912697e538f527336365e61b95"
+  },
+  "foodraterts/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.webp": {
+    "mtime": 1786420406.68583,
+    "ast_hash": "49dba5b42772ae4ca065968b7b032c19",
+    "semantic_hash": "49dba5b42772ae4ca065968b7b032c19"
+  },
+  "foodraterts/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp": {
+    "mtime": 1786420406.6477754,
+    "ast_hash": "474ce6b538f2abb604a9306a734f8226",
+    "semantic_hash": "474ce6b538f2abb604a9306a734f8226"
+  },
+  "foodraterts/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp": {
+    "mtime": 1786420406.6145177,
+    "ast_hash": "2cf6c8537e152b27df3af2c47a3b2630",
+    "semantic_hash": "2cf6c8537e152b27df3af2c47a3b2630"
+  },
+  "foodraterts/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.webp": {
+    "mtime": 1786420406.6928358,
+    "ast_hash": "e2a4f503b1e6fadbe82176e75fcabc00",
+    "semantic_hash": "e2a4f503b1e6fadbe82176e75fcabc00"
+  },
+  "foodraterts/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp": {
+    "mtime": 1786420406.6497765,
+    "ast_hash": "e26a1c28deaf83c6f2987ddb005d18f6",
+    "semantic_hash": "e26a1c28deaf83c6f2987ddb005d18f6"
+  },
+  "foodraterts/assets/images/adaptive-icon.png": {
+    "mtime": 1754393516.2610593,
+    "ast_hash": "585778812af2475578189642fa6d53e7",
+    "semantic_hash": "585778812af2475578189642fa6d53e7"
+  },
+  "foodraterts/assets/images/adaptive-icon2.png": {
+    "mtime": 499162500.0,
+    "ast_hash": "97dae5a0e62ad8551d8a31897b425e63",
+    "semantic_hash": "97dae5a0e62ad8551d8a31897b425e63"
+  },
+  "foodraterts/assets/images/favicon.png": {
+    "mtime": 499162500.0,
+    "ast_hash": "4f1cb2cac2370cd5050681232e8575a8",
+    "semantic_hash": "4f1cb2cac2370cd5050681232e8575a8"
+  },
+  "foodraterts/assets/images/icon.png": {
+    "mtime": 1754393516.2610593,
+    "ast_hash": "585778812af2475578189642fa6d53e7",
+    "semantic_hash": "585778812af2475578189642fa6d53e7"
+  },
+  "foodraterts/assets/images/icon2.png": {
+    "mtime": 499162500.0,
+    "ast_hash": "4e3f888fc8475f69fd5fa32f1ad5216a",
+    "semantic_hash": "4e3f888fc8475f69fd5fa32f1ad5216a"
+  },
+  "foodraterts/assets/images/partial-react-logo.png": {
+    "mtime": 499162500.0,
+    "ast_hash": "8f14e478886737f3323a2ac79c833749",
+    "semantic_hash": "8f14e478886737f3323a2ac79c833749"
+  },
+  "foodraterts/assets/images/react-logo.png": {
+    "mtime": 499162500.0,
+    "ast_hash": "695d5a1c6f29a689130f3aaa573aec6e",
+    "semantic_hash": "695d5a1c6f29a689130f3aaa573aec6e"
+  },
+  "foodraterts/assets/images/react-logo@2x.png": {
+    "mtime": 499162500.0,
+    "ast_hash": "b507e7f2c91ebc8fe24dee79ccb3b600",
+    "semantic_hash": "b507e7f2c91ebc8fe24dee79ccb3b600"
+  },
+  "foodraterts/assets/images/react-logo@3x.png": {
+    "mtime": 499162500.0,
+    "ast_hash": "8a4d0e5b845044e56e3b2df627d01cfd",
+    "semantic_hash": "8a4d0e5b845044e56e3b2df627d01cfd"
+  },
+  "foodraterts/assets/images/splash-icon.png": {
+    "mtime": 1754393516.2610593,
+    "ast_hash": "585778812af2475578189642fa6d53e7",
+    "semantic_hash": "585778812af2475578189642fa6d53e7"
+  },
+  "foodraterts/assets/images/splash-icon2.png": {
+    "mtime": 499162500.0,
+    "ast_hash": "97dae5a0e62ad8551d8a31897b425e63",
+    "semantic_hash": "97dae5a0e62ad8551d8a31897b425e63"
+  }
+}

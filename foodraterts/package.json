@@ -23,6 +23,7 @@
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
     "@rnmapbox/maps": "^10.3.5",
+    "@sentropic/graphify": "^0.17.1",
     "add": "^2.0.6",
     "convex": "^1.40.0",
     "dotenv": "^17.4.2",
