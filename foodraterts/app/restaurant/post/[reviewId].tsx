@@ -10,6 +10,7 @@ import {
     Platform,
     Alert,
     StatusBar,
+    Image,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,16 +24,22 @@ export default function PostDetailScreen() {
 
     const currentUser = useQuery(api.users.viewer);
     const userReviews = useQuery(api.items.getUserReviews) || [];
-    
+
     // Safely locate the exact post matching BOTH the review ID and the activityType
     const post = userReviews.find((r: any) => r._id === reviewId && r.activityType === activityType) || userReviews.find((r: any) => r._id === reviewId);
 
     const toggleLike = useMutation(api.items.toggleLikeReview);
     const addComment = useMutation(api.items.addCommentToReview);
     const deleteComment = useMutation(api.items.deleteCommentFromReview);
+    const removeImageMutation = useMutation(api.items.removeReviewImage);
 
     const [commentText, setCommentText] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const reviewImageUrl = useQuery(
+        api.images.getPublicUrl,
+        post?.imageStorageId ? { storageId: post.imageStorageId } : "skip"
+    );
 
     if (!post) {
         return (
@@ -51,6 +58,47 @@ export default function PostDetailScreen() {
     const isLikedByMe = post.likes?.includes(currentUser?._id);
     const likesTotal = post.likes?.length || 0;
     const comments = post.comments || [];
+    const isMyPost = post.userId === currentUser?._id;
+
+    const handleRemoveImage = () => {
+        Alert.alert(
+            "Remove Photo",
+            "Are you sure you want to delete this photo from your review?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Remove",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await removeImageMutation({
+                                reviewId: reviewId as string,
+                                activityType: post.activityType,
+                            });
+                            Alert.alert("Success", "Photo removed successfully.");
+                        } catch (err: any) {
+                            Alert.alert("Error", err.message || "Could not remove photo.");
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleEditReview = () => {
+        // Only allow editing for "updated" activity types
+        if (post.activityType === 'updated') {
+            router.push({
+                pathname: '/restaurant/rate/[itemId]',
+                params: {
+                    itemId: post.itemId,
+                    editReviewId: reviewId
+                }
+            });
+        } else {
+            Alert.alert("Cannot Edit", "You can only edit updated reviews. Create a new update to make changes.");
+        }
+    };
 
     const handleSendComment = async () => {
         if (!commentText.trim()) return;
@@ -99,7 +147,12 @@ export default function PostDetailScreen() {
                     <Ionicons name="arrow-back" size={22} color="#1F2937" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Post Details</Text>
-                <View style={{ width: 22 }} />
+                {post.activityType === 'updated' && isMyPost && (
+                    <TouchableOpacity onPress={handleEditReview} style={styles.iconButton}>
+                        <Ionicons name="create-outline" size={20} color="#6c3b3b" />
+                    </TouchableOpacity>
+                )}
+                {post.activityType !== 'updated' && <View style={{ width: 22 }} />}
             </View>
 
             <KeyboardAvoidingView 
@@ -135,6 +188,21 @@ export default function PostDetailScreen() {
                         {post.notes ? (
                             <View style={styles.notesBox}>
                                 <Text style={styles.notesText}>"{post.notes}"</Text>
+                            </View>
+                        ) : null}
+
+                        {reviewImageUrl ? (
+                            <View style={styles.imageWrapper}>
+                                <Image source={{ uri: reviewImageUrl }} style={styles.reviewImage} />
+                                {isMyPost && (
+                                    <TouchableOpacity 
+                                        style={styles.removeImageButton} 
+                                        onPress={handleRemoveImage}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Ionicons name="trash" size={16} color="#FFFFFF" />
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         ) : null}
 
@@ -324,6 +392,28 @@ const styles = StyleSheet.create({
         fontStyle: 'italic',
         color: '#4B5563',
     },
+    imageWrapper: {
+        position: 'relative',
+        marginTop: 12,
+        marginBottom: 12,
+    },
+    reviewImage: {
+        width: '100%',
+        height: 220,
+        borderRadius: 12,
+        resizeMode: 'cover',
+    },
+    removeImageButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     metricsRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -412,7 +502,6 @@ const styles = StyleSheet.create({
     },
     footerInputContainer: {
         flexDirection: 'row',
-        alignItems: 'center',
         paddingHorizontal: 16,
         paddingTop: 12,
         paddingBottom: 28,

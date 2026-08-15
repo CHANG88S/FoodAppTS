@@ -35,7 +35,8 @@ export default function RestaurantDetailScreen() {
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
-  
+  const [activeTab, setActiveTab] = useState("menu");
+
   // Fetch live backend data bundling restaurant and linked menu items
   const dbData = useQuery(api.restaurants.getRestaurantDetails, { 
     restaurantId: id as Id<"restaurants"> 
@@ -53,6 +54,18 @@ export default function RestaurantDetailScreen() {
   const visitStats = useQuery(api.restaurants.getVisitCount, {
     restaurantId: id as Id<"restaurants">
   });
+
+  // Query to get reviews with photos for this restaurant
+  const reviewsWithPhotos = useQuery(api.items.getReviewsWithPhotosForRestaurant, {
+    restaurantId: id as Id<"restaurants">
+  }) || [];
+
+  // Batch-resolve review photo URLs
+  const photoStorageIds = [...new Set(reviewsWithPhotos.map((r: any) => r.imageStorageId).filter(Boolean))];
+  const photoUrls = useQuery(
+    api.images.getPublicUrls,
+    photoStorageIds.length ? { storageIds: photoStorageIds } : "skip"
+  ) || {};
 
   const handleVisitedPress = async () => {
     // Check if user has reviewed a menu item at this restaurant first
@@ -90,7 +103,7 @@ export default function RestaurantDetailScreen() {
     );
   }
 
-  // 🔑 HELPER FUNCTION: Returns a dynamic emoji matching the restaurant or item category (handles strings and arrays safely)
+  // 🔑 HELPER FUNCTION: Returns a dynamic emoji matching the restaurant or item category
   const getCategoryEmoji = (categoryString?: string | string[]): string => {
     if (!categoryString) return "🧋"; 
     
@@ -108,7 +121,6 @@ export default function RestaurantDetailScreen() {
     if (cat.includes("bbq") || cat.includes("meat") || cat.includes("kbbq") || cat.includes("korean bbq")) return "🥩";
     if (cat.includes("burger")) return "🍔";
     if (cat.includes("donut")) return "🍩";
-    
     if (cat.includes("food")) return "🍲";
 
     return "🧋"; 
@@ -179,13 +191,10 @@ export default function RestaurantDetailScreen() {
     }
   };
 
-  // Helper function to safely change filters and reset carousel layout back to page 1
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
     setIsDropdownVisible(false);
     setActivePageIndex(0);
-    
-    // Snaps the scroll view back to coordinate position x: 0 instantly
     menuCarouselRef.current?.scrollTo({ x: 0, y: 0, animated: false });
   };
 
@@ -193,17 +202,14 @@ export default function RestaurantDetailScreen() {
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
       
-      {/* Completely removes the native structural header container bar from rendering */}
       <Stack.Screen 
         options={{
           headerShown: false
         }} 
       />
 
-      {/* Dynamic Header Section with Restored Back Button Container */}
+      {/* Dynamic Header Section */}
       <View style={styles.heroContainer}>
-        
-        {/* CUSTOM IN-PAGE BACK BUTTON: Placed inline within your layout tree cleanly */}
         <TouchableOpacity 
           style={styles.backButton} 
           onPress={() => router.back()}
@@ -223,19 +229,27 @@ export default function RestaurantDetailScreen() {
             {dbData.city && dbData.state ? `${dbData.city}, ${dbData.state}` : "Riverside, CA"}
           </Text>
         </View>
-
       </View>
 
-      {/* Tab Row Pill Design with Visited Button added to the right of About */}
+      {/* Tab Row Pill Design */}
       <View style={styles.tabRow}>
-        <TouchableOpacity style={[styles.tabPill, styles.activeTabPill]}>
-          <Text style={[styles.tabText, styles.activeTabText]}>MENU 👋</Text>
+        <TouchableOpacity
+          style={[styles.tabPill, activeTab === "menu" && styles.activeTabPill]}
+          onPress={() => setActiveTab("menu")}
+        >
+          <Text style={[styles.tabText, activeTab === "menu" && styles.activeTabText]}>MENU 👋</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tabPill}>
-          <Text style={styles.tabText}>PHOTOS</Text>
+        <TouchableOpacity
+          style={[styles.tabPill, activeTab === "photos" && styles.activeTabPill]}
+          onPress={() => setActiveTab("photos")}
+        >
+          <Text style={[styles.tabText, activeTab === "photos" && styles.activeTabText]}>PHOTOS</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tabPill}>
-          <Text style={styles.tabText}>ABOUT</Text>
+        <TouchableOpacity
+          style={[styles.tabPill, activeTab === "about" && styles.activeTabPill]}
+          onPress={() => setActiveTab("about")}
+        >
+          <Text style={[styles.tabText, activeTab === "about" && styles.activeTabText]}>ABOUT</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.tabPill} onPress={handleVisitedPress}>
           <Text style={styles.tabText}>VISITED ✅</Text>
@@ -264,185 +278,267 @@ export default function RestaurantDetailScreen() {
         )}
       </View>
 
-      {/* Localized Menu Search Bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search-outline" size={16} color="#9CA3AF" style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search Menu Items"
-          placeholderTextColor="#9CA3AF"
-          value={menuSearchQuery}
-          onChangeText={(text) => {
-            setMenuSearchQuery(text);
-            setActivePageIndex(0);
-            menuCarouselRef.current?.scrollTo({ x: 0, y: 0, animated: false });
-          }}
-          autoCapitalize="none"
-        />
-        {menuSearchQuery.trim().length > 0 && (
-          <TouchableOpacity onPress={() => {
-            setMenuSearchQuery("");
-            setActivePageIndex(0);
-            menuCarouselRef.current?.scrollTo({ x: 0, y: 0, animated: false });
-          }}>
-            <Ionicons name="close-circle" size={16} color="#9CA3AF" />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Dynamic Filter Section Header with Small Plus Button Next to Category */}
-      <View style={styles.menuSectionHeader}>
-        <Text style={styles.menuSectionTitle}>DRINKS & DISHES</Text>
-        
-        <View style={styles.headerRightControls}>
-          <TouchableOpacity 
-            style={styles.dropdownSelector} 
-            onPress={() => setIsDropdownVisible(true)}
-            activeOpacity={0.7}
-          >
-            <Text 
-              style={styles.dropdownSelectorText}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {selectedCategory === "All" ? "🏷️ All Categories" : `📁 ${selectedCategory}`}
-            </Text>
-            <Ionicons name="chevron-down" size={14} color="#6c3b3b" style={styles.dropdownChevron} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.smallPlusButton}
-            onPress={() => router.push(`/restaurant/${dbData._id}/add-item`)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="add" size={16} color="#6c3b3b" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Dropdown Modal Selector Component overlay */}
-      <Modal
-        visible={isDropdownVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setIsDropdownVisible(false)}
-      >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
-          onPress={() => setIsDropdownVisible(false)}
-        >
-          <View style={styles.dropdownMenuContainer}>
-            <Text style={styles.dropdownMenuTitle}>Filter by Category</Text>
-            <FlatList
-              data={uniqueCategories}
-              keyExtractor={(cat) => cat}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.dropdownItem,
-                    selectedCategory === item && styles.activeDropdownItem
-                  ]}
-                  onPress={() => handleCategoryChange(item)}
-                >
-                  <Text style={[
-                    styles.dropdownItemText,
-                    selectedCategory === item && styles.activeDropdownItemText
-                  ]}>
-                    {item === "All" ? "✨ Show All Items" : item}
-                  </Text>
-                  {selectedCategory === item && (
-                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-                  )}
-                </TouchableOpacity>
-              )}
+      {/* MENU TAB CONTENT */}
+      {activeTab === "menu" && (
+        <>
+          <View style={styles.searchContainer}>
+            <Ionicons name="search-outline" size={16} color="#9CA3AF" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search Menu Items"
+              placeholderTextColor="#9CA3AF"
+              value={menuSearchQuery}
+              onChangeText={(text) => {
+                setMenuSearchQuery(text);
+                setActivePageIndex(0);
+                menuCarouselRef.current?.scrollTo({ x: 0, y: 0, animated: false });
+              }}
+              autoCapitalize="none"
             />
+            {menuSearchQuery.trim().length > 0 && (
+              <TouchableOpacity onPress={() => {
+                setMenuSearchQuery("");
+                setActivePageIndex(0);
+                menuCarouselRef.current?.scrollTo({ x: 0, y: 0, animated: false });
+              }}>
+                <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+              </TouchableOpacity>
+            )}
           </View>
-        </TouchableOpacity>
-      </Modal>
 
-      {filteredMenuItems.length === 0 ? (
-        <View style={styles.emptyMenuCard}>
-          <Text style={styles.emptyMenuText}>No items match the selected filters.</Text>
-          <TouchableOpacity 
-            style={styles.addDrinkButton}
-            onPress={() => router.push(`/restaurant/${dbData._id}/add-item`)}
-          >
-            <Text style={styles.addDrinkButtonText}>Add New Item</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View>
-          <ScrollView 
-            ref={menuCarouselRef}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            contentContainerStyle={styles.carouselWrapper}
-          >
-            {gridPages.map((pageItems: any[], pageIndex: number) => (
-              <View key={`page-${pageIndex}`} style={styles.gridContainer}>
-                {pageItems.map((item: any) => (
-                  <MenuItemCard 
-                    key={item._id} 
-                    item={item} 
-                    restaurantCategory={dbData.category} 
-                    restaurantId={id as string} 
-                    router={router} 
-                    getCategoryEmoji={getCategoryEmoji} 
-                  />
-                ))}
-              </View>
-            ))}
-          </ScrollView>
+          <View style={styles.menuSectionHeader}>
+            <Text style={styles.menuSectionTitle}>DRINKS & DISHES</Text>
+            
+            <View style={styles.headerRightControls}>
+              <TouchableOpacity 
+                style={styles.dropdownSelector} 
+                onPress={() => setIsDropdownVisible(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.dropdownSelectorText} numberOfLines={1} ellipsizeMode="tail">
+                  {selectedCategory === "All" ? "🏷️ All Categories" : `📁 ${selectedCategory}`}
+                </Text>
+                <Ionicons name="chevron-down" size={14} color="#6c3b3b" style={styles.dropdownChevron} />
+              </TouchableOpacity>
 
-          {gridPages.length > 1 && (
-            <View style={styles.paginationDotsRow}>
-              {gridPages.map((_, index) => (
-                <View 
-                  key={`dot-${index}`}
-                  style={[
-                    styles.dot,
-                    activePageIndex === index ? styles.activeDot : styles.inactiveDot
-                  ]}
+              <TouchableOpacity
+                style={styles.smallPlusButton}
+                onPress={() => router.push(`/restaurant/${dbData._id}/add-item`)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="add" size={16} color="#6c3b3b" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <Modal
+            visible={isDropdownVisible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setIsDropdownVisible(false)}
+          >
+            <TouchableOpacity 
+              style={styles.modalOverlay} 
+              activeOpacity={1} 
+              onPress={() => setIsDropdownVisible(false)}
+            >
+              <View style={styles.dropdownMenuContainer}>
+                <Text style={styles.dropdownMenuTitle}>Filter by Category</Text>
+                <FlatList
+                  data={uniqueCategories}
+                  keyExtractor={(cat) => cat}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={[
+                        styles.dropdownItem,
+                        selectedCategory === item && styles.activeDropdownItem
+                      ]}
+                      onPress={() => handleCategoryChange(item)}
+                    >
+                      <Text style={[
+                        styles.dropdownItemText,
+                        selectedCategory === item && styles.activeDropdownItemText
+                      ]}>
+                        {item === "All" ? "✨ Show All Items" : item}
+                      </Text>
+                      {selectedCategory === item && (
+                        <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                      )}
+                    </TouchableOpacity>
+                  )}
                 />
+              </View>
+            </TouchableOpacity>
+          </Modal>
+
+          {filteredMenuItems.length === 0 ? (
+            <View style={styles.emptyMenuCard}>
+              <Text style={styles.emptyMenuText}>No items match the selected filters.</Text>
+              <TouchableOpacity 
+                style={styles.addDrinkButton}
+                onPress={() => router.push(`/restaurant/${dbData._id}/add-item`)}
+              >
+                <Text style={styles.addDrinkButtonText}>Add New Item</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View>
+              <ScrollView 
+                ref={menuCarouselRef}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+                contentContainerStyle={styles.carouselWrapper}
+              >
+                {gridPages.map((pageItems: any[], pageIndex: number) => (
+                  <View key={`page-${pageIndex}`} style={styles.gridContainer}>
+                    {pageItems.map((item: any) => (
+                      <MenuItemCard 
+                        key={item._id} 
+                        item={item} 
+                        restaurantCategory={dbData.category} 
+                        restaurantId={id as string} 
+                        router={router} 
+                        getCategoryEmoji={getCategoryEmoji} 
+                      />
+                    ))}
+                  </View>
+                ))}
+              </ScrollView>
+
+              {gridPages.length > 1 && (
+                <View style={styles.paginationDotsRow}>
+                  {gridPages.map((_, index) => (
+                    <View 
+                      key={`dot-${index}`}
+                      style={[
+                        styles.dot,
+                        activePageIndex === index ? styles.activeDot : styles.inactiveDot
+                      ]}
+                    />
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
+        </>
+      )}
+
+      {/* PHOTOS TAB CONTENT (3-COLUMN LAYOUT) */}
+      {activeTab === "photos" && (
+        <View style={styles.photosTabContent}>
+          <Text style={styles.photosTabTitle}>Customer Photos</Text>
+          <Text style={styles.photosTabSubtitle}>
+            See what others are enjoying at {dbData.restaurantName}
+          </Text>
+
+          {reviewsWithPhotos.length === 0 ? (
+            <View style={styles.emptyPhotosContainer}>
+              <Ionicons name="camera-outline" size={48} color="#9CA3AF" />
+              <Text style={styles.emptyPhotosText}>No photos yet</Text>
+              <Text style={styles.emptyPhotosSubtext}>Be the first to add a photo with your review!</Text>
+            </View>
+          ) : (
+            <View style={styles.photosGrid}>
+              {reviewsWithPhotos.map((review: any) => (
+                <View key={review._id} style={styles.photoCard}>
+                  <Image
+                    source={{ uri: photoUrls[review.imageStorageId] || '' }}
+                    style={styles.photoImage}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.photoOverlay}>
+                    <Text style={styles.photoItemName} numberOfLines={1}>{review.itemName}</Text>
+                    <View style={styles.photoRatingRow}>
+                      <Ionicons name="star" size={10} color="#FBBF24" />
+                      <Text style={styles.photoRatingText}>{review.overallRating?.toFixed(1)}</Text>
+                    </View>
+                  </View>
+                </View>
               ))}
             </View>
           )}
         </View>
       )}
 
-    </ScrollView>
+      {/* ABOUT TAB CONTENT */}
+      {activeTab === "about" && (
+        <View style={styles.aboutTabContent}>
+          <Text style={styles.aboutTabTitle}>About {dbData.restaurantName}</Text>
 
-    {/* Floating Pill Navigation */}
-    <View style={styles.floatingPillContainer}>
-      <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/home")}>
-        <Ionicons name="home" size={20} color="#000000" />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/search")}>
-        <Ionicons name="search" size={20} color="#000000" />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/notification")}>
-        <Ionicons name="heart-outline" size={20} color="#000000" />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/profile")}>
-        <Ionicons name="person-outline" size={20} color="#000000" />
-      </TouchableOpacity>
+          {dbData.address && (
+            <View style={styles.aboutRow}>
+              <Ionicons name="location-outline" size={18} color="#6c3b3b" style={styles.aboutIcon} />
+              <Text style={styles.aboutText}>{dbData.address}</Text>
+            </View>
+          )}
+
+          {dbData.city && dbData.state && (
+            <View style={styles.aboutRow}>
+              <Ionicons name="map-outline" size={18} color="#6c3b3b" style={styles.aboutIcon} />
+              <Text style={styles.aboutText}>{dbData.city}, {dbData.state}</Text>
+            </View>
+          )}
+
+          {dbData.phone && (
+            <View style={styles.aboutRow}>
+              <Ionicons name="call-outline" size={18} color="#6c3b3b" style={styles.aboutIcon} />
+              <Text style={styles.aboutText}>{dbData.phone}</Text>
+            </View>
+          )}
+
+          {dbData.website && (
+            <TouchableOpacity onPress={() => Linking.openURL(dbData.website!)}>
+              <View style={styles.aboutRow}>
+                <Ionicons name="globe-outline" size={18} color="#6c3b3b" style={styles.aboutIcon} />
+                <Text style={styles.aboutLink}>{dbData.website}</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+
+          <View style={styles.aboutStatsRow}>
+            <View style={styles.aboutStatItem}>
+              <Text style={styles.aboutStatValue}>{visitStats?.totalVisits || 0}</Text>
+              <Text style={styles.aboutStatLabel}>Visits</Text>
+            </View>
+            <View style={styles.aboutStatDivider} />
+            <View style={styles.aboutStatItem}>
+              <Text style={styles.aboutStatValue}>{reviewsWithPhotos.length}</Text>
+              <Text style={styles.aboutStatLabel}>Photos</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      </ScrollView>
+
+      {/* Floating Pill Navigation */}
+      <View style={styles.floatingPillContainer}>
+        <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/home")}>
+          <Ionicons name="home" size={20} color="#000000" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/search")}>
+          <Ionicons name="search" size={20} color="#000000" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/notification")}>
+          <Ionicons name="heart-outline" size={20} color="#000000" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/profile")}>
+          <Ionicons name="person-outline" size={20} color="#000000" />
+        </TouchableOpacity>
+      </View>
     </View>
-  </View>
-);
+  );
 }
 
-// Sub-component for individual menu items using storageId directly via getUrl query, with category fallback emoji
 function MenuItemCard({ item, restaurantCategory, restaurantId, router, getCategoryEmoji }: { item: any; restaurantCategory?: string; restaurantId: string; router: any; getCategoryEmoji: (cat?: string | string[]) => string }) {
   const imageUrl = useQuery(
     api.images.getPublicUrl,
     item.imageStorageId ? { storageId: item.imageStorageId } : "skip"
   );
 
-  // Fallback priority: item category -> restaurant category
   const effectiveCategory = item.category || restaurantCategory;
 
   return (
@@ -551,29 +647,6 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     marginTop: 2,
     paddingLeft: 21
-  },
-  visitStatsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 16,
-    marginTop: 12,
-    paddingHorizontal: 20,
-  },
-  statItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  statText: {
-    fontSize: 13,
-    color: "#6c3b3b",
-    fontWeight: "600",
-  },
-  statDivider: {
-    width: 1,
-    height: 16,
-    backgroundColor: "#E5E7EB",
   },
   tabRow: {
     flexDirection: 'row',
@@ -718,7 +791,7 @@ const styles = StyleSheet.create({
     width: PAGE_WIDTH, 
     flexDirection: 'row', 
     flexWrap: 'wrap', 
-    justifyContent: 'flex-start', // Changed from space-between to prevent single items from stretching vertically
+    justifyContent: 'flex-start',
     alignContent: 'flex-start',
     gap: 6, 
     paddingBottom: 10, 
@@ -738,7 +811,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 }, 
     shadowOpacity: 0.05, 
     shadowRadius: 2,
-    height: 165, // Fixed height keeps all cards identical regardless of item count per page
+    height: 165,
   },
   imageWrapperFrame: {
     width: '100%',
@@ -763,7 +836,7 @@ const styles = StyleSheet.create({
     width: '100%', 
     marginTop: 4, 
     alignItems: 'flex-start', 
-    height: 28, // Fixed height ensures text container stays uniform
+    height: 28,
   },
   itemName: { 
     fontSize: 11, 
@@ -901,5 +974,140 @@ const styles = StyleSheet.create({
   },
   pillItem: {
     padding: 3,
+  },
+  photosTabContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  photosTabTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  photosTabSubtitle: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 20,
+  },
+  emptyPhotosContainer: {
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyPhotosText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginTop: 12,
+  },
+  emptyPhotosSubtext: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    marginTop: 4,
+  },
+  // UPDATED 3-COLUMN PHOTOS GRID STYLES ONLY
+  photosGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  photoCard: {
+    width: (SCREEN_WIDTH - 40 - 12) / 3,
+    marginBottom: 8,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#F3F4F6',
+  },
+  photoImage: {
+    width: '100%',
+    height: 115,
+  },
+  photoOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    padding: 6,
+  },
+  photoItemName: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  photoRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  photoRatingText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  aboutTabContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  aboutTabTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1F2937',
+    marginBottom: 20,
+  },
+  aboutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  aboutIcon: {
+    width: 24,
+  },
+  aboutText: {
+    fontSize: 14,
+    color: '#374151',
+    flex: 1,
+  },
+  aboutLink: {
+    fontSize: 14,
+    color: '#6c3b3b',
+    textDecorationLine: 'underline',
+    flex: 1,
+  },
+  aboutStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    gap: 24,
+  },
+  aboutStatItem: {
+    alignItems: 'center',
+  },
+  aboutStatValue: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#6c3b3b',
+  },
+  aboutStatLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 4,
+  },
+  aboutStatDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: '#E5E7EB',
+  },
+  statItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  statText: {
+    fontSize: 13,
+    color: "#6c3b3b",
+    fontWeight: "600",
   },
 });

@@ -52,6 +52,14 @@ export default function Profile() {
     const currentUser = useQuery(api.users.viewer);
     const userReviews = useQuery(api.items.getUserReviews) || [];
     const deleteReviewMutation = useMutation(api.items.deleteItemReview);
+
+    // Batch-resolve review images for ACTIVITY cards
+    const activityImageIds = [...new Set(userReviews.map((r: any) => r.imageStorageId).filter(Boolean))];
+    const activityImageUrls = useQuery(
+        api.images.getPublicUrls,
+        activityImageIds.length ? { storageIds: activityImageIds } : "skip"
+    ) || {};
+
     const toggleLike = useMutation(api.items.toggleLikeReview);
 
     // Fetch followers and following counts
@@ -552,7 +560,7 @@ export default function Profile() {
                                                             <Text style={styles.tweetUsername} numberOfLines={1}>{userHandle}</Text>
                                                         )}
                                                     </View>
-                                                    <Text style={styles.timestampText}>{formatTimestamp(activity.createdAt || activity._creationTime)}</Text>
+                                                    <Text style={styles.timestampText}>{formatTimestamp(activity.timestamp)}</Text>
                                                 </View>
 
                                                 <Text style={styles.tweetBodyText}>
@@ -567,21 +575,28 @@ export default function Profile() {
                                                     )}
                                                 </Text>
 
+                                                {activity.imageStorageId && activityImageUrls[activity.imageStorageId] ? (
+                                                    <Image
+                                                        source={{ uri: activityImageUrls[activity.imageStorageId] }}
+                                                        style={styles.activityReviewImage}
+                                                    />
+                                                ) : null}
+
                                                 <View style={styles.tweetActionBar}>
-                                                    <TouchableOpacity 
-                                                        style={styles.actionButton} 
+                                                    <TouchableOpacity
+                                                        style={styles.actionButton}
                                                         onPress={(e) => {
                                                             e.stopPropagation();
-                                                            toggleLike({ 
-                                                                reviewId: activity._id, 
-                                                                activityType: activity.activityType 
+                                                            toggleLike({
+                                                                reviewId: activity._id,
+                                                                activityType: activity.activityType
                                                             });
                                                         }}
                                                     >
-                                                        <Ionicons 
-                                                            name={isLikedByMe ? "heart" : "heart-outline"} 
-                                                            size={16} 
-                                                            color={isLikedByMe ? "#DC2626" : "#6B7280"} 
+                                                        <Ionicons
+                                                            name={isLikedByMe ? "heart" : "heart-outline"}
+                                                            size={16}
+                                                            color={isLikedByMe ? "#DC2626" : "#6B7280"}
                                                         />
                                                         <Text style={styles.actionCountText}>{formatCount(likesTotal)}</Text>
                                                     </TouchableOpacity>
@@ -590,6 +605,24 @@ export default function Profile() {
                                                         <Ionicons name="chatbubble-outline" size={15} color="#6B7280" />
                                                         <Text style={styles.actionCountText}>{formatCount(commentsTotal)}</Text>
                                                     </View>
+
+                                                    {activity.activityType === 'updated' && (
+                                                        <TouchableOpacity
+                                                            style={styles.actionButton}
+                                                            onPress={(e) => {
+                                                                e.stopPropagation();
+                                                                router.push({
+                                                                    pathname: '/restaurant/rate/[itemId]',
+                                                                    params: {
+                                                                        itemId: activity.itemId,
+                                                                        editReviewId: activity._id
+                                                                    }
+                                                                });
+                                                            }}
+                                                        >
+                                                            <Ionicons name="create-outline" size={15} color="#6c3b3b" />
+                                                        </TouchableOpacity>
+                                                    )}
                                                 </View>
                                             </View>
                                         </TouchableOpacity>
@@ -1833,6 +1866,13 @@ const styles = StyleSheet.create({
     boldText: {
         fontWeight: '700',
         color: '#1F2937',
+    },
+    activityReviewImage: {
+        width: '100%',
+        height: 160,
+        borderRadius: 8,
+        resizeMode: 'cover',
+        marginTop: 8,
     },
     tweetActionBar: {
         flexDirection: 'row',

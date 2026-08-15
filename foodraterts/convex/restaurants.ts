@@ -463,15 +463,14 @@ export const filterRestaurantsByDistance = query({
   },
 });
 
-// Helper function to extract zipcode from address using regex
+// Helper function to extract zipcode from address (Fixed to grab the LAST 5-digit match)
 function extractZipcodeFromAddress(address: string, city: string, state: string): string | null {
-  // Try to find zipcode in address first
-  const zipMatch = address.match(/\b\d{5}(?:-\d{4})?\b/);
-  if (zipMatch) {
-    return zipMatch[0].substring(0, 5); // Return just 5 digits
+  const fullText = `${address || ""} ${city || ""} ${state || ""}`;
+  const matches = fullText.match(/\b\d{5}(?:-\d{4})?\b/g);
+  if (matches && matches.length > 0) {
+    // Return the last match to avoid grabbing street numbers like "12345 Main St"
+    return matches[matches.length - 1].substring(0, 5);
   }
-
-  // If not found in address, return null
   return null;
 }
 

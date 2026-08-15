@@ -45,8 +45,15 @@ export default function Upload() {
     }>();
     
     const userReviews = useQuery(api.items.getUserReviews) || [];
-    
-    const existingReview = userReviews.find((r: any) => 
+
+    // Get actual review data directly from database for accurate image handling
+    const actualReviewData = useQuery(
+        api.items.getReviewById,
+        editReviewId ? { reviewId: editReviewId } : "skip"
+    );
+
+    // Fall back to activity feed data if direct query fails
+    const existingReview = actualReviewData || userReviews.find((r: any) =>
         (editReviewId && r._id === editReviewId) || (!editReviewId && itemId && r.itemId === itemId)
     );
 
@@ -55,12 +62,23 @@ export default function Upload() {
     });
 
     const createReview = useMutation(api.items.createItemReview);
-    
+    const generateUploadUrlMutation = useMutation(api.images.generateUploadUrl);
+
+    const existingImageUrl = useQuery(
+        api.images.getPublicUrl,
+        existingReview?.imageStorageId ? { storageId: existingReview.imageStorageId } : "skip"
+    );
+
+    // Track which type of review we're editing
+    const isEditingUpdatedReview = existingReview?.activityType === 'updated';
+
     const [isDiscardModalVisible, setDiscardModalVisible] = useState(false);
     const [isProfileModal, setProfileModalVisible] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
 
     const [image, setImage] = useState<string | null>(null);
+    const [imageAsset, setImageAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
+    const [imageRemoved, setImageRemoved] = useState(false);
     const [orderNotes, setOrderNotes] = useState('');
     const [adjustmentText, setAdjustmentText] = useState('');
     const [criteriaList, setCriteriaList] = useState<Criterion[]>([]);
@@ -80,6 +98,10 @@ export default function Upload() {
                     value: attr.value
                 })));
             }
+            // Reset image state when loading an existing review
+            setImage(null);
+            setImageAsset(null);
+            setImageRemoved(false);
         }
     }, [existingReview]);
 
@@ -107,6 +129,8 @@ export default function Upload() {
         });
         if (!result.canceled) {
             setImage(result.assets[0].uri);
+            setImageAsset(result.assets[0]);
+            setImageRemoved(false);
             setProfileModalVisible(false);
         }
     };
@@ -125,6 +149,8 @@ export default function Upload() {
         });
         if (!result.canceled) {
             setImage(result.assets[0].uri);
+            setImageAsset(result.assets[0]);
+            setImageRemoved(false);
             setProfileModalVisible(false);
         }
     };
@@ -143,13 +169,45 @@ export default function Upload() {
 
         setIsSubmitting(true);
         try {
+            // Upload image if selected
+            let imageStorageId: Id<"_storage"> | null | undefined = undefined;
+            if (imageAsset) {
+                const uploadUrl = await generateUploadUrlMutation();
+                const response = await fetch(imageAsset.uri);
+                const blob = await response.blob();
+
+                const uploadResult = await fetch(uploadUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': imageAsset.mimeType || 'image/jpeg' },
+                    body: blob,
+                });
+                const json = await uploadResult.json();
+                imageStorageId = json.storageId;
+            } else if (imageRemoved) {
+                // Explicitly remove image by setting to null
+                imageStorageId = null;
+            }
+
+            // Determine which review ID to edit - prioritize actual review ID over activity ID
+            const reviewToEdit = actualReviewData?._id || existingReview?._id;
+
+            console.log('Submitting review with:', {
+                targetItemId,
+                imageStorageId,
+                imageRemoved,
+                editReviewId: editReviewId,
+                reviewToEdit,
+                existingReviewId: existingReview?._id
+            });
+
             await createReview({
                 itemId: targetItemId as Id<"menuItems">,
                 overallRating: manualOverallScore,
                 notes: adjustmentText.trim(),
                 criteriaList: criteriaList,
                 orderNotes: orderNotes.trim(),
-                editReviewId: editReviewId ? editReviewId : (existingReview?._id ? existingReview._id : undefined), // 🔑 Pass editReviewId to prevent duplication
+                imageStorageId,
+                editReviewId: reviewToEdit ? reviewToEdit : undefined,
             });
 
             Alert.alert('Success 🎉', existingReview ? 'Your review was updated successfully!' : 'Your rating data was saved successfully!', [
@@ -189,10 +247,46 @@ export default function Upload() {
                 <View style={styles.mainLayoutContainer}>
                     <View style={styles.amazonHeaderRow}>
                         <TouchableOpacity onPress={() => setProfileModalVisible(true)} activeOpacity={0.85} style={styles.imageContainer}>
-                            <Image
-                                source={image ? { uri: image } : { uri: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&q=80&w=400' }}
-                                style={styles.profileImage}
-                            />
+                            {image || (existingImageUrl && !imageRemoved) ? (
+                                <>
+                                    <Image
+                                        source={
+                                            image
+                                                ? { uri: image }
+                                                : { uri: existingImageUrl }
+                                        }
+                                        style={styles.profileImage}
+                                    />
+                                    <TouchableOpacity
+                                        style={styles.removeImageButton}
+                                        onPress={() => {
+                                            Alert.alert(
+                                                "Remove Photo",
+                                                "Are you sure you want to delete this photo from your review?",
+                                                [
+                                                    { text: "Cancel", style: "cancel" },
+                                                    {
+                                                        text: "Remove",
+                                                        style: "destructive",
+                                                        onPress: () => {
+                                                            setImage(null);
+                                                            setImageAsset(null);
+                                                            setImageRemoved(true);
+                                                        }
+                                                    }
+                                                ]
+                                            );
+                                        }}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Ionicons name="close-circle" size={20} color="#DC2626" />
+                                    </TouchableOpacity>
+                                </>
+                            ) : (
+                                <View style={[styles.profileImage, styles.placeholderImage]}>
+                                    <Ionicons name="camera" size={28} color="#6c3b3b" />
+                                </View>
+                            )}
                             <View style={styles.cameraIconBadge}>
                                 <Ionicons name="camera" size={11} color="white" />
                             </View>
@@ -435,24 +529,46 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 3,
     },
-    profileImage: { 
-        width: 86, 
-        height: 86, 
-        borderRadius: 16, 
+    profileImage: {
+        width: 86,
+        height: 86,
+        borderRadius: 16,
         backgroundColor: '#E5E7EB',
         borderWidth: 1,
         borderColor: '#E5E7EB',
     },
-    cameraIconBadge: { 
-        position: 'absolute', 
-        bottom: 3, 
-        right: 3, 
-        backgroundColor: '#6c3b3b', 
-        borderRadius: 10, 
-        padding: 4, 
+    placeholderImage: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#FAFAFA',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderStyle: 'dashed',
+    },
+    cameraIconBadge: {
+        position: 'absolute',
+        bottom: 3,
+        right: 3,
+        backgroundColor: '#6c3b3b',
+        borderRadius: 10,
+        padding: 4,
         zIndex: 3,
         borderWidth: 1.5,
         borderColor: '#FAFAFA',
+    },
+    removeImageButton: {
+        position: 'absolute',
+        top: -5,
+        right: -5,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        padding: 2,
+        zIndex: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        elevation: 3,
     },
     headerTextDetailsContainer: {
         flex: 1,

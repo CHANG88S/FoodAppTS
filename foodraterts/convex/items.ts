@@ -16,6 +16,16 @@ export const searchMenuItems = query({
   },
 });
 
+export const getReviewById = query({
+  args: {
+    reviewId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const actualId = args.reviewId.split("-")[0] as any;
+    return await ctx.db.get(actualId);
+  },
+});
+
 export const addMenuItem = mutation({
   args: {
     restaurantId: v.id("restaurants"),
@@ -61,6 +71,7 @@ export const createItemReview = mutation({
       })
     ),
     orderNotes: v.optional(v.string()),
+    imageStorageId: v.optional(v.union(v.id("_storage"), v.null())),
     editReviewId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -68,18 +79,34 @@ export const createItemReview = mutation({
     if (!userId) throw new Error("Must be logged in to submit a review.");
 
     const now = Date.now();
+    const cleanImageId = args.imageStorageId ?? undefined;
 
     if (args.editReviewId) {
       const cleanId = args.editReviewId.split("-")[0] as any;
       const reviewToUpdate: any = await ctx.db.get(cleanId);
       if (reviewToUpdate && reviewToUpdate.userId === userId) {
-        await ctx.db.patch(cleanId, {
+        let updateData: any = {
           overallRating: args.overallRating,
           notes: args.notes,
           granularAttributes: args.criteriaList,
           orderNotes: args.orderNotes,
           updatedAt: now,
-        });
+        };
+
+        if (args.imageStorageId !== undefined) {
+          if (args.imageStorageId === null) {
+            updateData.imageStorageId = undefined;
+            updateData.updatedImageStorageId = undefined;
+          } else {
+            if (!reviewToUpdate.originalImageStorageId && reviewToUpdate.imageStorageId) {
+              updateData.originalImageStorageId = reviewToUpdate.imageStorageId;
+            }
+            updateData.imageStorageId = cleanImageId;
+            updateData.updatedImageStorageId = cleanImageId;
+          }
+        }
+
+        await ctx.db.patch(cleanId, updateData);
         return cleanId;
       }
     }
@@ -91,13 +118,28 @@ export const createItemReview = mutation({
       .first();
 
     if (existingReview) {
-      await ctx.db.patch(existingReview._id, {
+      let updateData: any = {
         overallRating: args.overallRating,
         notes: args.notes,
         granularAttributes: args.criteriaList,
         orderNotes: args.orderNotes,
         updatedAt: now,
-      });
+      };
+
+      if (args.imageStorageId !== undefined) {
+        if (args.imageStorageId === null) {
+          updateData.imageStorageId = undefined;
+          updateData.updatedImageStorageId = undefined;
+        } else {
+          if (!existingReview.originalImageStorageId && existingReview.imageStorageId) {
+            updateData.originalImageStorageId = existingReview.imageStorageId;
+          }
+          updateData.imageStorageId = cleanImageId;
+          updateData.updatedImageStorageId = cleanImageId;
+        }
+      }
+
+      await ctx.db.patch(existingReview._id, updateData);
       return existingReview._id;
     } else {
       const newReviewId = await ctx.db.insert("itemReviews", {
@@ -107,6 +149,9 @@ export const createItemReview = mutation({
         notes: args.notes,
         granularAttributes: args.criteriaList,
         orderNotes: args.orderNotes,
+        imageStorageId: cleanImageId,
+        originalImageStorageId: cleanImageId,
+        updatedImageStorageId: undefined,
         likes: [],
         comments: [],
         updateLikes: [],
@@ -133,6 +178,39 @@ export const deleteItemReview = mutation({
     }
 
     await ctx.db.delete(actualId);
+    return true;
+  },
+});
+
+export const removeReviewImage = mutation({
+  args: {
+    reviewId: v.string(),
+    activityType: v.optional(v.string())
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    const actualId = args.reviewId.split("-")[0] as any;
+    const review: any = await ctx.db.get(actualId);
+
+    if (!review || review.userId !== userId) {
+      throw new Error("Review not found or unauthorized.");
+    }
+
+    if (args.activityType === "updated") {
+      await ctx.db.patch(actualId, {
+        imageStorageId: review.originalImageStorageId || undefined,
+        updatedImageStorageId: undefined,
+      });
+    } else {
+      await ctx.db.patch(actualId, {
+        imageStorageId: undefined,
+        originalImageStorageId: undefined,
+        updatedImageStorageId: undefined,
+      });
+    }
+
     return true;
   },
 });
@@ -259,7 +337,6 @@ export const getUserReviews = query({
         const item: any = await ctx.db.get(review.itemId);
         const restaurant: any = item?.restaurantId ? await ctx.db.get(item.restaurantId) : null;
 
-        // Fetch total visits for this restaurant by this user, defaulting to at least 1 visit
         let actualVisits = 0;
         if (restaurant && restaurant._id) {
           const visits = await ctx.db
@@ -289,18 +366,19 @@ export const getUserReviews = query({
           visitCount,
         };
 
-        // 1. Initial creation entry
+        const originalImage = review.originalImageStorageId || (hasBeenUpdated ? undefined : review.imageStorageId);
+
         activities.push({
           ...baseData,
           _id: review._id,
           uniqueKey: `${review._id}-created`,
           activityType: "rated",
           timestamp: createdAt,
+          imageStorageId: originalImage,
           likes: review.likes || [],
           comments: review.comments || [],
         });
 
-        // 2. Separate independent entry for updates
         if (hasBeenUpdated) {
           activities.push({
             ...baseData,
@@ -308,6 +386,7 @@ export const getUserReviews = query({
             uniqueKey: `${review._id}-updated`,
             activityType: "updated",
             timestamp: updatedAt,
+            imageStorageId: review.updatedImageStorageId || review.imageStorageId || undefined,
             likes: review.updateLikes || [],
             comments: review.updateComments || [],
           });
@@ -337,7 +416,6 @@ export const getUserReviewsByUserId = query({
         const item: any = await ctx.db.get(review.itemId);
         const restaurant: any = item?.restaurantId ? await ctx.db.get(item.restaurantId) : null;
 
-        // Fetch total visits for this restaurant by this user, defaulting to at least 1 visit
         let actualVisits = 0;
         if (restaurant && restaurant._id) {
           const visits = await ctx.db
@@ -367,18 +445,19 @@ export const getUserReviewsByUserId = query({
           visitCount,
         };
 
-        // 1. Initial creation entry
+        const originalImage = review.originalImageStorageId || (hasBeenUpdated ? undefined : review.imageStorageId);
+
         activities.push({
           ...baseData,
           _id: review._id,
           uniqueKey: `${review._id}-created`,
           activityType: "rated",
           timestamp: createdAt,
+          imageStorageId: originalImage,
           likes: review.likes || [],
           comments: review.comments || [],
         });
 
-        // 2. Separate independent entry for updates
         if (hasBeenUpdated) {
           activities.push({
             ...baseData,
@@ -386,6 +465,7 @@ export const getUserReviewsByUserId = query({
             uniqueKey: `${review._id}-updated`,
             activityType: "updated",
             timestamp: updatedAt,
+            imageStorageId: review.updatedImageStorageId || review.imageStorageId || undefined,
             likes: review.updateLikes || [],
             comments: review.updateComments || [],
           });
@@ -423,5 +503,38 @@ export const userHasReviewedRestaurant = query({
     }
 
     return false;
+  },
+});
+
+export const getReviewsWithPhotosForRestaurant = query({
+  args: { restaurantId: v.id("restaurants") },
+  handler: async (ctx, args) => {
+    const menuItems = await ctx.db
+      .query("menuItems")
+      .withIndex("by_restaurantId", (q) => q.eq("restaurantId", args.restaurantId))
+      .collect();
+
+    const itemIds = menuItems.map((item) => item._id);
+    if (itemIds.length === 0) return [];
+
+    const reviews: any[] = [];
+    for (const itemId of itemIds) {
+      const itemReviews = await ctx.db
+        .query("itemReviews")
+        .withIndex("by_itemId", (q) => q.eq("itemId", itemId))
+        .collect();
+
+      for (const review of itemReviews) {
+        if (review.imageStorageId) {
+          const item = await ctx.db.get(itemId);
+          reviews.push({
+            ...review,
+            itemName: item?.itemName || "Menu Item",
+          });
+        }
+      }
+    }
+
+    return reviews.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   },
 });

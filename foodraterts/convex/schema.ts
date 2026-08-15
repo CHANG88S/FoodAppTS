@@ -85,10 +85,10 @@ export default defineSchema({
 
   // 3. GRANULAR USER REVIEWS
   itemReviews: defineTable({
-    itemId: v.id("menuItems"),        
+    itemId: v.id("menuItems"),
     userId: v.string(),
-    overallRating: v.number(),  
-    notes: v.string(),              
+    overallRating: v.number(),
+    notes: v.string(),
     granularAttributes: v.array(
       v.object({
         id: v.optional(v.string()),
@@ -97,6 +97,9 @@ export default defineSchema({
       })
     ),
     orderNotes: v.optional(v.string()),
+    imageStorageId: v.optional(v.id("_storage")),
+    originalImageStorageId: v.optional(v.id("_storage")), // Track image at creation time
+    updatedImageStorageId: v.optional(v.id("_storage")), // Track image added during update
     likes: v.optional(v.array(v.string())),
     comments: v.optional(
       v.array(

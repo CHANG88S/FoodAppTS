@@ -79,6 +79,13 @@ export default function PublicProfileScreen() {
     targetUserId ? { userId: targetUserId } : "skip"
   ) || [];
 
+  // Batch-resolve review images
+  const userReviewImageIds = [...new Set(userReviews.map((r: any) => r.imageStorageId).filter(Boolean))];
+  const userReviewImageUrls = useQuery(
+    api.images.getPublicUrls,
+    userReviewImageIds.length ? { storageIds: userReviewImageIds } : "skip"
+  ) || {};
+
   const isFollowing = useQuery(
     api.users.isFollowing,
     targetUserId ? { followingId: targetUserId } : "skip"
@@ -711,6 +718,12 @@ export default function PublicProfileScreen() {
                               </View>
                               {review.notes ? (
                                 <Text style={styles.reviewNotesText} numberOfLines={2}>&ldquo;{review.notes}&rdquo;</Text>
+                              ) : null}
+                              {review.imageStorageId && userReviewImageUrls[review.imageStorageId] ? (
+                                <Image
+                                  source={{ uri: userReviewImageUrls[review.imageStorageId] }}
+                                  style={styles.userReviewThumbnail}
+                                />
                               ) : null}
                             </View>
                           ))}
@@ -1555,6 +1568,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#6B7280',
     fontStyle: 'italic',
+  },
+  userReviewThumbnail: {
+    width: '100%',
+    height: 140,
+    borderRadius: 8,
+    resizeMode: 'cover',
+    marginTop: 8,
   },
   prefDisplayRow: {
     gap: 12,
