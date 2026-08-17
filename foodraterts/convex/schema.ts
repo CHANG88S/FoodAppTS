@@ -264,4 +264,155 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_suggester", ["suggestedBy"])
     .index("by_restaurantId", ["restaurantId"]),
+
+  // 12. CONTENT FLAGGING & MODERATION
+  contentFlags: defineTable({
+    contentType: v.union(
+      v.literal("review"),
+      v.literal("tweet"),
+      v.literal("comment"),
+      v.literal("user")
+    ),
+    contentId: v.string(),
+    reason: v.union(
+      v.literal("spam"),
+      v.literal("inappropriate"),
+      v.literal("harassment"),
+      v.literal("misinformation"),
+      v.literal("fake_review"),
+      v.literal("other")
+    ),
+    description: v.optional(v.string()),
+    reportedBy: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("reviewed"),
+      v.literal("resolved"),
+      v.literal("dismissed")
+    ),
+    createdAt: v.number(),
+    reviewedAt: v.optional(v.number()),
+    reviewedBy: v.optional(v.string()),
+    notes: v.optional(v.string()),
+  })
+    .index("by_status", ["status"])
+    .index("by_reportedBy", ["reportedBy"]),
+
+  // 13. USER BLOCKS
+  userBlocks: defineTable({
+    blockerId: v.string(),
+    blockedId: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_blocker", ["blockerId"])
+    .index("by_blocker_and_blocked", ["blockerId", "blockedId"]),
+
+  // 14. USER REPORTS
+  userReports: defineTable({
+    reporterId: v.string(),
+    reportedUserId: v.string(),
+    reason: v.union(
+      v.literal("harassment"),
+      v.literal("spam"),
+      v.literal("inappropriate_behavior"),
+      v.literal("fake_account"),
+      v.literal("other")
+    ),
+    description: v.optional(v.string()),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("reviewed"),
+      v.literal("resolved"),
+      v.literal("dismissed")
+    ),
+    createdAt: v.number(),
+    reviewedAt: v.optional(v.number()),
+    reviewedBy: v.optional(v.string()),
+    action: v.optional(v.union(v.literal("warned"), v.literal("suspended"), v.literal("banned"))),
+  })
+    .index("by_status", ["status"])
+    .index("by_reporterId", ["reporterId"])
+    .index("by_reportedUserId", ["reportedUserId"]),
+
+  // 15. PUSH NOTIFICATION TOKENS
+  pushTokens: defineTable({
+    userId: v.string(),
+    token: v.string(),
+    platform: v.union(v.literal("ios"), v.literal("android"), v.literal("web")),
+    enabled: v.boolean(),
+    createdAt: v.number(),
+    lastUsedAt: v.optional(v.number()),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_token", ["token"]),
+
+  // 16. ANALYTICS EVENTS
+  analyticsEvents: defineTable({
+    userId: v.optional(v.string()),
+    eventType: v.string(),
+    properties: v.optional(v.record(v.string(), v.any())),
+    metadata: v.optional(v.object({
+      screen: v.optional(v.string()),
+      sessionId: v.optional(v.string()),
+      platform: v.optional(v.string()),
+    })),
+    timestamp: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_eventType", ["eventType"])
+    .index("by_timestamp", ["timestamp"]),
+
+  // 17. AI USAGE TRACKING
+  aiUsage: defineTable({
+    userId: v.optional(v.string()),
+    feature: v.string(),
+    model: v.string(),
+    inputTokens: v.optional(v.number()),
+    outputTokens: v.optional(v.number()),
+    totalTokens: v.number(),
+    responseTime: v.number(),
+    success: v.boolean(),
+    metadata: v.optional(v.record(v.string(), v.any())),
+    timestamp: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_feature", ["feature"])
+    .index("by_timestamp", ["timestamp"]),
+
+  // 18. PERFORMANCE MONITORING
+  performanceLogs: defineTable({
+    action: v.string(),
+    duration: v.number(),
+    userId: v.optional(v.string()),
+    metadata: v.optional(v.record(v.string(), v.any())),
+    timestamp: v.number(),
+  })
+    .index("by_action", ["action"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_userId", ["userId"]),
+
+  // 19. SECURITY EVENTS
+  securityEvents: defineTable({
+    eventType: v.string(),
+    severity: v.union(v.literal("info"), v.literal("warning"), v.literal("critical")),
+    userId: v.optional(v.string()),
+    details: v.optional(v.record(v.string(), v.any())),
+    ip: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+    timestamp: v.number(),
+  })
+    .index("by_eventType", ["eventType"])
+    .index("by_severity", ["severity"])
+    .index("by_timestamp", ["timestamp"]),
+
+  // 20. RATE LIMIT TRACKING
+  rateLimitEntries: defineTable({
+    userId: v.string(),
+    action: v.string(),
+    windowStart: v.number(),
+    count: v.number(),
+    lastReset: v.number(),
+  })
+    .index("by_userAction", ["userId", "action"])
+    .index("by_window", ["windowStart"]),
 });

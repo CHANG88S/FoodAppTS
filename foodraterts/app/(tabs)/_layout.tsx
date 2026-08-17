@@ -17,6 +17,8 @@ import AccountSettingsScreen from '../account-settings';
 import BobaPreferencesScreen from '../boba-preferences';
 import PrivacyScreen from '../privacy';
 import TermsScreen from '../terms';
+import TOSScreen from '../tos';
+import DataCollectionScreen from '../data-collection';
 import HelpScreen from '../help';
 import ModerationScreen from '../moderation';
 import MessagesScreen from '../messages';
@@ -243,10 +245,34 @@ export default function TabsDrawerLayout() {
                 name="terms"
                 component={TermsScreen}
                 options={{
-                    title: "Terms of Service",
-                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Terms of Service</Text>,
+                    title: "Terms & Conditions",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Terms & Conditions</Text>,
                     drawerIcon: ({ color, size }) => (
                         <Ionicons name="document-text-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Drawer.Screen
+                name="tos"
+                component={TOSScreen}
+                options={{
+                    title: "Data & AI Policy",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Data & AI Policy</Text>,
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="bulb-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Drawer.Screen
+                name="data-collection"
+                component={DataCollectionScreen}
+                options={{
+                    title: "Data Collection",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Data Collection</Text>,
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="analytics-outline" size={size} color={color} />
                     ),
                 }}
             />

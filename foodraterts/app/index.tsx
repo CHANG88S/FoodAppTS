@@ -58,11 +58,13 @@ const LoginIndex = () => {
       if (isSignUpMode) {
         await signIn("password", { email, password, username, name, flow: "signUp" });
         Alert.alert('Account Created!', 'Welcome to FoodRater!');
+        // New users go through onboarding
+        router.replace('/onboarding');
       } else {
         await signIn("password", { email, password, flow: "signIn" });
+        // Existing users check if they need onboarding
+        router.replace('/onboarding'); // Will redirect to home if already completed
       }
-
-      router.replace('/(tabs)/home');
     } catch (error: any) {
       console.error(error);
       Alert.alert('Authentication Failed', error.message || 'Invalid credentials or network error.');
