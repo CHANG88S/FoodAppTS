@@ -1,0 +1,1 @@
+{"nodes": [{"id": "image-app-home-page", "label": "FoodRater App Home Page", "type": "entity", "file_type": "image", "source_file": "assets/App Home Page.png", "confidence_score": 0.6, "attributes": {"description": "Mobile app home page screenshot", "analysis_limitation": "Image analysis unavailable due to rate limits"}}], "edges": [], "hyperedges": []}

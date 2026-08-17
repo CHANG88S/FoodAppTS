@@ -1,0 +1,1 @@
+{"nodes": [{"id": "ic_launcher_round", "label": "Round Launcher Icon", "type": "entity", "file_type": "image", "source_file": "foodraterts/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.webp", "confidence_score": 1.0, "attributes": {"variant": "round", "purpose": "Adaptive icon variant"}}], "edges": [], "hyperedges": []}

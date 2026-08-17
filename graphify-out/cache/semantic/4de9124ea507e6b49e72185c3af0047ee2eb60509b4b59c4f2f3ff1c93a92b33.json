@@ -1,0 +1,1 @@
+{"nodes": [{"id": "splashscreen_logo_mdpi", "label": "Splash Screen Logo MDPI", "type": "entity", "file_type": "image", "source_file": "foodraterts/android/app/src/main/res/drawable-mdpi/splashscreen_logo.png", "confidence_score": 1.0, "attributes": {"density": "mdpi", "scale_factor": 1.0}}], "edges": [], "hyperedges": []}
