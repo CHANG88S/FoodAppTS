@@ -110,48 +110,8 @@ export default function TweetDetailScreen() {
     };
 
     const handleReport = (comment: ThreadedComment) => {
-        // Will be implemented in Phase 3
         console.log('Report comment:', comment.id);
     };
-
-    const handleSendComment = async () => {
-        if (!commentText.trim()) return;
-        setIsSubmitting(true);
-        try {
-            await addCommentToTweet({
-                tweetId: tweetId as any,
-                body: commentText.trim(),
-            });
-            setCommentText('');
-        } catch (err: any) {
-            Alert.alert("Error", err.message || "Failed to post comment.");
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleDeleteComment = (commentId: string) => {
-        Alert.alert("Delete Comment", "Are you sure you want to delete this comment?", [
-            { text: "Cancel", style: "cancel" },
-            {
-                text: "Delete",
-                style: "destructive",
-                onPress: async () => {
-                    try {
-                        await deleteCommentFromTweet({
-                            tweetId: tweetId as any,
-                            commentId,
-                        });
-                    } catch (err: any) {
-                        Alert.alert("Error", err.message || "Could not delete comment.");
-                    }
-                },
-            },
-        ]);
-    };
-
-    const userHandle = currentUser?.username ? `@${currentUser.username}` : "@user";
-    const userFullName = currentUser?.name ? currentUser.name : "User";
 
     return (
         <View style={styles.root}>
@@ -347,16 +307,6 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#E5E7EB',
     },
-    blankAvatarTweet: {
-        backgroundColor: '#E5E7EB',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    avatarInitial: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#6c3b3b',
-    },
     postFullName: {
         fontSize: 14,
         fontWeight: '700',
@@ -408,46 +358,6 @@ const styles = StyleSheet.create({
         color: '#9CA3AF',
         fontStyle: 'italic',
     },
-    commentItem: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 10,
-        paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F3F4F6',
-    },
-    commentAvatar: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#E5E7EB',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    commentAvatarInitial: {
-        fontSize: 13,
-        fontWeight: '700',
-        color: '#374151',
-    },
-    commentBody: {
-        flex: 1,
-    },
-    commentHeaderRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 2,
-    },
-    commentUserHandle: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: '#4B5563',
-    },
-    commentText: {
-        fontSize: 12,
-        color: '#374151',
-        lineHeight: 16,
-    },
     footerInputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -458,21 +368,6 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#E5E7EB',
         gap: 10,
-    },
-    replyBanner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        backgroundColor: '#F3F4F6',
-        borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
-    },
-    replyBannerText: {
-        fontSize: 12,
-        color: '#6B7280',
-        fontWeight: '500',
     },
     commentInput: {
         flex: 1,

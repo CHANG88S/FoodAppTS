@@ -55,6 +55,39 @@ export const setProfilePicture = mutation({
   },
 });
 
+// Added updateUser mutation to handle client calls and onboarding
+export const updateUser = mutation({
+  args: {
+    name: v.optional(v.string()),
+    username: v.optional(v.string()),
+    city: v.optional(v.string()),
+    preferences: v.optional(
+      v.object({
+        sweetness: v.optional(v.number()),
+        iceLevel: v.optional(v.number()),
+        milkBase: v.optional(v.string()),
+        favoriteColor: v.optional(v.string()),
+        favoriteCuisines: v.optional(v.array(v.string())),
+        dietaryRestrictions: v.optional(v.array(v.string())),
+        spiceTolerance: v.optional(v.string()),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    const updates: any = {};
+    if (args.name !== undefined) updates.name = args.name;
+    if (args.username !== undefined) updates.username = args.username;
+    if (args.city !== undefined) updates.city = args.city;
+    if (args.preferences !== undefined) updates.preferences = args.preferences;
+
+    await ctx.db.patch(userId as any, updates);
+    return true;
+  },
+});
+
 export const updateProfile = action({
   args: {
     name: v.optional(v.string()),
@@ -344,7 +377,6 @@ export const deleteAccount = mutation({
     if (!userId) throw new Error("Unauthorized");
 
     // Delete all related data
-    // Delete follows where user is follower
     const followsAsFollower = await ctx.db
       .query("follows")
       .withIndex("by_follower", (q) => q.eq("followerId", userId as string))
@@ -353,7 +385,6 @@ export const deleteAccount = mutation({
       await ctx.db.delete(follow._id);
     }
 
-    // Delete follows where user is following
     const followsAsFollowing = await ctx.db
       .query("follows")
       .withIndex("by_following", (q) => q.eq("followingId", userId as string))
@@ -362,7 +393,6 @@ export const deleteAccount = mutation({
       await ctx.db.delete(follow._id);
     }
 
-    // Delete notifications where user is recipient
     const notifications = await ctx.db
       .query("notifications")
       .withIndex("by_recipient", (q) => q.eq("recipientId", userId as string))
@@ -371,7 +401,6 @@ export const deleteAccount = mutation({
       await ctx.db.delete(notification._id);
     }
 
-    // Delete notifications where user is sender
     const sentNotifications = await ctx.db
       .query("notifications")
       .filter((q) => q.eq(q.field("senderId"), userId as string))
@@ -380,7 +409,6 @@ export const deleteAccount = mutation({
       await ctx.db.delete(notification._id);
     }
 
-    // Delete user's reviews
     const reviews = await ctx.db
       .query("itemReviews")
       .withIndex("by_user", (q) => q.eq("userId", userId as string))
@@ -389,7 +417,6 @@ export const deleteAccount = mutation({
       await ctx.db.delete(review._id);
     }
 
-    // Delete user's tweets
     const tweets = await ctx.db
       .query("tweets")
       .withIndex("by_user", (q) => q.eq("userId", userId as string))
@@ -398,13 +425,11 @@ export const deleteAccount = mutation({
       await ctx.db.delete(tweet._id);
     }
 
-    // Delete conversations where user is participant1
     const conversations1 = await ctx.db
       .query("conversations")
       .withIndex("by_participant1", (q) => q.eq("participant1Id", userId as string))
       .collect();
     for (const conversation of conversations1) {
-      // Delete messages in this conversation
       const messages = await ctx.db
         .query("messages")
         .withIndex("by_conversation", (q) => q.eq("conversationId", conversation._id as string))
@@ -415,13 +440,11 @@ export const deleteAccount = mutation({
       await ctx.db.delete(conversation._id);
     }
 
-    // Delete conversations where user is participant2
     const conversations2 = await ctx.db
       .query("conversations")
       .withIndex("by_participant2", (q) => q.eq("participant2Id", userId as string))
       .collect();
     for (const conversation of conversations2) {
-      // Delete messages in this conversation
       const messages = await ctx.db
         .query("messages")
         .withIndex("by_conversation", (q) => q.eq("conversationId", conversation._id as string))
@@ -432,7 +455,6 @@ export const deleteAccount = mutation({
       await ctx.db.delete(conversation._id);
     }
 
-    // Finally, delete the user
     await ctx.db.delete(userId as any);
 
     return { success: true };

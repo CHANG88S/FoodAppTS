@@ -64,10 +64,11 @@ export default function Upload() {
     const createReview = useMutation(api.items.createItemReview);
     const generateUploadUrlMutation = useMutation(api.images.generateUploadUrl);
 
-    const existingImageUrl = useQuery(
+    const rawExistingImageUrl = useQuery(
         api.images.getPublicUrl,
         existingReview?.imageStorageId ? { storageId: existingReview.imageStorageId } : "skip"
     );
+    const existingImageUrl = rawExistingImageUrl ?? undefined;
 
     // Track which type of review we're editing
     const isEditingUpdatedReview = existingReview?.activityType === 'updated';
@@ -253,7 +254,7 @@ export default function Upload() {
                                         source={
                                             image
                                                 ? { uri: image }
-                                                : { uri: existingImageUrl }
+                                                : { uri: existingImageUrl! }
                                         }
                                         style={styles.profileImage}
                                     />
