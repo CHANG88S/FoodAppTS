@@ -29,9 +29,9 @@ const LoginIndex = () => {
   // Form validation state
   const isFormValid = () => {
     if (isSignUpMode) {
-      return isValidEmail(email) && hasMinUsername && hasMinPassword;
+      return isValidEmail(email) && hasMinUsername && hasMinPassword && email.length > 0;
     }
-    return isValidEmail(email) && hasMinPassword;
+    return isValidEmail(email) && hasMinPassword && email.length > 0 && password.length > 0;
   };
 
   const handleAuthAction = async () => {
@@ -126,39 +126,23 @@ const LoginIndex = () => {
       
       {isSignUpMode && (
         <>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Username (min. 3 characters)"
-              value={username}
-              onChangeText={(text) => {
-                setUsername(text);
-                if (submitted) setSubmitted(false);
-                if (!usernameTouched) setUsernameTouched(true);
-              }}
-              autoCapitalize="none"
-              editable={!loading}
-            />
-            {username.length > 0 && (
-              <Text style={[
-                styles.charCount,
-                hasMinUsername ? styles.validCharCount : styles.invalidCharCount
-              ]}>
-                {username.length}/3
-              </Text>
-            )}
-          </View>
-
-          {username.length > 0 && (
-            <View style={styles.constraintsBox}>
-              <Text style={[styles.constraintText, hasMinUsername ? styles.validText : styles.invalidText]}>
-                {hasMinUsername ? '✓' : '•'} At least 3 characters
-              </Text>
-            </View>
+          <TextInput
+            style={styles.textInput}
+            placeholder="Username (min. 3 characters)"
+            value={username}
+            onChangeText={(text) => {
+              setUsername(text);
+              if (submitted) setSubmitted(false);
+              if (!usernameTouched) setUsernameTouched(true);
+            }}
+            autoCapitalize="none"
+            editable={!loading}
+          />
+          {username.length > 0 && !hasMinUsername && (
+            <Text style={styles.errorText}>At least 3 characters required</Text>
           )}
-
-          {(usernameTouched && !hasMinUsername) && (
-            <Text style={styles.errorText}>Username must be at least 3 characters long</Text>
+          {username.length >= 3 && (
+            <Text style={styles.validText}>✓ Username looks good</Text>
           )}
 
           <TextInput
@@ -174,7 +158,7 @@ const LoginIndex = () => {
 
       <TextInput
         style={styles.textInput}
-        placeholder="Email address"
+        placeholder="Email"
         value={email}
         onChangeText={(text) => {
           setEmail(text);
@@ -186,10 +170,10 @@ const LoginIndex = () => {
         editable={!loading}
       />
       {email.length > 0 && !isValidEmail(email) && (
-        <Text style={styles.errorText}>Please enter a valid email address</Text>
+        <Text style={styles.errorText}>Please enter a valid email</Text>
       )}
-      {(emailTouched && !isValidEmail(email) && email.length === 0) && (
-        <Text style={styles.errorText}>Email is required</Text>
+      {email.length > 0 && isValidEmail(email) && (
+        <Text style={styles.validText}>✓ Valid email</Text>
       )}
       
       <TextInput 
@@ -206,18 +190,13 @@ const LoginIndex = () => {
         editable={!loading}
       />
       
-      {password.length > 0 && (
-        <View style={styles.constraintsBox}>
-          <Text style={[styles.constraintText, hasMinPassword ? styles.validText : styles.invalidText]}>
-            {hasMinPassword ? '✓' : '•'} At least 8 characters
-          </Text>
-        </View>
+      {password.length > 0 && !hasMinPassword && (
+        <Text style={styles.errorText}>At least 8 characters required</Text>
+      )}
+      {password.length >= 8 && (
+        <Text style={styles.validText}>✓ Password strength OK</Text>
       )}
 
-      {(passwordTouched && !hasMinPassword && password.length > 0) && (
-        <Text style={styles.errorText}>Password must be at least 8 characters long</Text>
-      )}
-      
       <TouchableOpacity
         style={[styles.button, loading && styles.disabledButton, !isFormValid() && styles.disabledButton]}
         onPress={handleAuthAction}
@@ -273,7 +252,7 @@ const styles = StyleSheet.create({
   },
   textInput: {
     height: 50,
-    width: '100%',
+    width: '90%',
     backgroundColor: '#FFFFFF',
     borderColor: '#E8EAF6',
     borderWidth: 2,
@@ -281,7 +260,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 4,
     paddingHorizontal: 20,
-    paddingRight: 50, // Extra space for character counter
     fontSize: 16,
     color: '#3C4858',
     shadowColor: '#9E9E9E',
@@ -298,47 +276,13 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     paddingHorizontal: 4,
   },
-  inputContainer: {
+  validText: {
     width: '90%',
-    position: 'relative',
-  },
-  charCount: {
-    position: 'absolute',
-    right: 15,
-    top: 15,
-    fontSize: 11,
-    fontWeight: '600',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
-  },
-  validCharCount: {
     color: '#059669',
-    backgroundColor: '#D1FAE5',
-  },
-  invalidCharCount: {
-    color: '#DC2626',
-    backgroundColor: '#FEE2E2',
-  },
-  constraintsBox: {
-    width: '90%',
-    marginTop: 6,
-    marginBottom: 6,
-    padding: 10,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-    gap: 4,
-  },
-  constraintText: {
     fontSize: 12,
     fontWeight: '500',
-  },
-  validText: {
-    color: '#059669',
-  },
-  invalidText: {
-    color: '#9CA3AF',
+    marginBottom: 4,
+    paddingHorizontal: 4,
   },
   button: {
     width: '90%',
@@ -359,9 +303,9 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   text: {
-    color: '#FFFFFF', 
-    fontSize: 16, 
-    fontWeight: '600', 
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   switchModeButton: {
     padding: 10,
