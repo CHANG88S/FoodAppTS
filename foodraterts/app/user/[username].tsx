@@ -878,7 +878,7 @@ export default function PublicProfileScreen() {
                 onPress={() => {
                   const rId = selectedPinReview?.restaurantId || selectedPinReview?.shopId;
                   setSelectedPinReview(null);
-                  if (rId) router.push(`/restaurant/${rId}`);
+                  if (rId) router.push(`/restaurant/[id]` as any, { id: rId });
                 }}
               >
                 <View style={styles.splitCardIconBox}>

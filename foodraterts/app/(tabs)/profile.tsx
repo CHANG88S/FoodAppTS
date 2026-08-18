@@ -1148,7 +1148,7 @@ export default function Profile() {
                                 onPress={() => {
                                     const rId = selectedPinReview?.restaurantId;
                                     setSelectedPinReview(null);
-                                    if (rId) router.push(`/restaurant/${rId}`);
+                                    if (rId) router.push(`/restaurant/[id]` as any, { id: rId });
                                 }}
                             >
                                 <View style={styles.splitCardIconBox}>
