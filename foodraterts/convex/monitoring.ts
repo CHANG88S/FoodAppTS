@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Performance and monitoring system
 export const logPerformance = mutation({
@@ -10,7 +11,7 @@ export const logPerformance = mutation({
     },
     handler: async (ctx, args) => {
         const now = Date.now();
-        const userId = await ctx.auth.getUserId();
+        const userId = await getAuthUserId(ctx);
 
         const performanceData = {
             action: args.action,
@@ -40,7 +41,7 @@ export const logError = mutation({
         severity: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("critical"))),
     },
     handler: async (ctx, args) => {
-        const userId = await ctx.auth.getUserId();
+        const userId = await getAuthUserId(ctx);
         const now = Date.now();
 
         const errorData = {

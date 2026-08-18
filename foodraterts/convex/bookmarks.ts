@@ -115,18 +115,18 @@ export const listBookmarkedReviews = query({
         const suffix = parts[parts.length - 1]; // Get last part
         const activityType = suffix === "updated" ? "updated" : "rated";
 
-        const review = await ctx.db.get(reviewId as any);
+        const review = (await ctx.db.get(reviewId as any)) as any;
         if (!review) return null;
 
         // Hydrate item and restaurant
-        const item = await ctx.db.get(review.itemId);
+        const item = (await ctx.db.get(review.itemId as any)) as any;
         if (!item) return null;
 
-        const restaurant = await ctx.db.get(item.restaurantId);
+        const restaurant = (await ctx.db.get(item.restaurantId as any)) as any;
         if (!restaurant) return null;
 
         // Get author info
-        const author = await ctx.db.get(review.userId as any);
+        const author = (await ctx.db.get(review.userId as any)) as any;
         const authorName = author?.name || author?.username || "User";
         const authorHandle = author?.username ? `@${author.username}` : "@user";
 
@@ -173,14 +173,14 @@ export const listBookmarkedTweets = query({
 
     const results = await Promise.all(
       bookmarks.map(async (bookmark) => {
-        const tweet = await ctx.db.get(bookmark.targetId as any);
+        const tweet = (await ctx.db.get(bookmark.targetId as any)) as any;
         if (!tweet) return null;
 
         // Get author info (handle legacy tweets without userId)
         let authorName = "User";
         let authorHandle = "@user";
         if (tweet.userId) {
-          const author = await ctx.db.get(tweet.userId as any);
+          const author = (await ctx.db.get(tweet.userId as any)) as any;
           authorName = author?.name || author?.username || "User";
           authorHandle = author?.username ? `@${author.username}` : "@user";
         }

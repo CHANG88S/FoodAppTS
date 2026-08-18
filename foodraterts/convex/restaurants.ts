@@ -148,7 +148,7 @@ function zipcodeToCoordinates(zipcode: string): { lat: number; lng: number } | n
     607: { lat: 41.9000, lng: -87.8500 },
     700: { lat: 29.9511, lng: -90.0715 },  // New Orleans area
     701: { lat: 30.0200, lng: -90.0500 },
-    701: { lat: 30.0900, lng: -90.0300 },
+    702: { lat: 30.0900, lng: -90.0300 },
     708: { lat: 29.9900, lng: -90.1000 },
     770: { lat: 29.7604, lng: -95.3698 },  // Houston area
     771: { lat: 29.8300, lng: -95.4000 },

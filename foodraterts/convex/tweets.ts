@@ -69,7 +69,7 @@ export const getTweetById = query({
     let authorProfilePicture = undefined;
 
     if (tweet.userId) {
-      const author = await ctx.db.get(tweet.userId as any);
+      const author = (await ctx.db.get(tweet.userId as any)) as any;
       if (author) {
         authorName = author.name || author.username || "User";
         authorHandle = author.username ? `@${author.username}` : "@user";
@@ -149,7 +149,7 @@ export const addCommentToTweet = mutation({
     if (!tweet) throw new Error("Tweet not found");
 
     // Get commenter's user information for storage
-    const user = await ctx.db.get(userId as any);
+    const user = (await ctx.db.get(userId as any)) as any;
     const userName = user?.name || user?.username || "User";
     const userHandle = user?.username ? `@${user.username}` : "@user";
 

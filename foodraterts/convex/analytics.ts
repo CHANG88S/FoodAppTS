@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Analytics event types
 const ANALYTICS_EVENTS = {
@@ -42,7 +43,7 @@ export const trackEvent = mutation({
         })),
     },
     handler: async (ctx, args) => {
-        const userId = await ctx.auth.getUserId();
+        const userId = await getAuthUserId(ctx);
 
         // In production, this would send to analytics service
         // For now, we'll log to console for development
@@ -67,7 +68,7 @@ export const batchTrackEvents = mutation({
         })),
     },
     handler: async (ctx, args) => {
-        const userId = await ctx.auth.getUserId();
+        const userId = await getAuthUserId(ctx);
 
         // Batch process multiple events
         const processedEvents = args.events.map(event => ({
@@ -95,7 +96,7 @@ export const trackAIUsage = mutation({
         metadata: v.optional(v.record(v.string(), v.any())),
     },
     handler: async (ctx, args) => {
-        const userId = await ctx.auth.getUserId();
+        const userId = await getAuthUserId(ctx);
 
         const aiUsage = {
             feature: args.feature,
@@ -125,7 +126,7 @@ export const getAnalyticsSummary = query({
         })),
     },
     handler: async (ctx, args) => {
-        const userId = await ctx.auth.getUserId();
+        const userId = await getAuthUserId(ctx);
         if (!userId) {
             return { error: "Unauthorized" };
         }
@@ -149,7 +150,7 @@ export const getAnalyticsSummary = query({
 export const getAIUsageStats = query({
     args: {},
     handler: async (ctx) => {
-        const isAdmin = await ctx.auth.getUserId();
+        const isAdmin = await getAuthUserId(ctx);
         if (!isAdmin) {
             return { error: "Unauthorized" };
         }

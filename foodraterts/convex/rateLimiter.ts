@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Security-focused rate limiting configuration
 const RATE_LIMITS = {
@@ -180,7 +181,7 @@ export const checkLoginRateLimit = mutation({
         const resetTime = windowStart + windowMs;
 
         // Log security events for suspicious activity
-        if (loginEntry.failureCount >= 3) {
+        if ((loginEntry.failureCount || 0) >= 3) {
             console.warn(`🔒 Multiple failed login attempts for ${email}: ${loginEntry.failureCount}`);
         }
 
@@ -256,7 +257,7 @@ export const getRateLimitStatus = query({
         ),
     },
     handler: async (ctx, args) => {
-        const userId = await ctx.auth.getUserId();
+        const userId = await getAuthUserId(ctx);
         if (!userId) {
             return {
                 allowed: false,

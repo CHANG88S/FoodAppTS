@@ -29,9 +29,11 @@ export const flagContent = mutation({
             .query("contentFlags")
             .withIndex("by_reportedBy", (q) => q.eq("reportedBy", userId as string))
             .filter((q) =>
-                q.eq(q.field("status"), "pending")
-                 .eq(q.field("contentType"), args.contentType)
-                 .eq(q.field("contentId"), args.contentId)
+                q.and(
+                    q.eq(q.field("status"), "pending"),
+                    q.eq(q.field("contentType"), args.contentType),
+                    q.eq(q.field("contentId"), args.contentId)
+                )
             )
             .first();
 
@@ -55,14 +57,6 @@ export const flagContent = mutation({
             notes: undefined,
         });
 
-        console.log("🚩 Content Flagged:", {
-            flagId,
-            contentType: args.contentType,
-            contentId: args.contentId,
-            reason: args.reason,
-            reportedBy: userId,
-        });
-
         return { success: true, flagId, duplicate: false };
     },
 });
@@ -70,8 +64,7 @@ export const flagContent = mutation({
 export const getPendingFlags = query({
     args: {},
     handler: async (ctx) => {
-        // Use requireStaff to check permissions and get user
-        const user = await requireStaff(ctx);
+        await requireStaff(ctx);
 
         const pendingFlags = await ctx.db
             .query("contentFlags")
@@ -81,21 +74,19 @@ export const getPendingFlags = query({
 
         // Hydrate each flag with content preview and reporter username
         const hydratedFlags = await Promise.all(
-            (await pendingFlags.collect()).map(async (flag) => {
+            pendingFlags.map(async (flag: any) => {
                 let preview = null;
                 let reporterUsername = "Unknown";
 
-                // Get reporter info
-                const reporter = await ctx.db.get(flag.reportedBy as any);
+                const reporter = (await ctx.db.get(flag.reportedBy as any)) as any;
                 if (reporter) {
                     reporterUsername = reporter.username || reporter.name || "Unknown";
                 }
 
-                // Hydrate content based on type
                 if (flag.contentType === "tweet") {
-                    const tweet = await ctx.db.get(flag.contentId as any);
+                    const tweet = (await ctx.db.get(flag.contentId as any)) as any;
                     if (tweet) {
-                        const author = tweet.userId ? await ctx.db.get(tweet.userId as any) : null;
+                        const author = tweet.userId ? ((await ctx.db.get(tweet.userId as any)) as any) : null;
                         preview = {
                             kind: "tweet" as const,
                             body: tweet.body,
@@ -103,11 +94,11 @@ export const getPendingFlags = query({
                         };
                     }
                 } else if (flag.contentType === "review") {
-                    const review = await ctx.db.get(flag.contentId as any);
+                    const review = (await ctx.db.get(flag.contentId as any)) as any;
                     if (review) {
-                        const item = await ctx.db.get(review.itemId);
-                        const restaurant = item ? await ctx.db.get(item.restaurantId) : null;
-                        const author = await ctx.db.get(review.userId as any);
+                        const item = (await ctx.db.get(review.itemId)) as any;
+                        const restaurant = item ? ((await ctx.db.get(item.restaurantId)) as any) : null;
+                        const author = (await ctx.db.get(review.userId as any)) as any;
                         preview = {
                             kind: "review" as const,
                             notes: review.notes,
@@ -118,19 +109,17 @@ export const getPendingFlags = query({
                         };
                     }
                 } else if (flag.contentType === "comment") {
-                    // Parse contentId: tweetId:commentId or reviewId:activityType:commentId
                     const parts = flag.contentId.split(":");
                     if (parts.length === 2) {
-                        // Tweet comment
                         const tweetId = parts[0];
                         const commentId = parts[1];
-                        const tweet = await ctx.db.get(tweetId as any);
+                        const tweet = (await ctx.db.get(tweetId as any)) as any;
                         if (tweet) {
                             const comment = (tweet.comments || []).find((c: any) =>
                                 c._id === commentId || c.commentId === commentId
                             );
                             if (comment) {
-                                const author = comment.userId ? await ctx.db.get(comment.userId as any) : null;
+                                const author = comment.userId ? ((await ctx.db.get(comment.userId as any)) as any) : null;
                                 preview = {
                                     kind: "comment" as const,
                                     text: comment.body || comment.text,
@@ -140,18 +129,17 @@ export const getPendingFlags = query({
                             }
                         }
                     } else if (parts.length === 3) {
-                        // Review comment
                         const reviewId = parts[0];
                         const activityType = parts[1];
                         const commentId = parts[2];
-                        const review = await ctx.db.get(reviewId as any);
+                        const review = (await ctx.db.get(reviewId as any)) as any;
                         if (review) {
                             const comments = activityType === "updated"
                                 ? (review.updateComments || [])
                                 : (review.comments || []);
                             const comment = comments.find((c: any) => c.commentId === commentId);
                             if (comment) {
-                                const item = await ctx.db.get(review.itemId);
+                                const item = (await ctx.db.get(review.itemId)) as any;
                                 preview = {
                                     kind: "comment" as const,
                                     text: comment.text,
@@ -182,19 +170,15 @@ export const reviewFlag = mutation({
         notes: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        // Use requireStaff to check permissions and get moderator info
         const moderator = await requireStaff(ctx);
 
         const flag = await ctx.db.get(args.flagId);
         if (!flag) throw new Error("Flag not found");
 
         const now = Date.now();
-
-        // Determine status based on action
         const status = args.action === "remove_content" ? "resolved" :
                        args.action === "dismiss" ? "dismissed" : "resolved";
 
-        // Update flag status
         await ctx.db.patch(args.flagId, {
             status,
             reviewedBy: moderator._id as string,
@@ -202,14 +186,13 @@ export const reviewFlag = mutation({
             notes: args.notes,
         });
 
-        // Take action based on decision
         if (args.action === "remove_content") {
             let ownerId = null;
             let parentContentType = null;
             let parentContentId = null;
 
             if (flag.contentType === "tweet") {
-                const tweet = await ctx.db.get(flag.contentId as any);
+                const tweet = (await ctx.db.get(flag.contentId as any)) as any;
                 if (tweet) {
                     ownerId = tweet.userId;
                     await ctx.db.delete(flag.contentId as any);
@@ -217,7 +200,7 @@ export const reviewFlag = mutation({
                     parentContentId = flag.contentId;
                 }
             } else if (flag.contentType === "review") {
-                const review = await ctx.db.get(flag.contentId as any);
+                const review = (await ctx.db.get(flag.contentId as any)) as any;
                 if (review) {
                     ownerId = review.userId;
                     await ctx.db.delete(flag.contentId as any);
@@ -225,13 +208,11 @@ export const reviewFlag = mutation({
                     parentContentId = flag.contentId;
                 }
             } else if (flag.contentType === "comment") {
-                // Parse contentId: tweetId:commentId or reviewId:activityType:commentId
                 const parts = flag.contentId.split(":");
                 if (parts.length === 2) {
-                    // Tweet comment
                     const tweetId = parts[0];
                     const commentId = parts[1];
-                    const tweet = await ctx.db.get(tweetId as any);
+                    const tweet = (await ctx.db.get(tweetId as any)) as any;
                     if (tweet) {
                         const currentComments = tweet.comments || [];
                         const targetComment = currentComments.find((c: any) =>
@@ -240,7 +221,6 @@ export const reviewFlag = mutation({
                         if (targetComment) {
                             ownerId = targetComment.userId;
                         }
-                        // Cascade delete: remove comment and all replies
                         const filtered = currentComments.filter((c: any) =>
                             c._id !== commentId && c.commentId !== commentId && c.replyToCommentId !== commentId
                         );
@@ -249,11 +229,10 @@ export const reviewFlag = mutation({
                         parentContentId = tweetId;
                     }
                 } else if (parts.length === 3) {
-                    // Review comment
                     const reviewId = parts[0];
                     const activityType = parts[1];
                     const commentId = parts[2];
-                    const review = await ctx.db.get(reviewId as any);
+                    const review = (await ctx.db.get(reviewId as any)) as any;
                     if (review) {
                         const isUpdate = activityType === "updated";
                         const comments = isUpdate ? (review.updateComments || []) : (review.comments || []);
@@ -261,7 +240,6 @@ export const reviewFlag = mutation({
                         if (targetComment) {
                             ownerId = targetComment.userId;
                         }
-                        // Cascade delete
                         const filtered = comments.filter((c: any) =>
                             c.commentId !== commentId && c.replyToCommentId !== commentId
                         );
@@ -276,7 +254,6 @@ export const reviewFlag = mutation({
                 }
             }
 
-            // Send notification to content owner (if different from moderator)
             if (ownerId && ownerId !== moderator._id && parentContentType && parentContentId) {
                 const kindLabel = flag.contentType === "comment" ? "comment" : parentContentType;
                 await ctx.runMutation((internal as any).notifications.createNotificationInternal, {
@@ -289,12 +266,6 @@ export const reviewFlag = mutation({
                 });
             }
         }
-
-        console.log("🛡️ Flag Reviewed:", {
-            flagId: args.flagId,
-            action: args.action,
-            reviewedBy: moderator._id,
-        });
 
         return { success: true };
     },
@@ -310,7 +281,6 @@ export const blockUser = mutation({
 
         const now = Date.now();
 
-        // Check if already blocked
         const existingBlock = await ctx.db
             .query("userBlocks")
             .withIndex("by_blocker_and_blocked", (q) =>
@@ -319,11 +289,9 @@ export const blockUser = mutation({
             .first();
 
         if (existingBlock) {
-            // Unblock
             await ctx.db.delete(existingBlock._id);
             return { action: "unblocked", blockedUserId: args.blockedUserId };
         } else {
-            // Block
             await ctx.db.insert("userBlocks", {
                 blockerId: userId as string,
                 blockedId: args.blockedUserId,
@@ -346,8 +314,8 @@ export const getBlockedUsers = query({
             .collect();
 
         const blockedUsers = await Promise.all(
-            blocks.map(async (block) => {
-                const blockedUser = await ctx.db.get(block.blockedId as any);
+            blocks.map(async (block: any) => {
+                const blockedUser = (await ctx.db.get(block.blockedId as any)) as any;
                 return {
                     id: block._id,
                     userId: block.blockedId,
@@ -384,7 +352,6 @@ export const reportUser = mutation({
 
         const now = Date.now();
 
-        // Create user report
         const reportId = await ctx.db.insert("userReports", {
             reporterId: userId as string,
             reportedUserId: args.reportedUserId,
@@ -397,13 +364,6 @@ export const reportUser = mutation({
             action: undefined,
         });
 
-        console.log("👤 User Reported:", {
-            reportId,
-            reporterId: userId,
-            reportedUserId: args.reportedUserId,
-            reason: args.reason,
-        });
-
         return { success: true, reportId };
     },
 });
@@ -411,7 +371,6 @@ export const reportUser = mutation({
 export const getPendingUserReports = query({
     args: {},
     handler: async (ctx) => {
-        // Use requireStaff to check permissions
         await requireStaff(ctx);
 
         const pendingReports = await ctx.db
@@ -420,22 +379,21 @@ export const getPendingUserReports = query({
             .order("desc")
             .take(100);
 
-        // Hydrate each report with user info
         const hydratedReports = await Promise.all(
-            (await pendingReports.collect()).map(async (report) => {
-                const reporter = await ctx.db.get(report.reporterId as any);
-                const reportedUser = await ctx.db.get(report.reportedUserId as any);
+            pendingReports.map(async (report: any) => {
+                const reporter = (await ctx.db.get(report.reporterId as any)) as any;
+                const reportedUser = (await ctx.db.get(report.reportedUserId as any)) as any;
+                const reviewList = await ctx.db
+                    .query("itemReviews")
+                    .withIndex("by_user", (q) => q.eq("userId", report.reportedUserId))
+                    .collect();
 
                 return {
                     ...report,
                     reporterUsername: reporter?.username || reporter?.name || "Unknown",
                     reportedUsername: reportedUser?.username || "Unknown",
                     reportedName: reportedUser?.name || null,
-                    reportedUserReviewCount: reportedUser ? await ctx.db
-                        .query("itemReviews")
-                        .withIndex("by_user", (q) => q.eq("userId", report.reportedUserId))
-                        .collect()
-                        .then(reviews => reviews.length) : 0,
+                    reportedUserReviewCount: reviewList.length,
                 };
             })
         );
@@ -451,18 +409,14 @@ export const reviewUserReport = mutation({
         notes: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        // Use requireStaff to check permissions and get moderator info
         const moderator = await requireStaff(ctx);
 
         const report = await ctx.db.get(args.reportId);
         if (!report) throw new Error("Report not found");
 
         const now = Date.now();
-
-        // Determine status based on action
         const status = args.action === "dismissed" ? "dismissed" : "resolved";
 
-        // Update report status and action
         await ctx.db.patch(args.reportId, {
             status,
             reviewedBy: moderator._id as string,
@@ -470,7 +424,6 @@ export const reviewUserReport = mutation({
             action: args.action === "dismissed" ? undefined : args.action,
         });
 
-        // Send notification to reported user (if not dismissed)
         if (args.action !== "dismissed") {
             const { internal } = await import("./_generated/api");
             await ctx.runMutation((internal as any).notifications.createNotificationInternal, {
@@ -483,38 +436,27 @@ export const reviewUserReport = mutation({
             });
         }
 
-        console.log("👤 User Report Reviewed:", {
-            reportId: args.reportId,
-            action: args.action,
-            reviewedBy: moderator._id,
-        });
-
         return { success: true };
     },
 });
 
-// Automated spam detection
 export const detectSpam = {
     review: (review: any): { isSpam: boolean; confidence: number; reasons: string[] } => {
         const reasons: string[] = [];
         let confidence = 0;
 
-        // Check for suspicious patterns
         if (review.notes && review.notes.length > 0) {
-            // Check for excessive caps
             const capsRatio = (review.notes.match(/[A-Z]/g) || []).length / review.notes.length;
             if (capsRatio > 0.7) {
                 reasons.push("Excessive capitalization");
                 confidence += 0.3;
             }
 
-            // Check for repetitive characters
             if (/(.)\1{4,}/.test(review.notes)) {
                 reasons.push("Repetitive characters");
                 confidence += 0.4;
             }
 
-            // Check for spam keywords
             const spamKeywords = ["buy now", "click here", "free money", "winner", "congratulations"];
             const lowerNotes = review.notes.toLowerCase();
             spamKeywords.forEach(keyword => {
@@ -525,10 +467,7 @@ export const detectSpam = {
             });
         }
 
-        // Check for suspicious rating patterns
         if (review.overallRating === 5 || review.overallRating === 1) {
-            // Very high or very low ratings can be suspicious if combined with other factors
-            // This is just a signal, not definitive spam
             if (confidence > 0.3) {
                 reasons.push("Extreme rating with other spam signals");
                 confidence += 0.2;
@@ -546,10 +485,8 @@ export const detectSpam = {
 export const getContentModerationStats = query({
     args: {},
     handler: async (ctx) => {
-        // Use requireStaff to check permissions
         await requireStaff(ctx);
 
-        // Get moderation statistics
         const pendingFlags = await ctx.db
             .query("contentFlags")
             .withIndex("by_status", (q) => q.eq("status", "pending"))
@@ -561,14 +498,14 @@ export const getContentModerationStats = query({
             .take(100);
 
         const stats = {
-            pending: (await pendingFlags.collect()).length,
-            total: (await recentFlags.collect()).length,
+            pending: pendingFlags.length,
+            total: recentFlags.length,
             byReason: {} as Record<string, number>,
             byType: {} as Record<string, number>,
             avgResponseTime: 0,
         };
 
-        (await recentFlags.collect()).forEach(flag => {
+        recentFlags.forEach((flag: any) => {
             stats.byReason[flag.reason] = (stats.byReason[flag.reason] || 0) + 1;
             stats.byType[flag.contentType] = (stats.byType[flag.contentType] || 0) + 1;
         });
