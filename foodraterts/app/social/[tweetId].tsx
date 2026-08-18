@@ -124,7 +124,7 @@ export default function TweetDetailScreen() {
                 <Text style={styles.headerTitle}>Tweet Details</Text>
                 <View style={styles.headerRightControls}>
                     <BookmarkButton targetType="tweet" targetId={tweetId as string} />
-                    <ReportButton contentType="tweet" contentId={tweetId as string} />
+                    <ReportButton contentType="tweet" contentId={tweetId as string} ownerId={tweet.userId} />
                 </View>
             </View>
 
@@ -176,6 +176,8 @@ export default function TweetDetailScreen() {
                                 onReply={handleReply}
                                 onRequestDelete={handleDeleteComment}
                                 onReport={handleReport}
+                                parentType="tweet"
+                                parentId={tweetId as string}
                             />
                         )}
                     </View>

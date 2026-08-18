@@ -19,6 +19,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { formatCount } from "../../utils/formatters";
 import { ReportButton } from "../../components/ReportButton";
+import { BookmarkButton } from "../../components/BookmarkButton";
 
 // Conditionally import Mapbox to avoid crashes when native module isn't available
 let Mapbox: any = null;
@@ -450,6 +451,12 @@ export default function PublicProfileScreen() {
                             <Ionicons name="chatbubble-outline" size={15} color="#6B7280" />
                             <Text style={styles.actionCountText}>{formatCount(commentsTotal)}</Text>
                           </View>
+                          <TouchableOpacity onPress={(e) => e.stopPropagation()} style={styles.actionButton}>
+                            <BookmarkButton targetType="review" targetId={activity.uniqueKey} size={15} />
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={(e) => e.stopPropagation()} style={styles.actionButton}>
+                            <ReportButton contentType="review" contentId={activity._id} ownerId={activity.userId} size={15} />
+                          </TouchableOpacity>
                         </View>
                       </View>
                     </View>
@@ -507,6 +514,12 @@ export default function PublicProfileScreen() {
                             <Ionicons name="chatbubble-outline" size={15} color="#6B7280" />
                             <Text style={styles.actionCountText}>{commentsTotal}</Text>
                           </View>
+                          <TouchableOpacity onPress={(e) => e.stopPropagation()} style={styles.actionButton}>
+                            <BookmarkButton targetType="tweet" targetId={tweet._id} size={15} />
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={(e) => e.stopPropagation()} style={styles.actionButton}>
+                            <ReportButton contentType="tweet" contentId={tweet._id} ownerId={tweet.userId} size={15} />
+                          </TouchableOpacity>
                         </View>
                       </View>
                     </View>

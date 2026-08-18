@@ -174,7 +174,7 @@ export default function PostDetailScreen() {
                 <Text style={styles.headerTitle}>Post Details</Text>
                 <View style={styles.headerRightControls}>
                     <BookmarkButton targetType="review" targetId={reviewId as string} />
-                    <ReportButton contentType="review" contentId={String(post._id)} />
+                    <ReportButton contentType="review" contentId={String(post._id)} ownerId={post.userId} />
                     {post.activityType === 'updated' && isMyPost && (
                         <TouchableOpacity onPress={handleEditReview} style={styles.iconButton}>
                             <Ionicons name="create-outline" size={20} color="#6c3b3b" />
@@ -268,6 +268,8 @@ export default function PostDetailScreen() {
                                 onReply={handleReply}
                                 onRequestDelete={handleDeleteComment}
                                 onReport={handleReport}
+                                parentType="review"
+                                parentId={reviewId as string}
                             />
                         )}
                     </View>

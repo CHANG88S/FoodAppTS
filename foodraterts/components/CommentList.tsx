@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { ReportButton } from './ReportButton';
 
 export type ThreadedComment = {
   id: string;
@@ -18,7 +19,9 @@ type Props = {
   currentUserId?: string;
   onReply: (comment: ThreadedComment) => void;
   onRequestDelete: (comment: ThreadedComment) => void;
-  onReport: (comment: ThreadedComment) => void;
+  onReport?: (comment: ThreadedComment) => void;
+  parentType?: 'tweet' | 'review';
+  parentId?: string;
 };
 
 export function CommentList({
@@ -27,6 +30,8 @@ export function CommentList({
   onReply,
   onRequestDelete,
   onReport,
+  parentType,
+  parentId,
 }: Props) {
   // Split into top-level and group replies by parent
   const topLevel = comments.filter((c) => !c.replyToCommentId);
@@ -68,8 +73,15 @@ export function CommentList({
                   <Ionicons name="trash-outline" size={14} color="#DC2626" />
                 </TouchableOpacity>
               )}
-              <TouchableOpacity onPress={() => onReport(comment)}>
-                <Ionicons name="flag-outline" size={14} color="#6B7280" />
+              <TouchableOpacity onPress={(e) => e.stopPropagation()}>
+                <ReportButton
+                  contentType="comment"
+                  contentId={parentType === 'tweet'
+                    ? `${parentId}:${comment.id}`
+                    : `${parentId}:comment:${comment.id}`}
+                  ownerId={comment.userId}
+                  size={14}
+                />
               </TouchableOpacity>
             </View>
           </View>
