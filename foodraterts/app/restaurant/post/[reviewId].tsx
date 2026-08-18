@@ -26,8 +26,8 @@ export default function PostDetailScreen() {
     const router = useRouter();
     const { reviewId, activityType = "rated" } = useLocalSearchParams<{ reviewId: string; activityType?: string }>();
 
-    const currentUser = useQuery(api.users.viewer);
-    const post = useQuery(api.items.getReviewActivityById, { reviewId: reviewId as string });
+    const currentUser = useQuery(api.users.viewer) as any;
+    const post = useQuery(api.items.getReviewActivityById, { reviewId: reviewId as string }) as any;
 
     const toggleLike = useMutation(api.items.toggleLikeReview);
     const addComment = useMutation(api.items.addCommentToReview);
@@ -100,7 +100,6 @@ export default function PostDetailScreen() {
     };
 
     const handleEditReview = () => {
-        // Only allow editing for "updated" activity types
         if (post.activityType === 'updated') {
             router.push({
                 pathname: '/restaurant/rate/[itemId]',
@@ -159,7 +158,6 @@ export default function PostDetailScreen() {
     };
 
     const handleReport = (comment: ThreadedComment) => {
-        // Will be implemented in Phase 3
         console.log('Report comment:', comment.id);
     };
 
@@ -491,46 +489,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#9CA3AF',
         fontStyle: 'italic',
-    },
-    commentItem: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 10,
-        paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F3F4F6',
-    },
-    commentAvatar: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#E5E7EB',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    commentAvatarInitial: {
-        fontSize: 13,
-        fontWeight: '700',
-        color: '#374151',
-    },
-    commentBody: {
-        flex: 1,
-    },
-    commentHeaderRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 2,
-    },
-    commentUserHandle: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: '#4B5563',
-    },
-    commentText: {
-        fontSize: 12,
-        color: '#374151',
-        lineHeight: 16,
     },
     footerInputContainer: {
         flexDirection: 'row',

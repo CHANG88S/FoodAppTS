@@ -26,6 +26,12 @@ const LoginIndex = () => {
   const hasMinUsername = username.length >= 3;
   const hasMinPassword = password.length >= 8;
 
+  // Check for common test email patterns
+  const isTestEmail = (val: string) => {
+    const testPatterns = ['test@test.com', 'admin@admin.com', 'user@user.com', 'info@test.com'];
+    return testPatterns.some(pattern => val.toLowerCase() === pattern);
+  };
+
   // Form validation state
   const isFormValid = () => {
     if (isSignUpMode) {
@@ -43,6 +49,10 @@ const LoginIndex = () => {
 
     if (!isValidEmail(email)) {
       return Alert.alert("Error", "Please enter a valid email address.");
+    }
+
+    if (isTestEmail(email)) {
+      return Alert.alert("Invalid Email", "Please use a real email address (not test@test.com, admin@admin.com, etc.). Try: yourname@gmail.com");
     }
 
     if (isSignUpMode && !hasMinUsername) {
@@ -170,9 +180,12 @@ const LoginIndex = () => {
         editable={!loading}
       />
       {email.length > 0 && !isValidEmail(email) && (
-        <Text style={styles.errorText}>Please enter a valid email</Text>
+        <Text style={styles.errorText}>Please enter a valid email (e.g., name@gmail.com)</Text>
       )}
-      {email.length > 0 && isValidEmail(email) && (
+      {email.length > 0 && isTestEmail(email) && (
+        <Text style={styles.errorText}>Please use a real email address</Text>
+      )}
+      {email.length > 0 && isValidEmail(email) && !isTestEmail(email) && (
         <Text style={styles.validText}>✓ Valid email</Text>
       )}
       

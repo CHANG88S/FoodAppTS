@@ -17,12 +17,12 @@ export async function requireStaff(ctx: QueryCtx) {
     throw new Error("Unauthorized: must be logged in");
   }
 
-  const user = await ctx.db.get(userId);
+  const user = (await ctx.db.get(userId as any)) as any;
   if (!user) {
     throw new Error("User not found");
   }
 
-  if (!STAFF_ROLES.includes(user.role as any)) {
+  if (!STAFF_ROLES.includes(user.role)) {
     throw new Error("Forbidden: staff only");
   }
 
@@ -40,12 +40,12 @@ export async function requireAdmin(ctx: QueryCtx) {
     throw new Error("Unauthorized: must be logged in");
   }
 
-  const user = await ctx.db.get(userId);
+  const user = (await ctx.db.get(userId as any)) as any;
   if (!user) {
     throw new Error("User not found");
   }
 
-  if (!ADMIN_ROLES.includes(user.role as any)) {
+  if (!ADMIN_ROLES.includes(user.role)) {
     throw new Error("Forbidden: admin/developer only");
   }
 
@@ -61,7 +61,7 @@ export const getCurrentUserRole = internalQuery({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
-    return await ctx.db.get(userId);
+    return await ctx.db.get(userId as any);
   },
 });
 
@@ -77,13 +77,13 @@ export async function requireAdminAction(ctx: ActionCtx) {
   }
 
   // Use internal query to get user with role information
-  const user = await ctx.runQuery(internal.authz.getCurrentUserRole, {});
+  const user = (await ctx.runQuery(internal.authz.getCurrentUserRole, {})) as any;
 
   if (!user) {
     throw new Error("User not found");
   }
 
-  if (!ADMIN_ROLES.includes(user.role as any)) {
+  if (!ADMIN_ROLES.includes(user.role)) {
     throw new Error("Forbidden: admin/developer only");
   }
 
@@ -100,10 +100,10 @@ export const isStaff = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return false;
 
-    const user = await ctx.db.get(userId);
+    const user = (await ctx.db.get(userId as any)) as any;
     if (!user) return false;
 
-    return STAFF_ROLES.includes(user.role as any);
+    return STAFF_ROLES.includes(user.role);
   },
 });
 
@@ -117,9 +117,9 @@ export const isAdmin = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return false;
 
-    const user = await ctx.db.get(userId);
+    const user = (await ctx.db.get(userId as any)) as any;
     if (!user) return false;
 
-    return ADMIN_ROLES.includes(user.role as any);
+    return ADMIN_ROLES.includes(user.role);
   },
 });

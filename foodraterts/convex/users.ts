@@ -5,11 +5,11 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { retrieveAccount, modifyAccountCredentials } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
 
-// Helper function to fetch a user document directly
+// Helper function to fetch a user document safely with type casting
 async function fetchUserViewer(ctx: QueryCtx) {
   const userId = await getAuthUserId(ctx);
   if (!userId) return null;
-  return await ctx.db.get(userId);
+  return await ctx.db.get(userId as any);
 }
 
 export const getUserRole = query({
@@ -51,11 +51,11 @@ export const setProfilePicture = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
-    await ctx.db.patch(userId, { profilePicture: args.imageStorageId });
+    await ctx.db.patch(userId as any, { profilePicture: args.imageStorageId });
   },
 });
 
-// Added updateUser mutation to handle client calls and onboarding
+// Update user mutation supporting onboarding and profile edits safely
 export const updateUser = mutation({
   args: {
     name: v.optional(v.string()),
@@ -100,18 +100,16 @@ export const updateProfile = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
 
-    // Retrieve user details via an internal query
-    const currentUser = await ctx.runQuery(internal.users.getInternalViewer, {});
+    const currentUser = (await ctx.runQuery(internal.users.getInternalViewer, {})) as any;
     if (!currentUser) throw new Error("User not found");
 
     if (args.username && args.username !== currentUser.username) {
-      const existingUser = await ctx.runQuery(internal.users.getInternalUserByUsername, { username: args.username });
+      const existingUser = (await ctx.runQuery(internal.users.getInternalUserByUsername, { username: args.username })) as any;
       if (existingUser && existingUser._id !== userId) {
         throw new Error("Username is already taken.");
       }
     }
 
-    // Handle password update and current password verification
     if (args.newPassword && args.newPassword.trim().length > 0) {
       if (!args.currentPassword) {
         throw new Error("Current password is required to set a new password.");
@@ -138,9 +136,8 @@ export const updateProfile = action({
       });
     }
 
-    // Run internal mutation to patch the profile fields
     await ctx.runMutation(internal.users.patchUserProfile, {
-      userId,
+      userId: userId as Id<"users">,
       name: args.name,
       username: args.username,
       email: args.email,
@@ -155,7 +152,7 @@ export const getInternalViewer = internalQuery({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
-    return await ctx.db.get(userId);
+    return await ctx.db.get(userId as any);
   },
 });
 
@@ -169,7 +166,6 @@ export const getInternalUserByUsername = internalQuery({
   },
 });
 
-// Public query to get user by username (for profile viewing)
 export const getUserByUsername = query({
   args: { username: v.string() },
   handler: async (ctx, args) => {
@@ -180,7 +176,6 @@ export const getUserByUsername = query({
   },
 });
 
-// Public query to get user by ID (for messaging, etc.)
 export const getUser = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
@@ -213,27 +208,24 @@ export const followUser = mutation({
     if (!userId) throw new Error("Unauthorized");
     if (userId === args.followingId) throw new Error("Cannot follow yourself");
 
-    // Check if already following
     const existing = await ctx.db
       .query("follows")
       .withIndex("by_follow_pair", (q) =>
-        q.eq("followerId", userId).eq("followingId", args.followingId)
+        q.eq("followerId", userId as string).eq("followingId", args.followingId)
       )
       .first();
 
     if (existing) return { success: false, message: "Already following" };
 
-    // Create follow relationship
     await ctx.db.insert("follows", {
-      followerId: userId,
+      followerId: userId as string,
       followingId: args.followingId,
       createdAt: Date.now(),
     });
 
-    // Create notification for the followed user
     await ctx.db.insert("notifications", {
       recipientId: args.followingId,
-      senderId: userId,
+      senderId: userId as string,
       type: "follow",
       targetType: "user",
       targetId: undefined,
@@ -255,7 +247,7 @@ export const unfollowUser = mutation({
     const existing = await ctx.db
       .query("follows")
       .withIndex("by_follow_pair", (q) =>
-        q.eq("followerId", userId).eq("followingId", args.followingId)
+        q.eq("followerId", userId as string).eq("followingId", args.followingId)
       )
       .first();
 
@@ -275,7 +267,7 @@ export const isFollowing = query({
     const follow = await ctx.db
       .query("follows")
       .withIndex("by_follow_pair", (q) =>
-        q.eq("followerId", userId).eq("followingId", args.followingId)
+        q.eq("followerId", userId as string).eq("followingId", args.followingId)
       )
       .first();
 
@@ -329,7 +321,7 @@ export const searchUsers = query({
     const users = await ctx.db.query("users").collect();
     const queryLower = args.query.toLowerCase();
 
-    return users.filter((u) => {
+    return users.filter((u: any) => {
       return (
         u.username?.toLowerCase().includes(queryLower) ||
         u.name?.toLowerCase().includes(queryLower)
@@ -338,7 +330,6 @@ export const searchUsers = query({
   },
 });
 
-// Update user preferences (boba settings, colors, etc.)
 export const updatePreferences = mutation({
   args: {
     sweetness: v.optional(v.number()),
@@ -350,7 +341,7 @@ export const updatePreferences = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
 
-    const currentUser = await ctx.db.get(userId as any) as any;
+    const currentUser = (await ctx.db.get(userId as any)) as any;
     if (!currentUser) throw new Error("User not found");
 
     const currentPrefs = currentUser.preferences || {};
@@ -369,14 +360,12 @@ export const updatePreferences = mutation({
   },
 });
 
-// Delete user account
 export const deleteAccount = mutation({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
 
-    // Delete all related data
     const followsAsFollower = await ctx.db
       .query("follows")
       .withIndex("by_follower", (q) => q.eq("followerId", userId as string))
