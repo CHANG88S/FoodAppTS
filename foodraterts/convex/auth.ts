@@ -8,7 +8,6 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         return {
           email: params.email as string,
           username: params.username as string,
-          // Only include name if it exists, otherwise omit or set to null/empty string
           ...(params.name ? { name: params.name as string } : {}),
           role: "user",
           preferences: {

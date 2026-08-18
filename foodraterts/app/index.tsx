@@ -29,9 +29,9 @@ const LoginIndex = () => {
   // Form validation state
   const isFormValid = () => {
     if (isSignUpMode) {
-      return isValidEmail(email) && hasMinUsername && hasMinPassword && email.length > 0;
+      return isValidEmail(email) && hasMinUsername && hasMinPassword;
     }
-    return isValidEmail(email) && hasMinPassword && email.length > 0 && password.length > 0;
+    return isValidEmail(email) && hasMinPassword;
   };
 
   const handleAuthAction = async () => {
