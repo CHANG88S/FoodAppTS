@@ -7,6 +7,7 @@ import { useFonts } from "expo-font";
 import { Ionicons } from "@expo/vector-icons";
 import * as SplashScreen from "expo-splash-screen";
 import Mapbox from '@rnmapbox/maps';
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -45,21 +46,23 @@ export default function RootLayout() {
   }
 
   return (
-    <ConvexAuthProvider client={convex} storage={secureStorage}>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen 
-          name="restaurant/[id]" 
-          options={{ 
-            title: "Restaurant Details", 
-            headerTintColor: "#6C3B3B", 
-            headerStyle: { backgroundColor: "#FAFAF9" },
-            headerBackTitle: "Back",
-            headerShadowVisible: false,
-          }} 
-        />
-      </Stack>
-    </ConvexAuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ConvexAuthProvider client={convex} storage={secureStorage}>
+        <Stack>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="restaurant/[id]"
+            options={{
+              title: "Restaurant Details",
+              headerTintColor: "#6C3B3B",
+              headerStyle: { backgroundColor: "#FAFAF9" },
+              headerBackTitle: "Back",
+              headerShadowVisible: false,
+            }}
+          />
+        </Stack>
+      </ConvexAuthProvider>
+    </GestureHandlerRootView>
   );
 }

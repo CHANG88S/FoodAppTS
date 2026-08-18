@@ -26,6 +26,57 @@ export const getReviewById = query({
   },
 });
 
+export const getReviewActivityById = query({
+  args: {
+    reviewId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Parse composite key: `${reviewId}-created|updated`
+    const parts = args.reviewId.split("-");
+    const actualId = parts[0] as any;
+    const suffix = parts[parts.length - 1]; // Get last part
+
+    const review = await ctx.db.get(actualId);
+    if (!review) return null;
+
+    // Hydrate item and restaurant
+    const item = await ctx.db.get(review.itemId);
+    if (!item) return null;
+
+    const restaurant = await ctx.db.get(item.restaurantId);
+    if (!restaurant) return null;
+
+    // Determine activity type
+    const activityType = suffix === "updated" && review.updatedAt && review.updatedAt > review.createdAt + 1000
+      ? "updated"
+      : "rated";
+
+    // Get author info
+    const author = await ctx.db.get(review.userId as any);
+    const authorName = author?.name || author?.username || "User";
+    const authorHandle = author?.username ? `@${author.username}` : "@user";
+
+    // Determine which image to show based on activity type
+    let imageStorageId = review.imageStorageId;
+    if (activityType === "updated") {
+      imageStorageId = review.updatedImageStorageId || review.originalImageStorageId || review.imageStorageId;
+    }
+
+    // Return the same activity shape as getUserReviews entries
+    return {
+      ...review,
+      _id: actualId,
+      uniqueKey: args.reviewId,
+      activityType,
+      itemName: item.itemName,
+      restaurantName: restaurant.restaurantName,
+      imageStorageId,
+      authorName,
+      authorHandle,
+    };
+  },
+});
+
 export const addMenuItem = mutation({
   args: {
     restaurantId: v.id("restaurants"),
@@ -247,10 +298,11 @@ export const toggleLikeReview = mutation({
 });
 
 export const addCommentToReview = mutation({
-  args: { 
-    reviewId: v.string(), 
+  args: {
+    reviewId: v.string(),
     text: v.string(),
-    activityType: v.optional(v.string()) 
+    activityType: v.optional(v.string()),
+    replyToCommentId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -263,7 +315,19 @@ export const addCommentToReview = mutation({
 
     const isUpdate = args.activityType === "updated";
     const comments = isUpdate ? (review.updateComments || []) : (review.comments || []);
-    
+
+    // Handle reply threading - flatten to top-level parent
+    let rootId = args.replyToCommentId;
+    let parentComment = null;
+    if (args.replyToCommentId) {
+      parentComment = comments.find((c: any) => c.commentId === args.replyToCommentId);
+      if (!parentComment) {
+        throw new Error("Parent comment not found");
+      }
+      // Flatten reply-to-reply to top-level parent
+      rootId = parentComment.replyToCommentId || args.replyToCommentId;
+    }
+
     const newComment = {
       commentId: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       userId,
@@ -271,6 +335,9 @@ export const addCommentToReview = mutation({
       userHandle: user?.username ? `@${user.username}` : "@user",
       text: args.text,
       createdAt: Date.now(),
+      replyToCommentId: rootId,
+      replyToUserId: parentComment?.userId,
+      replyToUserName: parentComment?.userName || parentComment?.userHandle || "User",
     };
 
     if (isUpdate) {
@@ -283,13 +350,40 @@ export const addCommentToReview = mutation({
       });
     }
 
+    // Create notifications for review owner and parent comment author
+    const { internal } = await import("./_generated/api");
+    const recipients = new Set<string>();
+
+    // Always notify review owner (if different from commenter)
+    if (review.userId !== userId) {
+      recipients.add(review.userId);
+    }
+
+    // Notify parent comment author (if different from commenter and review owner)
+    if (parentComment && parentComment.userId !== userId && parentComment.userId !== review.userId) {
+      recipients.add(parentComment.userId);
+    }
+
+    for (const recipientId of recipients) {
+      await ctx.runMutation((internal as any).notifications.createNotificationInternal, {
+        recipientId,
+        senderId: userId,
+        type: "comment",
+        targetType: "review",
+        targetId: args.reviewId,
+        message: parentComment
+          ? `replied to your comment: "${args.text.slice(0, 80)}${args.text.length > 80 ? '...' : ''}"`
+          : args.text,
+      });
+    }
+
     return newComment;
   },
 });
 
 export const deleteCommentFromReview = mutation({
-  args: { 
-    reviewId: v.string(), 
+  args: {
+    reviewId: v.string(),
     commentId: v.string(),
     activityType: v.optional(v.string())
   },
@@ -309,7 +403,11 @@ export const deleteCommentFromReview = mutation({
       throw new Error("Unauthorized to delete this comment");
     }
 
-    const updatedComments = comments.filter((c: any) => c.commentId !== args.commentId);
+    // Cascade delete: remove the comment and all replies to it
+    const updatedComments = comments.filter((c: any) =>
+      c.commentId !== args.commentId && c.replyToCommentId !== args.commentId
+    );
+
     if (isUpdate) {
       await ctx.db.patch(actualId, { updateComments: updatedComments });
     } else {

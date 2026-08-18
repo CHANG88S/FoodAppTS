@@ -15,11 +15,11 @@ import { api } from '../convex/_generated/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-type SuggestionType = 'places' | 'menuItems';
+type ModerationTab = 'places' | 'menuItems' | 'reports' | 'userReports';
 
 export default function ModerationScreen() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<SuggestionType>('places');
+  const [activeTab, setActiveTab] = useState<ModerationTab>('places');
   const [rejectNote, setRejectNote] = useState('');
   const [rejectingId, setRejectingId] = useState<string | null>(null);
 
@@ -33,12 +33,16 @@ export default function ModerationScreen() {
   const isStaff = useQuery(api.authz.isStaff) ?? false;
   const placeSuggestions = useQuery(api.suggestions.listPlaceSuggestions, { status: 'pending' }) ?? [];
   const menuItemSuggestions = useQuery(api.suggestions.listMenuItemSuggestions, { status: 'pending' }) ?? [];
+  const pendingFlags = useQuery(api.moderation.getPendingFlags) ?? [];
+  const pendingUserReports = useQuery(api.moderation.getPendingUserReports) ?? [];
 
   const approvePlace = useMutation(api.suggestions.approvePlaceSuggestion);
   const approvePlaceWithChain = useMutation(api.suggestions.approvePlaceSuggestionWithChain);
   const rejectPlace = useMutation(api.suggestions.rejectPlaceSuggestion);
   const approveMenuItem = useMutation(api.suggestions.approveMenuItemSuggestion);
   const rejectMenuItem = useMutation(api.suggestions.rejectMenuItemSuggestion);
+  const reviewFlag = useMutation(api.moderation.reviewFlag);
+  const reviewUserReport = useMutation(api.moderation.reviewUserReport);
 
   // Gate access
   if (!isStaff) {
@@ -161,8 +165,44 @@ export default function ModerationScreen() {
     }
   };
 
-  const suggestions = activeTab === 'places' ? placeSuggestions : menuItemSuggestions;
-  const isLoading = !placeSuggestions || !menuItemSuggestions;
+  const handleReviewFlag = async (flag: any, action: 'remove_content' | 'dismiss' | 'resolve') => {
+    try {
+      await reviewFlag({
+        flagId: flag._id,
+        action,
+        notes: action === 'dismiss' ? 'Dismissed by moderator' : undefined,
+      });
+      Alert.alert('Success', `Content ${action === 'remove_content' ? 'removed' : action === 'resolve' ? 'resolved' : 'dismissed'} successfully.`);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to review flag');
+    }
+  };
+
+  const handleReviewUserReport = async (report: any, action: 'warned' | 'suspended' | 'banned' | 'dismissed') => {
+    try {
+      await reviewUserReport({
+        reportId: report._id,
+        action,
+        notes: action === 'dismissed' ? 'Dismissed by moderator' : undefined,
+      });
+      Alert.alert('Success', `User report ${action === 'dismissed' ? 'dismissed' : 'action'} successfully.`);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to review user report');
+    }
+  };
+
+  const getCurrentItems = () => {
+    switch (activeTab) {
+      case 'places': return placeSuggestions;
+      case 'menuItems': return menuItemSuggestions;
+      case 'reports': return pendingFlags;
+      case 'userReports': return pendingUserReports;
+      default: return [];
+    }
+  };
+
+  const suggestions = getCurrentItems();
+  const isLoading = !placeSuggestions || !menuItemSuggestions || !pendingFlags || !pendingUserReports;
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
@@ -189,7 +229,23 @@ export default function ModerationScreen() {
           onPress={() => setActiveTab('menuItems')}
         >
           <Text style={[styles.tabText, activeTab === 'menuItems' && styles.activeTabText]}>
-            Menu Items ({menuItemSuggestions.length})
+            Items ({menuItemSuggestions.length})
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'reports' && styles.activeTab]}
+          onPress={() => setActiveTab('reports')}
+        >
+          <Text style={[styles.tabText, activeTab === 'reports' && styles.activeTabText]}>
+            Reports ({pendingFlags.length})
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'userReports' && styles.activeTab]}
+          onPress={() => setActiveTab('userReports')}
+        >
+          <Text style={[styles.tabText, activeTab === 'userReports' && styles.activeTabText]}>
+            Users ({pendingUserReports.length})
           </Text>
         </TouchableOpacity>
       </View>
@@ -202,17 +258,17 @@ export default function ModerationScreen() {
         <View style={styles.emptyState}>
           <Ionicons name="checkmark-circle" size={64} color="#059669" />
           <Text style={styles.emptyTitle}>All caught up!</Text>
-          <Text style={styles.emptyText}>No pending {activeTab === 'places' ? 'place' : 'menu item'} suggestions</Text>
+          <Text style={styles.emptyText}>
+            {activeTab === 'reports' ? 'No pending reports' :
+             activeTab === 'userReports' ? 'No pending user reports' :
+             `No pending ${activeTab === 'places' ? 'place' : 'menu item'} suggestions`}
+          </Text>
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          {suggestions.map((suggestion: any) => (
+          {activeTab === 'places' && suggestions.map((suggestion: any) => (
             <View key={suggestion._id} style={styles.card}>
-              {activeTab === 'places' ? (
-                <PlaceSuggestionCard suggestion={suggestion} />
-              ) : (
-                <MenuItemSuggestionCard suggestion={suggestion} />
-              )}
+              <PlaceSuggestionCard suggestion={suggestion} />
 
               {rejectingId === suggestion._id ? (
                 <View style={styles.rejectForm}>
@@ -232,7 +288,7 @@ export default function ModerationScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.rejectActionButton, styles.confirmButton]}
-                      onPress={() => handleReject(activeTab, suggestion._id)}
+                      onPress={() => handleReject(activeTab as 'places' | 'menuItems', suggestion._id)}
                     >
                       <Text style={styles.confirmButtonText}>Reject</Text>
                     </TouchableOpacity>
@@ -242,7 +298,7 @@ export default function ModerationScreen() {
                 <View style={styles.actions}>
                   <TouchableOpacity
                     style={styles.approveButton}
-                    onPress={() => handleApprove(activeTab, suggestion)}
+                    onPress={() => handleApprove(activeTab as 'places' | 'menuItems', suggestion)}
                   >
                     <Ionicons name="checkmark" size={18} color="#FFF" />
                     <Text style={styles.approveButtonText}>Approve</Text>
@@ -256,6 +312,245 @@ export default function ModerationScreen() {
                   </TouchableOpacity>
                 </View>
               )}
+            </View>
+          ))}
+
+          {activeTab === 'menuItems' && suggestions.map((suggestion: any) => (
+            <View key={suggestion._id} style={styles.card}>
+              <MenuItemSuggestionCard suggestion={suggestion} />
+
+              {rejectingId === suggestion._id ? (
+                <View style={styles.rejectForm}>
+                  <TextInput
+                    style={styles.rejectInput}
+                    placeholder="Rejection reason (optional)"
+                    value={rejectNote}
+                    onChangeText={setRejectNote}
+                    multiline
+                  />
+                  <View style={styles.rejectActions}>
+                    <TouchableOpacity
+                      style={[styles.rejectActionButton, styles.cancelButton]}
+                      onPress={handleCancelReject}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.rejectActionButton, styles.confirmButton]}
+                      onPress={() => handleReject(activeTab as 'places' | 'menuItems', suggestion._id)}
+                    >
+                      <Text style={styles.confirmButtonText}>Reject</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.actions}>
+                  <TouchableOpacity
+                    style={styles.approveButton}
+                    onPress={() => handleApprove(activeTab as 'places' | 'menuItems', suggestion)}
+                  >
+                    <Ionicons name="checkmark" size={18} color="#FFF" />
+                    <Text style={styles.approveButtonText}>Approve</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.rejectButton}
+                    onPress={() => handleRejectPress(suggestion._id)}
+                  >
+                    <Ionicons name="close" size={18} color="#FFF" />
+                    <Text style={styles.rejectButtonText}>Reject</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          ))}
+
+          {activeTab === 'reports' && (suggestions as any[]).map((flag: any) => (
+            <View key={flag._id} style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.reasonChip}>
+                  <Text style={styles.reasonChipText}>{flag.reason}</Text>
+                </View>
+                <Text style={styles.timestamp}>
+                  {new Date(flag.createdAt).toLocaleDateString()}
+                </Text>
+              </View>
+
+              <Text style={styles.reporterText}>
+                Reported by: {flag.reporterUsername}
+              </Text>
+
+              {flag.preview ? (
+                <View style={styles.contentPreview}>
+                  {flag.preview.kind === 'tweet' ? (
+                    <>
+                      <Text style={styles.previewKind}>Tweet</Text>
+                      <Text style={styles.previewBody}>By @{flag.preview.authorUsername}</Text>
+                      <Text style={styles.previewText} numberOfLines={3}>{flag.preview.body}</Text>
+                    </>
+                  ) : flag.preview.kind === 'review' ? (
+                    <>
+                      <Text style={styles.previewKind}>Review</Text>
+                      <Text style={styles.previewBody}>By @{flag.preview.authorUsername}</Text>
+                      <Text style={styles.previewText}>
+                        {flag.preview.overallRating} ⭐ • {flag.preview.itemName} from {flag.preview.restaurantName}
+                      </Text>
+                      {flag.preview.notes && (
+                        <Text style={styles.previewNotes}>"{flag.preview.notes}"</Text>
+                      )}
+                    </>
+                  ) : flag.preview.kind === 'comment' ? (
+                    <>
+                      <Text style={styles.previewKind}>Comment</Text>
+                      <Text style={styles.previewBody}>By @{flag.preview.authorUsername}</Text>
+                      <Text style={styles.previewText} numberOfLines={2}>{flag.preview.text}</Text>
+                      <Text style={styles.previewNotes}>On: {flag.preview.parentSummary}</Text>
+                    </>
+                  ) : (
+                    <Text style={styles.previewUnavailable}>Content unavailable</Text>
+                  )}
+                </View>
+              ) : (
+                <Text style={styles.previewUnavailable}>Content unavailable</Text>
+              )}
+
+              {flag.description && (
+                <Text style={styles.descriptionText}>Description: "{flag.description}"</Text>
+              )}
+
+              <View style={styles.moderationActions}>
+                <TouchableOpacity
+                  style={styles.removeButton}
+                  onPress={() => {
+                    Alert.alert(
+                      'Remove Content',
+                      'This will permanently delete the content and notify its owner.',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Remove',
+                          style: 'destructive',
+                          onPress: () => handleReviewFlag(flag, 'remove_content')
+                        }
+                      ]
+                    );
+                  }}
+                >
+                  <Ionicons name="trash" size={16} color="#FFF" />
+                  <Text style={styles.removeButtonText}>Remove Content</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.dismissButton}
+                  onPress={() => handleReviewFlag(flag, 'dismiss')}
+                >
+                  <Ionicons name="close-circle" size={16} color="#6B7280" />
+                  <Text style={styles.dismissButtonText}>Dismiss</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.resolveButton}
+                  onPress={() => handleReviewFlag(flag, 'resolve')}
+                >
+                  <Ionicons name="checkmark-circle" size={16} color="#059669" />
+                  <Text style={styles.resolveButtonText}>Resolve</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+
+          {activeTab === 'userReports' && (suggestions as any[]).map((report: any) => (
+            <View key={report._id} style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.reasonChip}>
+                  <Text style={styles.reasonChipText}>{report.reason}</Text>
+                </View>
+                <Text style={styles.timestamp}>
+                  {new Date(report.createdAt).toLocaleDateString()}
+                </Text>
+              </View>
+
+              <Text style={styles.reporterText}>
+                Reported by: {report.reporterUsername}
+              </Text>
+
+              <View style={styles.userPreview}>
+                <Ionicons name="person" size={20} color="#6c3b3b" />
+                <Text style={styles.userPreviewName}>{report.reportedUsername}</Text>
+                {report.reportedName && (
+                  <Text style={styles.userPreviewHandle}>({report.reportedName})</Text>
+                )}
+                <Text style={styles.userPreviewStats}>{report.reportedUserReviewCount} reviews</Text>
+              </View>
+
+              {report.description && (
+                <Text style={styles.descriptionText}>Description: "{report.description}"</Text>
+              )}
+
+              <View style={styles.userActions}>
+                <TouchableOpacity
+                  style={styles.userActionWarn}
+                  onPress={() => {
+                    Alert.alert(
+                      'Warn User',
+                      'Send a warning to this user?',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Warn',
+                          onPress: () => handleReviewUserReport(report, 'warned')
+                        }
+                      ]
+                    );
+                  }}
+                >
+                  <Ionicons name="warning" size={16} color="#FFF" />
+                  <Text style={styles.userActionText}>Warn</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.userActionSuspend}
+                  onPress={() => {
+                    Alert.alert(
+                      'Suspend User',
+                      'Suspend this user account?',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Suspend',
+                          onPress: () => handleReviewUserReport(report, 'suspended')
+                        }
+                      ]
+                    );
+                  }}
+                >
+                  <Ionicons name="remove-circle" size={16} color="#FFF" />
+                  <Text style={styles.userActionText}>Suspend</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.userActionBan}
+                  onPress={() => {
+                    Alert.alert(
+                      'Ban User',
+                      'Ban this user account?',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Ban',
+                          style: 'destructive',
+                          onPress: () => handleReviewUserReport(report, 'banned')
+                        }
+                      ]
+                    );
+                  }}
+                >
+                  <Ionicons name="person-remove" size={16} color="#FFF" />
+                  <Text style={styles.userActionText}>Ban</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.dismissButton}
+                  onPress={() => handleReviewUserReport(report, 'dismissed')}
+                >
+                  <Ionicons name="close-circle" size={16} color="#6B7280" />
+                  <Text style={styles.dismissButtonText}>Dismiss</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           ))}
         </ScrollView>
@@ -728,5 +1023,187 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontSize: 14,
     fontWeight: '500',
+  },
+  // New moderation styles
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  reasonChip: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  reasonChipText: {
+    fontSize: 12,
+    color: '#92400E',
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  reporterText: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  contentPreview: {
+    backgroundColor: '#F9FAFB',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  previewKind: {
+    fontSize: 11,
+    color: '#6c3b3b',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  previewBody: {
+    fontSize: 12,
+    color: '#374151',
+    marginBottom: 2,
+  },
+  previewText: {
+    fontSize: 13,
+    color: '#1F2937',
+    lineHeight: 18,
+  },
+  previewNotes: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  previewUnavailable: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
+  },
+  descriptionText: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontStyle: 'italic',
+    marginBottom: 12,
+  },
+  moderationActions: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  removeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#DC2626',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 6,
+  },
+  removeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  dismissButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 6,
+  },
+  dismissButtonText: {
+    color: '#6B7280',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  resolveButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#059669',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 6,
+  },
+  resolveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  userPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F9FAFB',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  userPreviewName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  userPreviewHandle: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  userPreviewStats: {
+    fontSize: 11,
+    color: '#9CA3AF',
+  },
+  userActions: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  userActionWarn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F59E0B',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 4,
+  },
+  userActionSuspend: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#8B5CF6',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 4,
+  },
+  userActionBan: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#DC2626',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 4,
+  },
+  userActionText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

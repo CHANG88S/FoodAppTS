@@ -1,5 +1,5 @@
 import { mutation, query } from "./_generated/server";
-import { v } from "convex-values";
+import { v } from "convex/values";
 
 // Security-focused rate limiting configuration
 const RATE_LIMITS = {

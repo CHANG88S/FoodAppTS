@@ -103,8 +103,8 @@ export const createNotificationInternal = mutation({
   args: {
     recipientId: v.string(),
     senderId: v.string(),
-    type: v.union(v.literal("follow"), v.literal("like"), v.literal("comment"), v.literal("mention")),
-    targetType: v.union(v.literal("tweet"), v.literal("review"), v.literal("user")),
+    type: v.union(v.literal("follow"), v.literal("like"), v.literal("comment"), v.literal("mention"), v.literal("suggestion"), v.literal("moderation")),
+    targetType: v.union(v.literal("tweet"), v.literal("review"), v.literal("user"), v.literal("suggestion")),
     targetId: v.optional(v.string()),
     message: v.optional(v.string()),
   },

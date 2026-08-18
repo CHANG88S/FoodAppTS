@@ -17,16 +17,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { formatCount } from '../../../utils/formatters';
+import { BookmarkButton } from '../../../components/BookmarkButton';
+import { CommentList } from '../../../components/CommentList';
+import { ReportButton } from '../../../components/ReportButton';
+import type { ThreadedComment } from '../../../components/CommentList';
 
 export default function PostDetailScreen() {
     const router = useRouter();
     const { reviewId, activityType = "rated" } = useLocalSearchParams<{ reviewId: string; activityType?: string }>();
 
     const currentUser = useQuery(api.users.viewer);
-    const userReviews = useQuery(api.items.getUserReviews) || [];
-
-    // Safely locate the exact post matching BOTH the review ID and the activityType
-    const post = userReviews.find((r: any) => r._id === reviewId && r.activityType === activityType) || userReviews.find((r: any) => r._id === reviewId);
+    const post = useQuery(api.items.getReviewActivityById, { reviewId: reviewId as string });
 
     const toggleLike = useMutation(api.items.toggleLikeReview);
     const addComment = useMutation(api.items.addCommentToReview);
@@ -35,6 +36,7 @@ export default function PostDetailScreen() {
 
     const [commentText, setCommentText] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [replyTarget, setReplyTarget] = useState<ThreadedComment | null>(null);
 
     const reviewImageUrl = useQuery(
         api.images.getPublicUrl,
@@ -55,10 +57,22 @@ export default function PostDetailScreen() {
         );
     }
 
-    const isLikedByMe = post.likes?.includes(currentUser?._id);
-    const likesTotal = post.likes?.length || 0;
-    const comments = post.comments || [];
-    const isMyPost = post.userId === currentUser?._id;
+    const comments = post?.comments || [];
+    const isLikedByMe = post?.likes?.includes(currentUser?._id) || false;
+    const likesTotal = post?.likes?.length || 0;
+    const isMyPost = post?.userId === currentUser?._id;
+
+    // Normalize comments for CommentList
+    const normalizedComments: ThreadedComment[] = comments.map((comment: any) => ({
+        id: comment.commentId,
+        userId: comment.userId,
+        authorName: comment.userName,
+        authorHandle: comment.userHandle,
+        text: comment.text,
+        createdAt: comment.createdAt,
+        replyToCommentId: comment.replyToCommentId,
+        replyToUserName: comment.replyToUserName,
+    }));
 
     const handleRemoveImage = () => {
         Alert.alert(
@@ -101,15 +115,17 @@ export default function PostDetailScreen() {
     };
 
     const handleSendComment = async () => {
-        if (!commentText.trim()) return;
+        if (!commentText.trim() || !post) return;
         setIsSubmitting(true);
         try {
             await addComment({
                 reviewId: reviewId as string,
                 text: commentText.trim(),
                 activityType: post.activityType,
+                replyToCommentId: replyTarget?.id,
             });
             setCommentText('');
+            setReplyTarget(null);
         } catch (err: any) {
             Alert.alert("Error", err.message || "Failed to post comment.");
         } finally {
@@ -117,7 +133,7 @@ export default function PostDetailScreen() {
         }
     };
 
-    const handleDeleteComment = (commentId: string) => {
+    const handleDeleteComment = (comment: ThreadedComment) => {
         Alert.alert("Delete Comment", "Are you sure you want to delete this comment?", [
             { text: "Cancel", style: "cancel" },
             {
@@ -127,7 +143,7 @@ export default function PostDetailScreen() {
                     try {
                         await deleteComment({
                             reviewId: reviewId as string,
-                            commentId,
+                            commentId: comment.id,
                             activityType: post.activityType,
                         });
                     } catch (err: any) {
@@ -136,6 +152,15 @@ export default function PostDetailScreen() {
                 },
             },
         ]);
+    };
+
+    const handleReply = (comment: ThreadedComment) => {
+        setReplyTarget(comment);
+    };
+
+    const handleReport = (comment: ThreadedComment) => {
+        // Will be implemented in Phase 3
+        console.log('Report comment:', comment.id);
     };
 
     return (
@@ -147,12 +172,15 @@ export default function PostDetailScreen() {
                     <Ionicons name="arrow-back" size={22} color="#1F2937" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Post Details</Text>
-                {post.activityType === 'updated' && isMyPost && (
-                    <TouchableOpacity onPress={handleEditReview} style={styles.iconButton}>
-                        <Ionicons name="create-outline" size={20} color="#6c3b3b" />
-                    </TouchableOpacity>
-                )}
-                {post.activityType !== 'updated' && <View style={{ width: 22 }} />}
+                <View style={styles.headerRightControls}>
+                    <BookmarkButton targetType="review" targetId={reviewId as string} />
+                    <ReportButton contentType="review" contentId={String(post._id)} />
+                    {post.activityType === 'updated' && isMyPost && (
+                        <TouchableOpacity onPress={handleEditReview} style={styles.iconButton}>
+                            <Ionicons name="create-outline" size={20} color="#6c3b3b" />
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
 
             <KeyboardAvoidingView 
@@ -231,46 +259,43 @@ export default function PostDetailScreen() {
 
                     <View style={styles.commentsSection}>
                         <Text style={styles.commentsHeading}>Comments ({formatCount(comments.length)})</Text>
-                        {comments.length === 0 ? (
+                        {normalizedComments.length === 0 ? (
                             <Text style={styles.noCommentsText}>No comments yet. Start the conversation!</Text>
                         ) : (
-                            comments.map((comment: any) => {
-                                const isMyComment = comment.userId === currentUser?._id;
-                                return (
-                                    <View key={comment.commentId} style={styles.commentItem}>
-                                        <View style={styles.commentAvatar}>
-                                            <Text style={styles.commentAvatarInitial}>{comment.userName.charAt(0)}</Text>
-                                        </View>
-                                        <View style={styles.commentBody}>
-                                            <View style={styles.commentHeaderRow}>
-                                                <Text style={styles.commentUserHandle}>{comment.userHandle}</Text>
-                                                {isMyComment && (
-                                                    <TouchableOpacity onPress={() => handleDeleteComment(comment.commentId)}>
-                                                        <Ionicons name="trash-outline" size={14} color="#DC2626" />
-                                                    </TouchableOpacity>
-                                                )}
-                                            </View>
-                                            <Text style={styles.commentText}>{comment.text}</Text>
-                                        </View>
-                                    </View>
-                                );
-                            })
+                            <CommentList
+                                comments={normalizedComments}
+                                currentUserId={currentUser?._id}
+                                onReply={handleReply}
+                                onRequestDelete={handleDeleteComment}
+                                onReport={handleReport}
+                            />
                         )}
                     </View>
                 </ScrollView>
 
+                {replyTarget && (
+                    <View style={styles.replyBanner}>
+                        <Text style={styles.replyBannerText}>
+                            Replying to {replyTarget.authorHandle}
+                        </Text>
+                        <TouchableOpacity onPress={() => setReplyTarget(null)}>
+                            <Ionicons name="close-circle" size={20} color="#6B7280" />
+                        </TouchableOpacity>
+                    </View>
+                )}
+
                 <View style={styles.footerInputContainer}>
                     <TextInput
                         style={styles.commentInput}
-                        placeholder="Post a comment..."
+                        placeholder={replyTarget ? `Reply to ${replyTarget.authorHandle}...` : "Post a comment..."}
                         placeholderTextColor="#9CA3AF"
                         value={commentText}
                         onChangeText={setCommentText}
                         multiline
                         maxLength={200}
                     />
-                    <TouchableOpacity 
-                        style={[styles.sendButton, !commentText.trim() && styles.sendButtonDisabled]} 
+                    <TouchableOpacity
+                        style={[styles.sendButton, !commentText.trim() && styles.sendButtonDisabled]}
                         disabled={!commentText.trim() || isSubmitting}
                         onPress={handleSendComment}
                     >
@@ -328,6 +353,11 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '800',
         color: '#1F2937',
+    },
+    headerRightControls: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
     scrollContent: {
         padding: 16,
@@ -509,6 +539,21 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#E5E7EB',
         gap: 10,
+    },
+    replyBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        backgroundColor: '#F3F4F6',
+        borderTopWidth: 1,
+        borderTopColor: '#E5E7EB',
+    },
+    replyBannerText: {
+        fontSize: 12,
+        color: '#6B7280',
+        fontWeight: '500',
     },
     commentInput: {
         flex: 1,

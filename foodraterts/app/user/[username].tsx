@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { formatCount } from "../../utils/formatters";
+import { ReportButton } from "../../components/ReportButton";
 
 // Conditionally import Mapbox to avoid crashes when native module isn't available
 let Mapbox: any = null;
@@ -368,6 +369,7 @@ export default function PublicProfileScreen() {
                   >
                     <Ionicons name="mail-outline" size={20} color="#fff" />
                   </TouchableOpacity>
+                  <ReportButton reportedUserId={targetUserId} size={20} />
                 </View>
               )}
             </View>

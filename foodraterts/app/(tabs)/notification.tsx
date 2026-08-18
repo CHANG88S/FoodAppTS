@@ -89,12 +89,17 @@ export default function NotificationScreen() {
         if (notification.targetType === "tweet" && notification.targetId) {
           router.push(`/social/${notification.targetId}` as any);
         } else if (notification.targetType === "review" && notification.targetId) {
-          router.push(`/restaurant/rate/${notification.targetId}` as any);
+          router.push(`/restaurant/post/${notification.targetId}` as any);
         }
         break;
       case "mention":
         if (notification.targetId) {
           router.push(`/social/${notification.targetId}` as any);
+        }
+        break;
+      case "moderation":
+        if (notification.targetId) {
+          router.push(`/restaurant/post/${notification.targetId}` as any);
         }
         break;
     }
@@ -120,6 +125,10 @@ export default function NotificationScreen() {
         }
       case "mention":
         return `${senderName} mentioned you`;
+      case "moderation":
+        return notification.message || "A moderator reviewed your content";
+      case "suggestion":
+        return notification.message || "New suggestion";
       default:
         return "New notification";
     }
@@ -172,8 +181,8 @@ export default function NotificationScreen() {
                 {getNotificationText(notification)}
               </Text>
 
-              {notification.type === "comment" && 
-               typeof notification.message === "string" && 
+              {(notification.type === "comment" || notification.type === "moderation" || notification.type === "suggestion") &&
+               typeof notification.message === "string" &&
                notification.message.trim().length > 0 && (
                 <Text style={styles.commentPreview} numberOfLines={1}>
                   "{notification.message}"
@@ -232,6 +241,10 @@ export default function NotificationScreen() {
         return "chatbubble";
       case "mention":
         return "at";
+      case "moderation":
+        return "shield";
+      case "suggestion":
+        return "pricetag";
       default:
         return "notifications";
     }
@@ -247,6 +260,10 @@ export default function NotificationScreen() {
         return styles.badgeComment;
       case "mention":
         return styles.badgeMention;
+      case "moderation":
+        return styles.badgeModeration;
+      case "suggestion":
+        return styles.badgeSuggestion;
       default:
         return styles.badgeDefault;
     }
@@ -405,6 +422,12 @@ const styles = StyleSheet.create({
   },
   badgeMention: {
     backgroundColor: "#FF9800",
+  },
+  badgeModeration: {
+    backgroundColor: "#b01212",
+  },
+  badgeSuggestion: {
+    backgroundColor: "#4CAF50",
   },
   badgeDefault: {
     backgroundColor: "#9E9E9E",

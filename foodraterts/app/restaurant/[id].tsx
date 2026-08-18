@@ -19,6 +19,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { Ionicons } from "@expo/vector-icons";
+import { BookmarkButton } from '../../components/BookmarkButton';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_PADDING = 20;
@@ -210,16 +211,20 @@ export default function RestaurantDetailScreen() {
 
       {/* Dynamic Header Section */}
       <View style={styles.heroContainer}>
-        <TouchableOpacity 
-          style={styles.backButton} 
+        <TouchableOpacity
+          style={styles.backButton}
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
           <Ionicons name="arrow-back" size={24} color="#6c3b3b" />
         </TouchableOpacity>
 
+        <View style={styles.bookmarkButton}>
+          <BookmarkButton targetType="restaurant" targetId={String(id)} size={24} />
+        </View>
+
         <Text style={styles.restaurantTitle}>{dbData.restaurantName}</Text>
-        
+
         <View style={styles.headerTextAlignmentBlock}>
           <Text style={styles.categorySub} numberOfLines={1}>
             📍 {dbData.address || "Address details unavailable"}
@@ -621,6 +626,13 @@ const styles = StyleSheet.create({
   backButton: {
     position: 'absolute',
     left: 20,
+    top: 53,
+    zIndex: 10,
+    padding: 4,
+  },
+  bookmarkButton: {
+    position: 'absolute',
+    right: 20,
     top: 53,
     zIndex: 10,
     padding: 4,

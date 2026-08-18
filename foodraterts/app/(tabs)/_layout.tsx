@@ -13,6 +13,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import BadgesScreen from '../badges';
 import SettingsScreen from '../settings';
+import BookmarksScreen from '../bookmarks';
 import AccountSettingsScreen from '../account-settings';
 import BobaPreferencesScreen from '../boba-preferences';
 import PrivacyScreen from '../privacy';
@@ -172,6 +173,18 @@ export default function TabsDrawerLayout() {
                     drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Profile Settings</Text>,
                     drawerIcon: ({ color, size }) => (
                         <Ionicons name="settings-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Drawer.Screen
+                name="bookmarks"
+                component={BookmarksScreen}
+                options={{
+                    title: "Bookmarks",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Bookmarks</Text>,
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="bookmark-outline" size={size} color={color} />
                     ),
                 }}
             />

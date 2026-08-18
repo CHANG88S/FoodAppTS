@@ -110,6 +110,9 @@ export default defineSchema({
           userHandle: v.string(),
           text: v.string(),
           createdAt: v.number(),
+          replyToCommentId: v.optional(v.string()),
+          replyToUserId: v.optional(v.string()),
+          replyToUserName: v.optional(v.string()),
         })
       )
     ),
@@ -123,6 +126,9 @@ export default defineSchema({
           userHandle: v.string(),
           text: v.string(),
           createdAt: v.number(),
+          replyToCommentId: v.optional(v.string()),
+          replyToUserId: v.optional(v.string()),
+          replyToUserName: v.optional(v.string()),
         })
       )
     ),
@@ -145,6 +151,11 @@ export default defineSchema({
           userId: v.string(),
           body: v.string(),
           createdAt: v.number(),
+          userName: v.optional(v.string()),
+          userHandle: v.optional(v.string()),
+          replyToCommentId: v.optional(v.string()),
+          replyToUserId: v.optional(v.string()),
+          replyToUserName: v.optional(v.string()),
         })
       )
     ),
@@ -179,7 +190,8 @@ export default defineSchema({
       v.literal("like"),
       v.literal("comment"),
       v.literal("mention"),
-      v.literal("suggestion")
+      v.literal("suggestion"),
+      v.literal("moderation")
     ),
     targetType: v.union(
       v.literal("tweet"),
@@ -415,4 +427,18 @@ export default defineSchema({
   })
     .index("by_userAction", ["userId", "action"])
     .index("by_window", ["windowStart"]),
+
+  // 21. USER BOOKMARKS / SAVED CONTENT
+  bookmarks: defineTable({
+    userId: v.id("users"),
+    targetType: v.union(
+      v.literal("restaurant"),
+      v.literal("review"),
+      v.literal("tweet")
+    ),
+    targetId: v.string(), // restaurant _id | composite review key `${_id}-created|updated` | tweet _id
+    createdAt: v.number(),
+  })
+    .index("by_user_and_target", ["userId", "targetType", "targetId"])
+    .index("by_user_and_type", ["userId", "targetType"]),
 });
