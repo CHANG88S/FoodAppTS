@@ -267,6 +267,7 @@ export const approvePlaceSuggestionWithChain = mutation({
 
     // Copy menu items if requested and chain restaurant provided
     let copiedItemsCount = 0;
+    let logoCopied = false;
     if (args.chainRestaurantId && args.copyMenuItems) {
       const copiedItems = await copyMenuItems(
         ctx,
@@ -275,6 +276,15 @@ export const approvePlaceSuggestionWithChain = mutation({
         suggestion.restaurantName
       );
       copiedItemsCount = copiedItems.length;
+
+      // Copy restaurant logo if it exists
+      const chainRestaurant = await ctx.db.get(args.chainRestaurantId);
+      if (chainRestaurant && chainRestaurant.logoStorageId) {
+        await ctx.db.patch(newRestaurantId, {
+          logoStorageId: chainRestaurant.logoStorageId,
+        });
+        logoCopied = true;
+      }
     }
 
     // Update suggestion status
@@ -283,7 +293,7 @@ export const approvePlaceSuggestionWithChain = mutation({
       reviewedBy: reviewer._id,
       reviewedAt: Date.now(),
       note: args.chainRestaurantId
-        ? `Approved as chain location${copiedItemsCount > 0 ? ` with ${copiedItemsCount} menu items copied` : ""}`
+        ? `Approved as chain location${copiedItemsCount > 0 ? ` with ${copiedItemsCount} menu items copied` : ""}${logoCopied ? " (including logo)" : ""}`
         : undefined,
     });
 
@@ -295,7 +305,7 @@ export const approvePlaceSuggestionWithChain = mutation({
       targetType: "suggestion" as any,
       targetId: suggestion._id,
       message: args.chainRestaurantId
-        ? `Your suggested place "${suggestion.restaurantName}" was approved as a chain location${copiedItemsCount > 0 ? ` with ${copiedItemsCount} menu items copied over!` : ""}!`
+        ? `Your suggested place "${suggestion.restaurantName}" was approved as a chain location${copiedItemsCount > 0 ? ` with ${copiedItemsCount} menu items copied${logoCopied ? " and logo" : ""} over!` : logoCopied ? " with logo copied over!" : ""}!`
         : `Your suggested place "${suggestion.restaurantName}" was approved!`,
     });
 
@@ -303,6 +313,7 @@ export const approvePlaceSuggestionWithChain = mutation({
       success: true,
       newRestaurantId,
       copiedItemsCount,
+      logoCopied,
     };
   },
 });

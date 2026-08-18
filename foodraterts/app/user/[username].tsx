@@ -877,8 +877,15 @@ export default function PublicProfileScreen() {
                 activeOpacity={0.8}
                 onPress={() => {
                   const rId = selectedPinReview?.restaurantId || selectedPinReview?.shopId;
+                  console.log('🔍 Debug: Navigating to restaurant with ID:', rId, 'Type:', typeof rId);
                   setSelectedPinReview(null);
-                  if (rId) router.push(`/restaurant/[id]` as any, { id: rId });
+                  if (rId) {
+                    try {
+                      router.push(`/restaurant/${String(rId)}` as any);
+                    } catch (error) {
+                      console.error('❌ Navigation error:', error);
+                    }
+                  }
                 }}
               >
                 <View style={styles.splitCardIconBox}>

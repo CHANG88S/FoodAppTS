@@ -142,7 +142,7 @@ export default function ModerationScreen() {
 
       Alert.alert(
         '✅ Approved',
-        `Place suggestion has been approved as a chain location${result.copiedItemsCount > 0 ? ` with ${result.copiedItemsCount} menu items copied!` : '.'}`
+        `Place suggestion has been approved as a chain location${result.copiedItemsCount > 0 ? ` with ${result.copiedItemsCount} menu items${result.logoCopied ? ' and logo' : ''} copied!` : result.logoCopied ? ' with logo copied!' : '.'}`
       );
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to approve suggestion');
