@@ -14,14 +14,25 @@ const LoginIndex = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  
-  // Track submission attempt
+
+  // Track submission attempt and field interactions
   const [submitted, setSubmitted] = useState(false);
+  const [usernameTouched, setUsernameTouched] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
 
   // Validation helpers
   const isValidEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
   const hasMinUsername = username.length >= 3;
   const hasMinPassword = password.length >= 8;
+
+  // Form validation state
+  const isFormValid = () => {
+    if (isSignUpMode) {
+      return isValidEmail(email) && hasMinUsername && hasMinPassword;
+    }
+    return isValidEmail(email) && hasMinPassword;
+  };
 
   const handleAuthAction = async () => {
     setSubmitted(true);
@@ -104,6 +115,9 @@ const LoginIndex = () => {
     setEmail("");
     setPassword("");
     setSubmitted(false);
+    setUsernameTouched(false);
+    setEmailTouched(false);
+    setPasswordTouched(false);
   };
 
   return (
@@ -112,46 +126,70 @@ const LoginIndex = () => {
       
       {isSignUpMode && (
         <>
-          <TextInput 
-            style={styles.textInput} 
-            placeholder="Username (Required)" 
-            value={username} 
-            onChangeText={(text) => {
-              setUsername(text);
-              if (submitted) setSubmitted(false);
-            }} 
-            autoCapitalize="none"
-            editable={!loading}
-          />
-          {submitted && !hasMinUsername && (
-            <Text style={styles.errorText}>3 character minimum for username</Text>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Username (min. 3 characters)"
+              value={username}
+              onChangeText={(text) => {
+                setUsername(text);
+                if (submitted) setSubmitted(false);
+                if (!usernameTouched) setUsernameTouched(true);
+              }}
+              autoCapitalize="none"
+              editable={!loading}
+            />
+            {username.length > 0 && (
+              <Text style={[
+                styles.charCount,
+                hasMinUsername ? styles.validCharCount : styles.invalidCharCount
+              ]}>
+                {username.length}/3
+              </Text>
+            )}
+          </View>
+
+          {username.length > 0 && (
+            <View style={styles.constraintsBox}>
+              <Text style={[styles.constraintText, hasMinUsername ? styles.validText : styles.invalidText]}>
+                {hasMinUsername ? '✓' : '•'} At least 3 characters
+              </Text>
+            </View>
           )}
 
-          <TextInput 
-            style={styles.textInput} 
-            placeholder="Display Name (Optional)" 
-            value={name} 
-            onChangeText={setName} 
+          {(usernameTouched && !hasMinUsername) && (
+            <Text style={styles.errorText}>Username must be at least 3 characters long</Text>
+          )}
+
+          <TextInput
+            style={styles.textInput}
+            placeholder="Display Name (Optional)"
+            value={name}
+            onChangeText={setName}
             autoCapitalize="words"
             editable={!loading}
           />
         </>
       )}
 
-      <TextInput 
-        style={styles.textInput} 
-        placeholder="Email" 
-        value={email} 
+      <TextInput
+        style={styles.textInput}
+        placeholder="Email address"
+        value={email}
         onChangeText={(text) => {
           setEmail(text);
           if (submitted) setSubmitted(false);
-        }} 
+          if (!emailTouched) setEmailTouched(true);
+        }}
         autoCapitalize="none"
         keyboardType="email-address"
         editable={!loading}
       />
-      {submitted && !isValidEmail(email) && (
-        <Text style={styles.errorText}>Not a valid email</Text>
+      {email.length > 0 && !isValidEmail(email) && (
+        <Text style={styles.errorText}>Please enter a valid email address</Text>
+      )}
+      {(emailTouched && !isValidEmail(email) && email.length === 0) && (
+        <Text style={styles.errorText}>Email is required</Text>
       )}
       
       <TextInput 
@@ -161,6 +199,7 @@ const LoginIndex = () => {
         onChangeText={(text) => {
           setPassword(text);
           if (submitted) setSubmitted(false);
+          if (!passwordTouched) setPasswordTouched(true);
         }} 
         secureTextEntry
         autoCapitalize="none"
@@ -170,19 +209,19 @@ const LoginIndex = () => {
       {password.length > 0 && (
         <View style={styles.constraintsBox}>
           <Text style={[styles.constraintText, hasMinPassword ? styles.validText : styles.invalidText]}>
-            {hasMinPassword ? '✓' : '•'} At least 8 characters long
+            {hasMinPassword ? '✓' : '•'} At least 8 characters
           </Text>
         </View>
       )}
 
-      {submitted && !hasMinPassword && (
-        <Text style={styles.errorText}>Not a valid password</Text>
+      {(passwordTouched && !hasMinPassword && password.length > 0) && (
+        <Text style={styles.errorText}>Password must be at least 8 characters long</Text>
       )}
       
-      <TouchableOpacity 
-        style={[styles.button, loading && styles.disabledButton]} 
+      <TouchableOpacity
+        style={[styles.button, loading && styles.disabledButton, !isFormValid() && styles.disabledButton]}
         onPress={handleAuthAction}
-        disabled={loading}
+        disabled={loading || !isFormValid()}
       >
         <Text style={styles.text}>
           {loading ? "Processing..." : isSignUpMode ? "Create Account" : "Login"}
@@ -233,22 +272,23 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   textInput: {
-    height: 50, 
-    width: '90%', 
-    backgroundColor: '#FFFFFF', 
-    borderColor: '#E8EAF6', 
+    height: 50,
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E8EAF6',
     borderWidth: 2,
-    borderRadius: 15, 
+    borderRadius: 15,
     marginTop: 10,
     marginBottom: 4,
-    paddingHorizontal: 20, 
-    fontSize: 16, 
-    color: '#3C4858', 
-    shadowColor: '#9E9E9E', 
+    paddingHorizontal: 20,
+    paddingRight: 50, // Extra space for character counter
+    fontSize: 16,
+    color: '#3C4858',
+    shadowColor: '#9E9E9E',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
-    elevation: 2, 
+    elevation: 2,
   },
   errorText: {
     width: '90%',
@@ -257,6 +297,29 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 6,
     paddingHorizontal: 4,
+  },
+  inputContainer: {
+    width: '90%',
+    position: 'relative',
+  },
+  charCount: {
+    position: 'absolute',
+    right: 15,
+    top: 15,
+    fontSize: 11,
+    fontWeight: '600',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+  },
+  validCharCount: {
+    color: '#059669',
+    backgroundColor: '#D1FAE5',
+  },
+  invalidCharCount: {
+    color: '#DC2626',
+    backgroundColor: '#FEE2E2',
   },
   constraintsBox: {
     width: '90%',
