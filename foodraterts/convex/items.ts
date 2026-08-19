@@ -293,6 +293,18 @@ export const toggleLikeReview = mutation({
       await ctx.db.patch(actualId, { likes: updatedLikes });
     }
 
+    // Create notification for new like (if liking someone else's review)
+    if (!hasLiked && review.userId !== userId) {
+      await ctx.runMutation((internal as any).notifications.createNotificationInternal, {
+        recipientId: review.userId,
+        senderId: userId,
+        type: "like",
+        targetType: "review",
+        targetId: args.reviewId,
+        message: undefined,
+      });
+    }
+
     return !hasLiked;
   },
 });
