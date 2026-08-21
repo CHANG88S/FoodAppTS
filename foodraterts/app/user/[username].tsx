@@ -179,6 +179,12 @@ export default function PublicProfileScreen() {
   const userHandle = userProfile?.username ? `@${userProfile.username}` : "@user";
   const userFullName = userProfile?.name || null;
 
+  // Badge logic
+  const badgesDirectory: Record<string, string> = {
+    'First Review': '🌟',
+  };
+  const equippedBadgeIcon = userProfile?.displayedBadge ? badgesDirectory[userProfile.displayedBadge] || '🏆' : null;
+
   // Taste preferences from profile schema
   const userPreferences = userProfile?.preferences || {};
   const sweetnessPref = userPreferences.sweetness ?? 50;
@@ -325,9 +331,17 @@ export default function PublicProfileScreen() {
                   <View style={styles.nameRow}>
                     <Text style={styles.displayName} numberOfLines={1}>{userFullName}</Text>
                     <Text style={styles.subHandleName} numberOfLines={1}>{userHandle}</Text>
+                    {equippedBadgeIcon && (
+                      <Text style={{ fontSize: 15 }}>{equippedBadgeIcon}</Text>
+                    )}
                   </View>
                 ) : (
-                  <Text style={styles.subHandleName} numberOfLines={1}>{userHandle}</Text>
+                  <View style={styles.nameRow}>
+                    <Text style={styles.subHandleName} numberOfLines={1}>{userHandle}</Text>
+                    {equippedBadgeIcon && (
+                      <Text style={{ fontSize: 15 }}>{equippedBadgeIcon}</Text>
+                    )}
+                  </View>
                 )}
               </View>
 
@@ -370,7 +384,7 @@ export default function PublicProfileScreen() {
                   >
                     <Ionicons name="mail-outline" size={20} color="#fff" />
                   </TouchableOpacity>
-                  <ReportButton reportedUserId={targetUserId} size={20} />
+                  <ReportButton reportedUserId={targetUserId as string} size={20} />
                 </View>
               )}
             </View>

@@ -51,7 +51,7 @@ export default function Profile() {
     const router = useRouter();
     const navigation = useNavigation<any>();
 
-    const currentUser = useQuery(api.users.viewer);
+    const currentUser = useQuery(api.users.viewer) as any;
     const userReviews = useQuery(api.items.getUserReviews) || [];
     const deleteReviewMutation = useMutation(api.items.deleteItemReview);
 
@@ -67,11 +67,11 @@ export default function Profile() {
     // Fetch followers and following counts
     const followers = useQuery(
         api.users.getFollowers,
-        currentUser?._id ? { userId: currentUser._id } : "skip"
+        currentUser?._id ? { userId: currentUser._id as any } : "skip"
     );
     const following = useQuery(
         api.users.getFollowing,
-        currentUser?._id ? { userId: currentUser._id } : "skip"
+        currentUser?._id ? { userId: currentUser._id as any } : "skip"
     );
 
     // Queries & mutations for tweets feature
@@ -85,7 +85,7 @@ export default function Profile() {
     const setProfilePictureMutation = useMutation(api.users.setProfilePicture);
     const profilePictureUrl = useQuery(
         api.images.getPublicUrl,
-        currentUser?.profilePicture ? { storageId: currentUser.profilePicture } : "skip"
+        currentUser?.profilePicture ? { storageId: currentUser?.profilePicture as any } : "skip"
     );
 
     const [isProfileModal, setProfileModalVisible] = useState(false);
@@ -338,16 +338,16 @@ export default function Profile() {
     };
 
     const profileImageUri = image || profilePictureUrl || undefined;
-    const userHandle = currentUser?.username ? `@${currentUser.username}` : "@user";
-    const userFullName = currentUser?.name ? currentUser.name : null;
+    const userHandle = (currentUser as any)?.username ? `@${(currentUser as any).username}` : "@user";
+    const userFullName = (currentUser as any)?.name ? (currentUser as any).name : null;
 
     // Dynamic theme color from boba preferences
-    const themeColor = currentUser?.preferences?.favoriteColor || '#6c3b3b';
+    const themeColor = (currentUser as any)?.preferences?.favoriteColor || '#6c3b3b';
 
     const badgesDirectory: Record<string, string> = {
         'First Review': '🌟',
     };
-    const equippedBadgeIcon = currentUser?.displayedBadge ? badgesDirectory[currentUser.displayedBadge] || '🏆' : null;
+    const equippedBadgeIcon = (currentUser as any)?.displayedBadge ? badgesDirectory[(currentUser as any).displayedBadge] || '🏆' : null;
 
     const formatRating = (rating: number | undefined) => {
         if (rating === undefined || rating === null) return "0.0";
@@ -455,7 +455,7 @@ export default function Profile() {
                             ) : (
                                 <View style={[styles.profileImage, styles.blankAvatar]}>
                                     <Text style={styles.avatarInitial}>
-                                        {(currentUser?.name || currentUser?.username || "U").charAt(0).toUpperCase()}
+                                        {((currentUser as any)?.name || (currentUser as any)?.username || "U").charAt(0).toUpperCase()}
                                     </Text>
                                 </View>
                             )}
@@ -472,13 +472,18 @@ export default function Profile() {
                                 {userFullName ? (
                                     <View style={styles.nameRow}>
                                         <Text style={styles.displayName} numberOfLines={1}>{userFullName}</Text>
+                                        <Text style={styles.subHandleName} numberOfLines={1}>{userHandle}</Text>
                                         {equippedBadgeIcon && (
                                             <Text style={{ fontSize: 15 }}>{equippedBadgeIcon}</Text>
                                         )}
-                                        <Text style={styles.subHandleName} numberOfLines={1}>{userHandle}</Text>
                                     </View>
                                 ) : (
-                                    <Text style={styles.subHandleName} numberOfLines={1}>{userHandle}</Text>
+                                    <View style={styles.nameRow}>
+                                        <Text style={styles.subHandleName} numberOfLines={1}>{userHandle}</Text>
+                                        {equippedBadgeIcon && (
+                                            <Text style={{ fontSize: 15 }}>{equippedBadgeIcon}</Text>
+                                        )}
+                                    </View>
                                 )}
                             </View>
 
@@ -546,7 +551,7 @@ export default function Profile() {
                                             ) : (
                                                 <View style={[styles.tweetAvatar, styles.blankAvatarTweet]}>
                                                     <Text style={styles.avatarInitialTweet}>
-                                                        {(currentUser?.name || currentUser?.username || "U").charAt(0).toUpperCase()}
+                                                        {((currentUser as any)?.name || (currentUser as any)?.username || "U").charAt(0).toUpperCase()}
                                                     </Text>
                                                 </View>
                                             )}
@@ -714,7 +719,7 @@ export default function Profile() {
                                             ) : (
                                                 <View style={[styles.tweetAvatar, styles.blankAvatarTweet]}>
                                                     <Text style={styles.avatarInitialTweet}>
-                                                        {(currentUser?.name || currentUser?.username || "U").charAt(0).toUpperCase()}
+                                                        {((currentUser as any)?.name || (currentUser as any)?.username || "U").charAt(0).toUpperCase()}
                                                     </Text>
                                                 </View>
                                             )}
@@ -1101,14 +1106,14 @@ export default function Profile() {
                             <View style={styles.prefDisplayItem}>
                                 <Text style={styles.prefDisplayIcon}>🍯</Text>
                                 <View style={styles.prefDisplayContent}>
-                                    <Text style={styles.prefDisplayValue}>{currentUser?.preferences?.sweetness ?? 50}% Sweetness</Text>
+                                    <Text style={styles.prefDisplayValue}>{(currentUser as any)?.preferences?.sweetness ?? 50}% Sweetness</Text>
                                 </View>
                             </View>
 
                             <View style={styles.prefDisplayItem}>
                                 <Text style={styles.prefDisplayIcon}>❄️</Text>
                                 <View style={styles.prefDisplayContent}>
-                                    <Text style={styles.prefDisplayValue}>{currentUser?.preferences?.iceLevel ?? 50}% Ice</Text>
+                                    <Text style={styles.prefDisplayValue}>{(currentUser as any)?.preferences?.iceLevel ?? 50}% Ice</Text>
                                 </View>
                             </View>
 
@@ -1116,7 +1121,7 @@ export default function Profile() {
                                 <Text style={styles.prefDisplayIcon}>🥛</Text>
                                 <View style={styles.prefDisplayContent}>
                                     <Text style={styles.prefDisplayLabel}>Milk Base</Text>
-                                    <Text style={styles.prefDisplayValue}>{currentUser?.preferences?.milkBase || 'Oat Milk'}</Text>
+                                    <Text style={styles.prefDisplayValue}>{(currentUser as any)?.preferences?.milkBase || 'Oat Milk'}</Text>
                                 </View>
                             </View>
                         </View>
