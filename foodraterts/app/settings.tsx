@@ -9,7 +9,7 @@ import { BlurView } from 'expo-blur';
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const currentUser = useQuery(api.users.viewer);
+  const currentUser = useQuery(api.users.viewer) as any;
   const updateProfileProfile = useAction(api.users.updateProfile);
 
   const [name, setName] = useState('');
@@ -37,9 +37,9 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     if (currentUser) {
-      setName(currentUser.name || '');
-      setUsername(currentUser.username || '');
-      setEmail(currentUser.email || '');
+      setName((currentUser as any).name || '');
+      setUsername((currentUser as any).username || '');
+      setEmail((currentUser as any).email || '');
     }
   }, [currentUser]);
 

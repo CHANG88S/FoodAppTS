@@ -267,9 +267,9 @@ export const removeReviewImage = mutation({
 });
 
 export const toggleLikeReview = mutation({
-  args: { 
+  args: {
     reviewId: v.string(),
-    activityType: v.optional(v.string()) 
+    activityType: v.optional(v.string())
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -295,6 +295,7 @@ export const toggleLikeReview = mutation({
 
     // Create notification for new like (if liking someone else's review)
     if (!hasLiked && review.userId !== userId) {
+      const { internal } = await import("./_generated/api");
       await ctx.runMutation((internal as any).notifications.createNotificationInternal, {
         recipientId: review.userId,
         senderId: userId,

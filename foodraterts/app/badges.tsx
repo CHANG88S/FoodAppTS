@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function BadgesScreen() {
   const router = useRouter();
-  const currentUser = useQuery(api.users.viewer);
+  const currentUser = useQuery(api.users.viewer) as any;
   const userReviews = useQuery(api.items.getUserReviews) || [];
   const setBadgeMutation = useMutation(api.users.setDisplayedBadge);
 

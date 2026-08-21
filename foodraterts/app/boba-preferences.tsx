@@ -34,7 +34,7 @@ const ICE_OPTIONS = [
 
 export default function BobaPreferencesScreen() {
     const router = useRouter();
-    const currentUser = useQuery(api.users.viewer);
+    const currentUser = useQuery(api.users.viewer) as any;
     const updatePreferences = useMutation(api.users.updatePreferences);
 
     const [sweetness, setSweetness] = useState(50);
@@ -44,8 +44,8 @@ export default function BobaPreferencesScreen() {
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        if (currentUser?.preferences) {
-            const prefs = currentUser.preferences;
+        if ((currentUser as any)?.preferences) {
+            const prefs = (currentUser as any).preferences;
             if (prefs.sweetness !== undefined) setSweetness(prefs.sweetness);
             if (prefs.iceLevel !== undefined) setIceLevel(prefs.iceLevel);
             if (prefs.milkBase) setMilkBase(prefs.milkBase);
