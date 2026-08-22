@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 type ModerationTab = 'places' | 'menuItems' | 'reports' | 'userReports';
+type SuggestionType = 'places' | 'menuItems';
 
 export default function ModerationScreen() {
   const router = useRouter();
@@ -142,7 +143,7 @@ export default function ModerationScreen() {
 
       Alert.alert(
         '✅ Approved',
-        `Place suggestion has been approved as a chain location${result.copiedItemsCount > 0 ? ` with ${result.copiedItemsCount} menu items${result.logoCopied ? ' and logo' : ''} copied!` : result.logoCopied ? ' with logo copied!' : '.'}`
+        `Place suggestion has been approved as a chain location${(result.copiedItemsCount || 0) > 0 ? ` with ${result.copiedItemsCount} menu items${result.logoCopied ? ' and logo' : ''} copied!` : result.logoCopied ? ' with logo copied!' : '.'}`
       );
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to approve suggestion');

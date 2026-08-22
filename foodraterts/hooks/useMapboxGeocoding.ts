@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAction, useMutation } from 'convex/react';
+import { useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 
 /**
@@ -7,7 +7,6 @@ import { api } from '../convex/_generated/api';
  * Provides functions to geocode single restaurants or handle geocoding errors
  */
 export function useMapboxGeocoding() {
-  const geocodeAndUpdateRestaurant = useAction(api.geocoding.geocodeAndUpdateRestaurant);
   const updateCoordinates = useMutation(api.geocoding.updateRestaurantCoordinates);
 
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -26,17 +25,10 @@ export function useMapboxGeocoding() {
     setGeocodingError(null);
 
     try {
-      const result = await geocodeAndUpdateRestaurant({
-        restaurantId: restaurantId as any,
-        mapboxToken,
-      });
-
-      if (result.success) {
-        return { success: true, coordinates: { lat: result.latitude, lng: result.longitude } };
-      } else {
-        setGeocodingError(result.error || 'Geocoding failed');
-        return { success: false, error: result.error };
-      }
+      // TODO: Implement geocodeAndUpdateRestaurant action in convex/geocoding.ts
+      // For now, this is a placeholder for the geocoding functionality
+      setGeocodingError('Geocoding not yet implemented');
+      return { success: false, error: 'Geocoding not yet implemented' };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setGeocodingError(errorMessage);

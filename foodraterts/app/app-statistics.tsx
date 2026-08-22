@@ -9,13 +9,13 @@ import { Ionicons } from '@expo/vector-icons';
 export default function AppStatisticsScreen() {
   const router = useRouter();
 
-  const currentUser = useQuery(api.users.viewer);
+  const currentUser = useQuery(api.users.viewer) as any;
   const appStats = useQuery(api.geocoding.getAppStatistics);
 
   // 🔑 Admin Guard: Check the user's role property (owner or developer only)
   useEffect(() => {
     if (currentUser !== undefined && currentUser !== null) {
-      if (currentUser.role !== 'owner' && currentUser.role !== 'developer') {
+      if ((currentUser as any).role !== 'owner' && (currentUser as any).role !== 'developer') {
         Alert.alert("Access Denied", "You do not have administrative privileges to view this page.");
         router.replace('/(tabs)/home');
       }
