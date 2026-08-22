@@ -227,9 +227,6 @@ export default function Home() {
           <Text style={styles.greeting}>Welcome in! 👋</Text>
           <Text style={styles.subtitle}>Find your next spot to try!</Text>
         </View>
-        <TouchableOpacity style={styles.profileButton}>
-          <Ionicons name="person-circle-outline" size={36} color="#6c3b3b" />
-        </TouchableOpacity>
       </View>
 
       {/* Unified Search Input Box */}
@@ -470,12 +467,9 @@ const styles = StyleSheet.create({
     color: "#1F2937"
   },
   subtitle: { 
-    fontSize: 14, 
-    color: "#6B7280", 
+    fontSize: 14,
+    color: "#6B7280",
     marginTop: 2
-  },
-  profileButton: { 
-    padding: 4
   },
   searchContainer: { 
     flexDirection: "row", 
