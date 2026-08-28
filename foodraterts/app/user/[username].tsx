@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { formatCount } from "../../utils/formatters";
+import { FollowersModal } from "../../components/FollowersModal";
 import { ReportButton } from "../../components/ReportButton";
 import { BookmarkButton } from "../../components/BookmarkButton";
 
@@ -46,6 +47,9 @@ const TABS = ["ACTIVITY", "TWEETS", "REVIEWS", "PREFERENCES"];
 export default function PublicProfileScreen() {
   const router = useRouter();
   const { username } = useLocalSearchParams();
+
+  const [followersModalVisible, setFollowersModalVisible] = useState(false);
+  const [followersModalTab, setFollowersModalTab] = useState<'followers' | 'following'>('followers');
 
   const viewer = useQuery(api.users.viewer);
   const currentUserId = viewer?._id;
@@ -350,14 +354,28 @@ export default function PublicProfileScreen() {
                   <Text style={styles.statNumber}>{uniqueReviews.length}</Text>
                   <Text style={styles.statLabel}>Ratings</Text>
                 </View>
-                <View style={styles.statItem}>
+                <TouchableOpacity
+                  style={styles.statItem}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    setFollowersModalTab('followers');
+                    setFollowersModalVisible(true);
+                  }}
+                >
                   <Text style={styles.statNumber}>{followers?.length || 0}</Text>
                   <Text style={styles.statLabel}>Followers</Text>
-                </View>
-                <View style={styles.statItem}>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.statItem}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    setFollowersModalTab('following');
+                    setFollowersModalVisible(true);
+                  }}
+                >
                   <Text style={styles.statNumber}>{following?.length || 0}</Text>
                   <Text style={styles.statLabel}>Following</Text>
-                </View>
+                </TouchableOpacity>
               </View>
 
               {userProfile?._id !== currentUserId && (
@@ -996,6 +1014,13 @@ export default function PublicProfileScreen() {
           </View>
         </View>
       </Modal>
+
+      <FollowersModal
+        visible={followersModalVisible}
+        onClose={() => setFollowersModalVisible(false)}
+        username={userProfile?.username || ''}
+        initialTab={followersModalTab}
+      />
     </SafeAreaView>
   );
 }

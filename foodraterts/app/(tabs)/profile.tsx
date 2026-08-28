@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import { FollowersModal } from '../../components/FollowersModal';
 import { useRouter, Stack, useNavigation, useFocusEffect } from 'expo-router';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -50,6 +51,9 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 export default function Profile() {
     const router = useRouter();
     const navigation = useNavigation<any>();
+
+    const [followersModalVisible, setFollowersModalVisible] = useState(false);
+    const [followersModalTab, setFollowersModalTab] = useState<'followers' | 'following'>('followers');
 
     const currentUser = useQuery(api.users.viewer) as any;
     const userReviews = useQuery(api.items.getUserReviews) || [];
@@ -492,11 +496,25 @@ export default function Profile() {
                                     <Text style={styles.statNumber}>{uniqueReviews.length}</Text>
                                     <Text style={styles.statLabel}>Ratings</Text>
                                 </View>
-                                <TouchableOpacity style={styles.statItem} activeOpacity={0.7}>
+                                <TouchableOpacity
+                                    style={styles.statItem}
+                                    activeOpacity={0.7}
+                                    onPress={() => {
+                                        setFollowersModalTab('followers');
+                                        setFollowersModalVisible(true);
+                                    }}
+                                >
                                     <Text style={styles.statNumber}>{followers?.length || 0}</Text>
                                     <Text style={styles.statLabel}>Followers</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.statItem} activeOpacity={0.7}>
+                                <TouchableOpacity
+                                    style={styles.statItem}
+                                    activeOpacity={0.7}
+                                    onPress={() => {
+                                        setFollowersModalTab('following');
+                                        setFollowersModalVisible(true);
+                                    }}
+                                >
                                     <Text style={styles.statNumber}>{following?.length || 0}</Text>
                                     <Text style={styles.statLabel}>Following</Text>
                                 </TouchableOpacity>
@@ -1263,6 +1281,13 @@ export default function Profile() {
                     </View>
                 </View>
             </Modal>
+
+            <FollowersModal
+                visible={followersModalVisible}
+                onClose={() => setFollowersModalVisible(false)}
+                username={(currentUser as any)?.username || ''}
+                initialTab={followersModalTab}
+            />
         </View>
     );
 }

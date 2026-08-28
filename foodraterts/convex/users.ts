@@ -157,8 +157,9 @@ export const getInternalViewer = internalQuery({
 });
 
 export const getInternalUserByUsername = internalQuery({
-  args: { username: v.string() },
+  args: { username: v.optional(v.string()) },
   handler: async (ctx, args) => {
+    if (!args.username) return null;
     return await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("username"), args.username))
@@ -167,8 +168,9 @@ export const getInternalUserByUsername = internalQuery({
 });
 
 export const getUserByUsername = query({
-  args: { username: v.string() },
+  args: { username: v.optional(v.string()) },
   handler: async (ctx, args) => {
+    if (!args.username) return null;
     return await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("username"), args.username))
