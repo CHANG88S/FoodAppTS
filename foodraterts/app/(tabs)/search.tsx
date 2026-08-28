@@ -220,21 +220,31 @@ function ReviewCard({
   onPress: (review: Review) => void;
 }) {
   const [imageError, setImageError] = useState(false);
+  const router = useRouter();
+
+  const handleUserPress = () => {
+    router.push(`/user/${review.authorUsername}`);
+  };
 
   return (
     <TouchableOpacity onPress={() => onPress(review)} activeOpacity={0.7}>
       <View style={styles.reviewCard}>
         <View style={styles.reviewHeader}>
           <View style={styles.reviewAuthorInfo}>
-            <ProfileAvatar
-              storageId={review.authorProfilePicture}
-              size={28}
-              variant="brand"
-              fallbackText={review.authorName}
-              style={styles.reviewAvatar}
-            />
+            <TouchableOpacity onPress={handleUserPress} activeOpacity={0.7}>
+              <ProfileAvatar
+                storageId={review.authorProfilePicture}
+                size={28}
+                variant="brand"
+                fallbackText={review.authorName}
+                style={styles.reviewAvatar}
+              />
+            </TouchableOpacity>
             <View style={styles.reviewAuthorText}>
-              <Text style={styles.reviewAuthorName}>{review.authorName}</Text>
+              <View style={styles.nameRow}>
+                <Text style={styles.reviewAuthorName}>{review.authorName}</Text>
+                <Text style={styles.reviewUsername}> @{review.authorUsername}</Text>
+              </View>
               <Text style={styles.reviewMeta}>
                 rated <Text style={styles.reviewItem}>{review.itemName}</Text>
               </Text>
@@ -373,11 +383,24 @@ const styles = StyleSheet.create({
   },
   reviewAuthorText: {
     flex: 1,
+    minWidth: 0, // Allows text to shrink properly
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    flexWrap: 'wrap',
   },
   reviewAuthorName: {
     fontSize: 14,
     fontWeight: "600",
     color: "#000",
+    flexShrink: 1,
+  },
+  reviewUsername: {
+    fontSize: 12,
+    color: "#666",
+    marginLeft: 4,
+    flexShrink: 1,
   },
   reviewMeta: {
     fontSize: 13,
@@ -411,6 +434,7 @@ const styles = StyleSheet.create({
     color: "#333",
     lineHeight: 20,
     marginBottom: 8,
+    flexWrap: 'wrap',
   },
   reviewImageContainer: {
     marginTop: 8,
