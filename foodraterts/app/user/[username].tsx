@@ -19,8 +19,8 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { formatCount } from "../../utils/formatters";
 import { FollowersModal } from "../../components/FollowersModal";
-import { ReportButton } from "../../components/ReportButton";
 import { BookmarkButton } from "../../components/BookmarkButton";
+import { ReportButton } from "../../components/ReportButton";
 
 // Conditionally import Mapbox to avoid crashes when native module isn't available
 let Mapbox: any = null;
@@ -509,52 +509,23 @@ export default function PublicProfileScreen() {
                 {userTweets.map((tweet: any) => {
                   const likesTotal = tweet.likes?.length || 0;
                   const commentsTotal = tweet.comments?.length || 0;
+                  const isLiked = tweet.likes?.includes(currentUserId);
 
                   return (
-                    <View key={tweet._id} style={styles.tweetCardItem}>
-                      {profileImageUri ? (
-                        <Image source={{ uri: profileImageUri }} style={styles.tweetAvatar} />
-                      ) : (
-                        <View style={[styles.tweetAvatar, styles.blankAvatarTweet]}>
-                          <Text style={styles.avatarInitialTweet}>
-                            {(userProfile.name || userProfile.username || "U").charAt(0).toUpperCase()}
-                          </Text>
-                        </View>
-                      )}
-                      <View style={styles.tweetContentColumn}>
-                        <View style={styles.tweetHeaderRow}>
-                          <View style={styles.tweetNameContainer}>
-                            {userFullName ? (
-                              <>
-                                <Text style={styles.tweetFullName} numberOfLines={1}>{userFullName}</Text>
-                                <Text style={styles.tweetUsername} numberOfLines={1}>{userHandle}</Text>
-                              </>
-                            ) : (
-                              <Text style={styles.tweetUsername} numberOfLines={1}>{userHandle}</Text>
-                            )}
-                          </View>
-                          <Text style={styles.timestampText}>{formatTimestamp(tweet.createdAt || tweet._creationTime)}</Text>
-                        </View>
-                        <Text style={[styles.tweetBodyText, { color: "#1F2937" }]}>{tweet.body}</Text>
-
-                        <View style={styles.tweetActionBar}>
-                          <View style={styles.actionButton}>
-                            <Ionicons name="heart-outline" size={16} color="#6B7280" />
-                            <Text style={styles.actionCountText}>{likesTotal}</Text>
-                          </View>
-                          <View style={styles.actionButton}>
-                            <Ionicons name="chatbubble-outline" size={15} color="#6B7280" />
-                            <Text style={styles.actionCountText}>{commentsTotal}</Text>
-                          </View>
-                          <TouchableOpacity onPress={(e) => e.stopPropagation()} style={styles.actionButton}>
-                            <BookmarkButton targetType="tweet" targetId={tweet._id} size={15} />
-                          </TouchableOpacity>
-                          <TouchableOpacity onPress={(e) => e.stopPropagation()} style={styles.actionButton}>
-                            <ReportButton contentType="tweet" contentId={tweet._id} ownerId={tweet.userId} size={15} />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </View>
+                    <TweetCard
+                      key={tweet._id}
+                      tweet={tweet}
+                      profileImageUri={profileImageUri || undefined}
+                      userFullName={userFullName || undefined}
+                      userHandle={userHandle}
+                      userProfile={userProfile}
+                      currentUserId={currentUserId}
+                      isLiked={isLiked}
+                      likesTotal={likesTotal}
+                      commentsTotal={commentsTotal}
+                      onNavigate={() => router.push(`/social/${tweet._id}`)}
+                      formatTimestamp={formatTimestamp}
+                    />
                   );
                 })}
               </View>
@@ -1022,6 +993,108 @@ export default function PublicProfileScreen() {
         initialTab={followersModalTab}
       />
     </SafeAreaView>
+  );
+}
+
+function TweetCard({
+  tweet,
+  profileImageUri,
+  userFullName,
+  userHandle,
+  userProfile,
+  currentUserId,
+  isLiked,
+  likesTotal,
+  commentsTotal,
+  onNavigate,
+  formatTimestamp,
+}: {
+  tweet: any;
+  profileImageUri?: string | null;
+  userFullName?: string;
+  userHandle: string;
+  userProfile: any;
+  currentUserId?: string;
+  isLiked?: boolean;
+  likesTotal: number;
+  commentsTotal: number;
+  onNavigate: () => void;
+  formatTimestamp: (timestamp: number | undefined) => string;
+}) {
+  const router = useRouter();
+  const toggleLikeTweet = useMutation(api.tweets.toggleLikeTweet);
+
+  const handleLike = async (e: any) => {
+    e.stopPropagation();
+    try {
+      await toggleLikeTweet({ tweetId: tweet._id });
+    } catch (error) {
+      console.error('Like error:', error);
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      style={styles.tweetCardItem}
+      onPress={onNavigate}
+      activeOpacity={0.7}
+    >
+      {profileImageUri ? (
+        <Image source={{ uri: profileImageUri }} style={styles.tweetAvatar} />
+      ) : (
+        <View style={[styles.tweetAvatar, styles.blankAvatarTweet]}>
+          <Text style={styles.avatarInitialTweet}>
+            {(userProfile.name || userProfile.username || "U").charAt(0).toUpperCase()}
+          </Text>
+        </View>
+      )}
+      <View style={styles.tweetContentColumn}>
+        <View style={styles.tweetHeaderRow}>
+          <View style={styles.tweetNameContainer}>
+            {userFullName ? (
+              <>
+                <Text style={styles.tweetFullName} numberOfLines={1}>{userFullName}</Text>
+                <Text style={styles.tweetUsername} numberOfLines={1}>{userHandle}</Text>
+              </>
+            ) : (
+              <Text style={styles.tweetUsername} numberOfLines={1}>{userHandle}</Text>
+            )}
+          </View>
+          <Text style={styles.timestampText}>{formatTimestamp(tweet.createdAt || tweet._creationTime)}</Text>
+        </View>
+        <Text style={[styles.tweetBodyText, { color: "#1F2937" }]}>{tweet.body}</Text>
+
+        <View style={styles.tweetActionBar}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleLike}
+          >
+            <Ionicons
+              name={isLiked ? "heart" : "heart-outline"}
+              size={16}
+              color={isLiked ? "#EF4444" : "#6B7280"}
+            />
+            <Text style={[styles.actionCountText, isLiked && { color: "#EF4444" }]}>{likesTotal}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              router.push(`/social/${tweet._id}`);
+            }}
+          >
+            <Ionicons name="chatbubble-outline" size={15} color="#6B7280" />
+            <Text style={styles.actionCountText}>{commentsTotal}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={(e) => e.stopPropagation()} style={styles.actionButton}>
+            <BookmarkButton targetType="tweet" targetId={tweet._id} size={15} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={(e) => e.stopPropagation()} style={styles.actionButton}>
+            <ReportButton contentType="tweet" contentId={tweet._id} ownerId={tweet.userId} size={15} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </TouchableOpacity>
   );
 }
 
