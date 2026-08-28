@@ -136,7 +136,8 @@ export default defineSchema({
     updatedAt: v.optional(v.number()),
   })
     .index("by_itemId", ["itemId"])
-    .index("by_user", ["userId"]),
+    .index("by_user", ["userId"])
+    .searchIndex("search_reviews", { searchField: "notes" }),
 
   // 4. SOCIAL TWEETS / ACTIVITY FEED POSTS
   tweets: defineTable({

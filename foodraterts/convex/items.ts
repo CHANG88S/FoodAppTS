@@ -16,6 +16,95 @@ export const searchMenuItems = query({
   },
 });
 
+export const searchReviews = query({
+  args: {
+    searchQuery: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (args.searchQuery === "") return [];
+
+    // Search reviews by text content (notes field)
+    const reviews = await ctx.db
+      .query("itemReviews")
+      .withSearchIndex("search_reviews", (q) => q.search("notes", args.searchQuery))
+      .take(20);
+
+    // Hydrate each review with item and restaurant details
+    const hydratedReviews = await Promise.all(
+      reviews.map(async (review: any) => {
+        const item = (await ctx.db.get(review.itemId)) as any;
+        const restaurant = item?.restaurantId
+          ? ((await ctx.db.get(item.restaurantId)) as any)
+          : null;
+
+        // Get author info
+        const author = (await ctx.db.get(review.userId)) as any;
+
+        return {
+          ...review,
+          _id: review._id,
+          itemName: item?.itemName || "Menu Item",
+          restaurantName: restaurant?.restaurantName || item?.restaurantName || "",
+          restaurantId: restaurant?._id || null,
+          authorName: author?.name || author?.username || "User",
+          authorUsername: author?.username || "user",
+          authorProfilePicture: author?.profilePicture,
+        };
+      })
+    );
+
+    return hydratedReviews;
+  },
+});
+
+export const getRandomReviewsFromOthers = query({
+  args: {
+    excludeUserId: v.id("users"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit || 20;
+
+    // Get all reviews, excluding the current user's reviews
+    const allReviews = await ctx.db
+      .query("itemReviews")
+      .filter((q) => q.neq(q.field("userId"), args.excludeUserId))
+      .take(100);
+
+    // Shuffle and pick random reviews
+    const shuffled = allReviews.sort(() => Math.random() - 0.5);
+    const randomReviews = shuffled.slice(0, Math.min(limit, allReviews.length));
+
+    // Hydrate each review with item and restaurant details
+    const hydratedReviews = await Promise.all(
+      randomReviews.map(async (review: any) => {
+        const item = (await ctx.db.get(review.itemId)) as any;
+        const restaurant = item?.restaurantId
+          ? ((await ctx.db.get(item.restaurantId)) as any)
+          : null;
+
+        // Get author info
+        const author = (await ctx.db.get(review.userId)) as any;
+
+        return {
+          ...review,
+          _id: review._id,
+          itemName: item?.itemName || "Menu Item",
+          restaurantName: restaurant?.restaurantName || item?.restaurantName || "",
+          restaurantId: restaurant?._id || null,
+          authorName: author?.name || author?.username || "User",
+          authorUsername: author?.username || "user",
+          authorProfilePicture: author?.profilePicture,
+          userId: review.userId,
+        };
+      })
+    );
+
+    // Sort by most recent
+    return hydratedReviews.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  },
+});
+
 export const getReviewById = query({
   args: {
     reviewId: v.string(),
