@@ -1,0 +1,164 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # Job 1: Code Quality & Linting
+  code-quality:
+    name: Code Quality & Linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./foodraterts/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./foodraterts
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: ./foodraterts
+        run: npm run lint
+
+      - name: Check TypeScript compilation
+        working-directory: ./foodraterts
+        run: npx tsc --noEmit
+
+      - name: Check for security vulnerabilities
+        working-directory: ./foodraterts
+        run: npm audit --audit-level=moderate
+
+      - name: Check for outdated dependencies
+        working-directory: ./foodraterts
+        run: npm outdated || true
+
+  # Job 2: Convex Backend Validation
+  convex-validation:
+    name: Convex Backend Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./foodraterts/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./foodraterts
+        run: npm ci
+
+      - name: Validate Convex schema
+        working-directory: ./foodraterts
+        run: npx convex dev check
+
+      - name: Check Convex types
+        working-directory: ./foodraterts
+        run: npx tsc --noEmit --project convex/tsconfig.json
+
+  # Job 3: Build Verification
+  build-verification:
+    name: Build Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./foodraterts/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./foodraterts
+        run: npm ci
+
+      - name: Verify Expo build config
+        working-directory: ./foodraterts
+        run: npx expo prebuild --clean
+
+  # Job 4: Code Coverage & Analysis
+  code-analysis:
+    name: Code Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./foodraterts/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./foodraterts
+        run: npm ci
+
+      - name: Count lines of code
+        working-directory: ./foodraterts
+        run: |
+          echo "## Project Stats" >> $GITHUB_STEP_SUMMARY
+          echo '- TypeScript Files: $(find . -name "*.ts" -o -name "*.tsx" | wc -l)' >> $GITHUB_STEP_SUMMARY
+          echo '- Total Lines: $(find . -name "*.ts" -o -name "*.tsx" | xargs wc -l | tail -1 | awk '{print $1}')" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for TODO comments
+        working-directory: ./foodraterts
+        run: |
+          TODO_COUNT=$(grep -r "TODO" --include="*.ts" --include="*.tsx" . | wc -l)
+          echo "TODO comments found: $TODO_COUNT" >> $GITHUB_STEP_SUMMARY
+
+  # Job 5: Dependency Check
+  dependency-check:
+    name: Dependency License Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./foodraterts/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./foodraterts
+        run: npm ci
+
+      - name: Check license compatibility
+        working-directory: ./foodraterts
+        run: npx license-checker --production --onlyAllow "MIT;Apache-2.0;BSD;BSD-2-Clause;BSD-3-Clause;ISC" || true
+
+# Summary report
+  on-failure:
+    runs-on: ubuntu-latest
+    needs: [code-quality, convex-validation, build-verification]
+    if: failure()
+    steps:
+      - name: Report failure
+        run: |
+          echo "## ❌ CI Pipeline Failed" >> $GITHUB_STEP_SUMMARY
+          echo "One or more CI jobs failed. Please check the logs above." >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,44 @@
+# PR Labeler Configuration
+# Automatically labels pull requests based on changed files
+
+"feature":
+  - enabled: true
+  - any:
+    - regex: '^app/.*\.tsx$'
+    - regex: '^components/.*\.tsx$'
+
+"bugfix":
+  - enabled: true
+  - any:
+    - regex: '^convex/.*\.ts$'
+    - regex: '.*bug.*'
+
+"documentation":
+  - enabled: true
+  - any:
+    - regex: '^.*\.md$'
+    - regex: '^CLAUDE\.md$'
+
+"ci/cd":
+  - enabled: true
+  - any:
+    - regex: '^\.github/.*\.yml$'
+    - regex: '^\.github/.*\.yaml$'
+
+"dependencies":
+  - enabled: true
+  - any:
+    - regex: '^package\.json$'
+    - regex: '^package-lock\.json$'
+
+"ui/polish":
+  - enabled: true
+  - any:
+    - regex: '.*style.*'
+    - regex: '.*design.*'
+
+"enhancement":
+  - enabled: true
+  - any:
+    - regex: '.*new.*'
+    - regex: '.*add.*'
