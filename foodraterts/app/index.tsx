@@ -79,12 +79,13 @@ const LoginIndex = () => {
       if (isSignUpMode) {
         await signIn("password", { email, password, username, name, flow: "signUp" });
         Alert.alert('Account Created!', 'Welcome to FoodRater!');
-        // New users go through onboarding
-        router.replace('/onboarding');
+        // New users go through the welcome tour (first use only)
+        router.replace({ pathname: '/onboarding', params: { from: 'signup' } });
       } else {
         await signIn("password", { email, password, flow: "signIn" });
-        // Existing users check if they need onboarding
-        router.replace('/onboarding'); // Will redirect to home if already completed
+        // Returning users go straight to the feed — the welcome tour only
+        // runs on sign-up and can be replayed from the profile drawer.
+        router.replace('/(tabs)/home');
       }
     } catch (error: any) {
       console.error(error);

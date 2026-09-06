@@ -10,13 +10,14 @@ import {
     TextInput,
     ActivityIndicator,
 } from 'react-native';
-import { useRouter, Stack } from 'expo-router';
+import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 
 export default function OnboardingScreen() {
     const router = useRouter();
+    const { from } = useLocalSearchParams<{ from?: string }>();
     const updateUser = useMutation(api.users.updateUser);
     const currentUser = useQuery(api.users.viewer);
 
@@ -42,27 +43,38 @@ export default function OnboardingScreen() {
     const handleBack = () => {
         if (step > 1) {
             setStep(step - 1);
-        } else {
+        } else if (from === 'signup') {
             router.replace('/(tabs)/home');
+        } else {
+            // Replayed from the profile drawer — just return to the app.
+            router.back();
         }
     };
 
     const completeOnboarding = async () => {
         setLoading(true);
         try {
-            await updateUser({
-                preferences: {
-                    sweetness,
-                    iceLevel,
-                    milkBase,
-                    favoriteCuisines,
-                },
-            });
+            // Guests can browse the tour from the drawer but have no profile to save to.
+            if (currentUser) {
+                await updateUser({
+                    preferences: {
+                        sweetness,
+                        iceLevel,
+                        milkBase,
+                        favoriteCuisines,
+                    },
+                });
+            }
 
             // Track onboarding completion
             console.log('✅ Onboarding completed');
 
-            router.replace('/(tabs)/home');
+            if (from === 'signup') {
+                router.replace('/(tabs)/home');
+            } else {
+                // Replayed from the profile drawer — return to the previous screen.
+                router.back();
+            }
         } catch (error) {
             console.error('Onboarding error:', error);
         } finally {

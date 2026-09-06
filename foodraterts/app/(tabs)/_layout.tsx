@@ -24,6 +24,7 @@ import HelpScreen from '../help';
 import ModerationScreen from '../moderation';
 import MessagesScreen from '../messages';
 import AppStatisticsScreen from '../app-statistics';
+import OnboardingScreen from '../onboarding';
 
 const Drawer = createDrawerNavigator();
 
@@ -311,6 +312,18 @@ export default function TabsDrawerLayout() {
                     drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Help & Support</Text>,
                     drawerIcon: ({ color, size }) => (
                         <Ionicons name="help-circle-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Drawer.Screen
+                name="onboarding"
+                component={OnboardingScreen}
+                options={{
+                    title: "Welcome Tour",
+                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Welcome Tour</Text>,
+                    drawerIcon: ({ color, size }) => (
+                        <Ionicons name="happy-outline" size={size} color={color} />
                     ),
                 }}
             />
