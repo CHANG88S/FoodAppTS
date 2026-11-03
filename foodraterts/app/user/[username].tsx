@@ -11,6 +11,7 @@ import {
   UIManager,
   Modal,
   Dimensions,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
@@ -101,6 +102,12 @@ export default function PublicProfileScreen() {
   const unfollowUser = useMutation(api.users.unfollowUser);
   const startConversationMutation = useMutation(api.messaging.startConversation);
 
+  const blockUserMutation = useMutation(api.moderation.blockUser);
+  const blockedUsers = useQuery(api.moderation.getBlockedUsers);
+  const isBlocked = !!(
+    targetUserId && blockedUsers?.some((b) => b.userId === targetUserId)
+  );
+
   const [activeTab, setActiveTab] = useState("ACTIVITY");
   const [expandedRestaurant, setExpandedRestaurant] = useState<string | null>(null);
   const [isAuthModalVisible, setAuthModalVisible] = useState(false);
@@ -161,6 +168,44 @@ export default function PublicProfileScreen() {
     } catch (error) {
       console.error("Message navigation error:", error);
     }
+  };
+
+  const handleToggleBlock = () => {
+    if (!currentUserId) {
+      setAuthModalVisible(true);
+      return;
+    }
+    if (!targetUserId) return;
+
+    const name = userProfile?.username || "this user";
+    Alert.alert(
+      isBlocked ? `Unblock @${name}?` : `Block @${name}?`,
+      isBlocked
+        ? "They will be able to interact with you again."
+        : "They won't be able to interact with you.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: isBlocked ? "Unblock" : "Block",
+          style: isBlocked ? "default" : "destructive",
+          onPress: async () => {
+            try {
+              const result = await blockUserMutation({
+                blockedUserId: targetUserId,
+              });
+              Alert.alert(
+                result.action === "blocked" ? "User Blocked" : "User Unblocked",
+                result.action === "blocked"
+                  ? `@${name} has been blocked.`
+                  : `@${name} has been unblocked.`
+              );
+            } catch (error: any) {
+              Alert.alert("Error", error.message || "Failed to update block.");
+            }
+          },
+        },
+      ]
+    );
   };
 
   const formatTimestamp = (timestamp: number | undefined) => {
@@ -383,26 +428,39 @@ export default function PublicProfileScreen() {
                   <TouchableOpacity
                     style={[
                       styles.primaryButton,
-                      isFollowing ? styles.secondaryButton : null,
+                      (isFollowing || isBlocked) ? styles.secondaryButton : null,
                     ]}
-                    onPress={handleFollow}
+                    onPress={isBlocked ? handleToggleBlock : handleFollow}
                   >
                     <Text
                       style={[
                         styles.primaryButtonText,
-                        isFollowing ? styles.secondaryButtonText : null,
+                        (isFollowing || isBlocked) ? styles.secondaryButtonText : null,
                       ]}
                     >
-                      {isFollowing ? "Following" : "Follow"}
+                      {isBlocked ? "Blocked" : isFollowing ? "Following" : "Follow"}
                     </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.primaryButton, styles.messageButton]}
-                    onPress={handleMessage}
-                  >
-                    <Ionicons name="mail-outline" size={20} color="#fff" />
-                  </TouchableOpacity>
+                  {!isBlocked && (
+                    <TouchableOpacity
+                      style={[styles.primaryButton, styles.messageButton]}
+                      onPress={handleMessage}
+                    >
+                      <Ionicons name="mail-outline" size={20} color="#fff" />
+                    </TouchableOpacity>
+                  )}
                   <ReportButton reportedUserId={targetUserId as string} size={20} />
+                  <TouchableOpacity
+                    onPress={handleToggleBlock}
+                    style={styles.blockButton}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons
+                      name="ban-outline"
+                      size={20}
+                      color={isBlocked ? "#DC2626" : "#6B7280"}
+                    />
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
@@ -1028,8 +1086,8 @@ function TweetCard({
     e.stopPropagation();
     try {
       await toggleLikeTweet({ tweetId: tweet._id });
-    } catch (error) {
-      console.error('Like error:', error);
+    } catch (error: any) {
+      Alert.alert('Unable to like', error?.message || 'Please try again.');
     }
   };
 
@@ -1223,6 +1281,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
     gap: 12,
+  },
+  blockButton: {
+    padding: 4,
   },
   primaryButton: {
     backgroundColor: "#6c3b3b",

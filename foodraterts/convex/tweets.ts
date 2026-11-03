@@ -2,6 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
+import { hasBlockBetween } from "./blocks";
 
 // 1. GENERATE THE UPLOAD URL
 export const generateUploadUrl = mutation({
@@ -112,6 +113,13 @@ export const toggleLikeTweet = mutation({
     const tweet = await ctx.db.get(args.tweetId);
     if (!tweet) throw new Error("Tweet not found");
 
+    // Enforce blocks: can't like a blocked user's tweet
+    if (tweet.userId && tweet.userId !== userId) {
+      if (await hasBlockBetween(ctx, userId as string, tweet.userId)) {
+        throw new Error("You can't interact with this user");
+      }
+    }
+
     const currentLikes = tweet.likes || [];
     const hasLiked = currentLikes.includes(userId);
     const updatedLikes = hasLiked
@@ -186,6 +194,13 @@ export const addCommentToTweet = mutation({
 
     const tweet = await ctx.db.get(args.tweetId);
     if (!tweet) throw new Error("Tweet not found");
+
+    // Enforce blocks: can't comment on a blocked user's tweet
+    if (tweet.userId && tweet.userId !== userId) {
+      if (await hasBlockBetween(ctx, userId as string, tweet.userId)) {
+        throw new Error("You can't interact with this user");
+      }
+    }
 
     // Get commenter's user information for storage
     const user = (await ctx.db.get(userId as any)) as any;

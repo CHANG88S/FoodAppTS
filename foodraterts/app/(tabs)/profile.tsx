@@ -773,7 +773,9 @@ export default function Profile() {
                                                         style={styles.actionButton} 
                                                         onPress={(e) => {
                                                             e.stopPropagation();
-                                                            toggleLikeTweet({ tweetId: tweet._id });
+                                                            toggleLikeTweet({ tweetId: tweet._id }).catch((err: any) =>
+                                                                Alert.alert('Unable to like', err?.message || 'Please try again.')
+                                                            );
                                                         }}
                                                     >
                                                         <Ionicons 

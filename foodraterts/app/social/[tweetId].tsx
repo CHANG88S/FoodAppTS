@@ -153,7 +153,11 @@ export default function TweetDetailScreen() {
                         <View style={styles.metricsRow}>
                             <TouchableOpacity
                                 style={styles.likeInteraction}
-                                onPress={() => toggleLikeTweet({ tweetId: tweet._id })}
+                                onPress={() =>
+                                    toggleLikeTweet({ tweetId: tweet._id }).catch((err: any) =>
+                                        Alert.alert("Unable to like", err?.message || "Please try again.")
+                                    )
+                                }
                             >
                                 <Ionicons
                                     name={isLikedByMe ? "heart" : "heart-outline"}

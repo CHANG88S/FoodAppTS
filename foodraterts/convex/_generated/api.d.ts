@@ -11,6 +11,7 @@
 import type * as analytics from "../analytics.js";
 import type * as auth from "../auth.js";
 import type * as authz from "../authz.js";
+import type * as blocks from "../blocks.js";
 import type * as bookmarks from "../bookmarks.js";
 import type * as geocoding from "../geocoding.js";
 import type * as http from "../http.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
   auth: typeof auth;
   authz: typeof authz;
+  blocks: typeof blocks;
   bookmarks: typeof bookmarks;
   geocoding: typeof geocoding;
   http: typeof http;

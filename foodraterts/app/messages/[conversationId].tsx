@@ -20,6 +20,7 @@ import { api } from '../../convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { formatTimestamp } from '../../utils/formatters';
+import { ReportButton } from '../../components/ReportButton';
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -86,6 +87,47 @@ export default function ChatScreen() {
   useEffect(() => {
     markAsReadMutation();
   }, []);
+
+  const blockUserMutation = useMutation(api.moderation.blockUser);
+  const blockedUsers = useQuery(api.moderation.getBlockedUsers);
+  const isBlocked = !!(
+    otherUser?._id && blockedUsers?.some((b) => b.userId === otherUser._id)
+  );
+
+  const handleToggleBlock = () => {
+    if (!otherUser?._id) return;
+    if (currentUser && otherUser._id === currentUser._id) return;
+
+    const name = otherUser.username || 'this user';
+    Alert.alert(
+      isBlocked ? `Unblock @${name}?` : `Block @${name}?`,
+      isBlocked
+        ? 'They will be able to interact with you again.'
+        : "They won't be able to interact with you.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: isBlocked ? 'Unblock' : 'Block',
+          style: isBlocked ? 'default' : 'destructive',
+          onPress: async () => {
+            try {
+              const result = await blockUserMutation({
+                blockedUserId: otherUser._id,
+              });
+              Alert.alert(
+                result.action === 'blocked' ? 'User Blocked' : 'User Unblocked',
+                result.action === 'blocked'
+                  ? `@${name} has been blocked.`
+                  : `@${name} has been unblocked.`
+              );
+            } catch (error: any) {
+              Alert.alert('Error', error.message || 'Failed to update block.');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const handleSendPress = async () => {
     if (isSending) return;
@@ -291,6 +333,24 @@ export default function ChatScreen() {
                 <Ionicons name="arrow-back" size={24} color="#1F2937" />
               </TouchableOpacity>
             ),
+            headerRight: () => (
+              <View style={styles.headerActions}>
+                {otherUserId && (
+                  <ReportButton reportedUserId={otherUserId as string} size={20} />
+                )}
+                <TouchableOpacity
+                  onPress={handleToggleBlock}
+                  style={styles.headerActionButton}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons
+                    name="ban-outline"
+                    size={20}
+                    color={isBlocked ? '#DC2626' : '#6B7280'}
+                  />
+                </TouchableOpacity>
+              </View>
+            ),
           }}
         />
 
@@ -323,40 +383,52 @@ export default function ChatScreen() {
           </View>
         )}
 
-        <View style={styles.inputContainer}>
-          <TouchableOpacity
-            style={styles.attachButton}
-            onPress={() => setIsImagePickerOpen(true)}
-          >
-            <Ionicons name="add-circle-outline" size={28} color="#6c3b3b" />
-          </TouchableOpacity>
+        {isBlocked ? (
+          <View style={styles.blockedNoticeContainer}>
+            <Ionicons name="ban-outline" size={18} color="#6B7280" />
+            <Text style={styles.blockedNoticeText}>
+              You blocked this user. Unblock to send messages.
+            </Text>
+            <TouchableOpacity onPress={handleToggleBlock}>
+              <Text style={styles.blockedNoticeAction}>Unblock</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.inputContainer}>
+            <TouchableOpacity
+              style={styles.attachButton}
+              onPress={() => setIsImagePickerOpen(true)}
+            >
+              <Ionicons name="add-circle-outline" size={28} color="#6c3b3b" />
+            </TouchableOpacity>
 
-          <TextInput
-            style={styles.textInput}
-            placeholder="Type a message..."
-            placeholderTextColor="#9CA3AF"
-            value={messageText}
-            onChangeText={setMessageText}
-            multiline
-            maxLength={1000}
-          />
+            <TextInput
+              style={styles.textInput}
+              placeholder="Type a message..."
+              placeholderTextColor="#9CA3AF"
+              value={messageText}
+              onChangeText={setMessageText}
+              multiline
+              maxLength={1000}
+            />
 
-          <TouchableOpacity
-            style={[styles.sendButton, (!messageText.trim() && !selectedImage) && styles.sendButtonDisabled]}
-            onPress={handleSendPress}
-            disabled={isSending || (!messageText.trim() && !selectedImage)}
-          >
-            {isSending ? (
-              <ActivityIndicator size={20} color="#FFFFFF" />
-            ) : (
-              <Ionicons
-                name={selectedImage ? "image-outline" : "send"}
-                size={20}
-                color="#FFFFFF"
-              />
-            )}
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={[styles.sendButton, (!messageText.trim() && !selectedImage) && styles.sendButtonDisabled]}
+              onPress={handleSendPress}
+              disabled={isSending || (!messageText.trim() && !selectedImage)}
+            >
+              {isSending ? (
+                <ActivityIndicator size={20} color="#FFFFFF" />
+              ) : (
+                <Ionicons
+                  name={selectedImage ? "image-outline" : "send"}
+                  size={20}
+                  color="#FFFFFF"
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Image Picker Modal */}
         <Modal
@@ -397,6 +469,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F9FAFB',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerActionButton: {
+    padding: 4,
+  },
+  blockedNoticeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: '#F3F4F6',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  blockedNoticeText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  blockedNoticeAction: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#6c3b3b',
   },
   messagesList: {
     flexGrow: 1,

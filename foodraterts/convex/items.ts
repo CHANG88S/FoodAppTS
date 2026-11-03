@@ -2,6 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { requireStaff } from "./authz";
+import { hasBlockBetween } from "./blocks";
 
 export const searchMenuItems = query({
   args: {
@@ -368,6 +369,13 @@ export const toggleLikeReview = mutation({
     const review: any = await ctx.db.get(actualId);
     if (!review) throw new Error("Review not found");
 
+    // Enforce blocks: can't like a blocked user's review
+    if (review.userId && review.userId !== userId) {
+      if (await hasBlockBetween(ctx, userId as string, review.userId)) {
+        throw new Error("You can't interact with this user");
+      }
+    }
+
     const isUpdate = args.activityType === "updated";
     const likes = isUpdate ? (review.updateLikes || []) : (review.likes || []);
     const hasLiked = likes.includes(userId);
@@ -414,6 +422,13 @@ export const addCommentToReview = mutation({
     const actualId = args.reviewId.split("-")[0] as any;
     const review: any = await ctx.db.get(actualId);
     if (!review) throw new Error("Review not found");
+
+    // Enforce blocks: can't comment on a blocked user's review
+    if (review.userId && review.userId !== userId) {
+      if (await hasBlockBetween(ctx, userId as string, review.userId)) {
+        throw new Error("You can't interact with this user");
+      }
+    }
 
     const isUpdate = args.activityType === "updated";
     const comments = isUpdate ? (review.updateComments || []) : (review.comments || []);

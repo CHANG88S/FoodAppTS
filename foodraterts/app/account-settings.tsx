@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { useAuthActions } from '@convex-dev/auth/react';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,9 +12,24 @@ export default function AccountSettingsScreen() {
     const { signOut } = useAuthActions();
     const deleteAccountMutation = useMutation(api.users.deleteAccount);
 
+    const blockedUsers = useQuery(api.moderation.getBlockedUsers);
+    const blockUserMutation = useMutation(api.moderation.blockUser);
+    const [unblockingId, setUnblockingId] = useState<string | null>(null);
+
     const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
     const [deleteTextInput, setDeleteTextInput] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleUnblock = async (userId: string) => {
+        try {
+            setUnblockingId(userId);
+            await blockUserMutation({ blockedUserId: userId });
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to unblock user.');
+        } finally {
+            setUnblockingId(null);
+        }
+    };
 
     const handleDeleteAccount = async () => {
         if (deleteTextInput !== 'delete') {
@@ -53,6 +68,47 @@ export default function AccountSettingsScreen() {
                     <Text style={styles.sectionSubtitle}>
                         Manage your account data and access
                     </Text>
+                </View>
+
+                <View style={styles.sectionCard}>
+                    <Text style={styles.sectionTitle}>Blocked Users</Text>
+                    <Text style={styles.sectionSubtitle}>
+                        Manage the accounts you have blocked
+                    </Text>
+
+                    {blockedUsers === undefined ? (
+                        <Text style={styles.blockedEmptyText}>Loading...</Text>
+                    ) : blockedUsers.length === 0 ? (
+                        <Text style={styles.blockedEmptyText}>
+                            You haven&apos;t blocked anyone.
+                        </Text>
+                    ) : (
+                        <View style={styles.blockedList}>
+                            {blockedUsers.map((blocked) => (
+                                <View key={blocked.id} style={styles.blockedRow}>
+                                    <View style={styles.blockedInfo}>
+                                        <Text style={styles.blockedUsername}>
+                                            {blocked.name || blocked.username}
+                                        </Text>
+                                        <Text style={styles.blockedHandle}>
+                                            @{blocked.username}
+                                        </Text>
+                                    </View>
+                                    <TouchableOpacity
+                                        style={styles.unblockButton}
+                                        onPress={() => handleUnblock(blocked.userId)}
+                                        disabled={unblockingId === blocked.userId}
+                                    >
+                                        <Text style={styles.unblockButtonText}>
+                                            {unblockingId === blocked.userId
+                                                ? '...'
+                                                : 'Unblock'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ))}
+                        </View>
+                    )}
                 </View>
 
                 <TouchableOpacity
@@ -185,6 +241,52 @@ const styles = StyleSheet.create({
     sectionSubtitle: {
         fontSize: 13,
         color: '#6B7280',
+    },
+    blockedList: {
+        marginTop: 12,
+        gap: 8,
+    },
+    blockedRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#F9FAFB',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+    },
+    blockedInfo: {
+        flex: 1,
+    },
+    blockedUsername: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#1F2937',
+    },
+    blockedHandle: {
+        fontSize: 12,
+        color: '#6B7280',
+        marginTop: 2,
+    },
+    blockedEmptyText: {
+        marginTop: 12,
+        fontSize: 13,
+        color: '#9CA3AF',
+    },
+    unblockButton: {
+        backgroundColor: '#F3F4F6',
+        borderWidth: 1,
+        borderColor: '#D1D5DB',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+    },
+    unblockButtonText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#374151',
     },
     deleteButton: {
         flexDirection: 'row',

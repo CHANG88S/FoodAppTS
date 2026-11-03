@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
+import { hasBlockBetween } from "./blocks";
 
 // Get conversations with tab logic
 export const listConversations = query({
@@ -276,6 +277,11 @@ export const startConversation = mutation({
       throw new Error("Cannot start conversation with yourself");
     }
 
+    // Enforce blocks: neither participant can start a conversation
+    if (await hasBlockBetween(ctx, userId as string, args.otherUserId)) {
+      throw new Error("You can't message this user");
+    }
+
     // Check if conversation already exists
     const existingConv = await ctx.db
       .query("conversations")
@@ -339,6 +345,14 @@ export const sendMessage = mutation({
       throw new Error("Not authorized to send messages in this conversation");
     }
 
+    // Enforce blocks: neither participant can message the other
+    const recipientId = conversation.participant1Id === userId
+      ? conversation.participant2Id
+      : conversation.participant1Id;
+    if (await hasBlockBetween(ctx, userId as string, recipientId)) {
+      throw new Error("You can't message this user");
+    }
+
     // Create message
     const messageId = await ctx.db.insert("messages", {
       conversationId: args.conversationId,
@@ -354,10 +368,6 @@ export const sendMessage = mutation({
     });
 
     // Create notification for recipient (only if they follow the sender)
-    const recipientId = conversation.participant1Id === userId
-      ? conversation.participant2Id
-      : conversation.participant1Id;
-
     const isFollowing = await ctx.db
       .query("follows")
       .withIndex("by_follow_pair", (q) =>
@@ -404,6 +414,14 @@ export const sendImageMessage = mutation({
       throw new Error("Not authorized to send messages in this conversation");
     }
 
+    // Enforce blocks: neither participant can message the other
+    const imageRecipientId = conversation.participant1Id === userId
+      ? conversation.participant2Id
+      : conversation.participant1Id;
+    if (await hasBlockBetween(ctx, userId as string, imageRecipientId)) {
+      throw new Error("You can't message this user");
+    }
+
     // Create message with image
     const messageId = await ctx.db.insert("messages", {
       conversationId: args.conversationId,
@@ -420,20 +438,16 @@ export const sendImageMessage = mutation({
     });
 
     // Create notification for recipient
-    const recipientId = conversation.participant1Id === userId
-      ? conversation.participant2Id
-      : conversation.participant1Id;
-
     const isFollowing = await ctx.db
       .query("follows")
       .withIndex("by_follow_pair", (q) =>
-        q.eq("followerId", recipientId).eq("followingId", userId)
+        q.eq("followerId", imageRecipientId).eq("followingId", userId)
       )
       .first();
 
     if (isFollowing) {
       await ctx.runMutation((internal as any).notifications.createNotificationInternal, {
-        recipientId,
+        recipientId: imageRecipientId,
         senderId: userId,
         type: "mention",
         targetType: "user",

@@ -4,6 +4,7 @@ import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { retrieveAccount, modifyAccountCredentials } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
+import { hasBlockBetween } from "./blocks";
 
 // Helper function to fetch a user document safely with type casting
 async function fetchUserViewer(ctx: QueryCtx) {
@@ -209,6 +210,11 @@ export const followUser = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
     if (userId === args.followingId) throw new Error("Cannot follow yourself");
+
+    // Enforce blocks: can't follow a user you blocked or who blocked you
+    if (await hasBlockBetween(ctx, userId as string, args.followingId as string)) {
+      throw new Error("You can't follow this user");
+    }
 
     const existing = await ctx.db
       .query("follows")
