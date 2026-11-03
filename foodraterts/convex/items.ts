@@ -3,6 +3,8 @@ import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { requireStaff } from "./authz";
 import { hasBlockBetween } from "./blocks";
+import { detectSpam } from "./moderation";
+import { containsProfanity, PROFANITY_ERROR_MESSAGE } from "./profanity";
 
 export const searchMenuItems = query({
   args: {
@@ -219,6 +221,10 @@ export const createItemReview = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Must be logged in to submit a review.");
 
+    if (containsProfanity(args.notes) || containsProfanity(args.orderNotes || "")) {
+      throw new Error(PROFANITY_ERROR_MESSAGE);
+    }
+
     const now = Date.now();
     const cleanImageId = args.imageStorageId ?? undefined;
 
@@ -300,6 +306,24 @@ export const createItemReview = mutation({
         createdAt: now,
         updatedAt: now,
       });
+
+      // Auto-flag suspected spam for moderator review (doesn't block the review)
+      const spamCheck = detectSpam.review({
+        notes: args.notes,
+        overallRating: args.overallRating,
+      });
+      if (spamCheck.isSpam) {
+        await ctx.db.insert("contentFlags", {
+          contentType: "review",
+          contentId: newReviewId as string,
+          reason: "spam",
+          description: `Auto-flagged: ${spamCheck.reasons.join("; ")}`,
+          reportedBy: "system",
+          status: "pending",
+          createdAt: now,
+        });
+      }
+
       return newReviewId;
     }
   },
@@ -422,6 +446,10 @@ export const addCommentToReview = mutation({
     const actualId = args.reviewId.split("-")[0] as any;
     const review: any = await ctx.db.get(actualId);
     if (!review) throw new Error("Review not found");
+
+    if (containsProfanity(args.text)) {
+      throw new Error(PROFANITY_ERROR_MESSAGE);
+    }
 
     // Enforce blocks: can't comment on a blocked user's review
     if (review.userId && review.userId !== userId) {

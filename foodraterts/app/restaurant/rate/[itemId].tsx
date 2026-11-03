@@ -214,9 +214,9 @@ export default function Upload() {
             Alert.alert('Success 🎉', existingReview ? 'Your review was updated successfully!' : 'Your rating data was saved successfully!', [
                 { text: 'OK', onPress: () => router.back() }
             ]);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            Alert.alert('Submission Error', 'Failed to save your review configurations.');
+            Alert.alert('Submission Error', error?.message || 'Failed to save your review configurations.');
         } finally {
             setIsSubmitting(false);
         }

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, Alert, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuthActions } from "@convex-dev/auth/react";
 
 const LoginIndex = () => {  
@@ -13,6 +14,7 @@ const LoginIndex = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [is13OrOlder, setIs13OrOlder] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Track submission attempt and field interactions
@@ -35,7 +37,7 @@ const LoginIndex = () => {
   // Form validation state
   const isFormValid = () => {
     if (isSignUpMode) {
-      return isValidEmail(email) && hasMinUsername && hasMinPassword;
+      return isValidEmail(email) && hasMinUsername && hasMinPassword && is13OrOlder;
     }
     return isValidEmail(email) && hasMinPassword;
   };
@@ -61,6 +63,13 @@ const LoginIndex = () => {
 
     if (!hasMinPassword) {
       return Alert.alert("Error", "Password must be at least 8 characters long.");
+    }
+
+    if (isSignUpMode && !is13OrOlder) {
+      return Alert.alert(
+        "Age Requirement",
+        "You must be at least 13 years old to create a FoodRater account."
+      );
     }
 
     setLoading(true);
@@ -125,6 +134,7 @@ const LoginIndex = () => {
     setName("");
     setEmail("");
     setPassword("");
+    setIs13OrOlder(false);
     setSubmitted(false);
     setUsernameTouched(false);
     setEmailTouched(false);
@@ -209,6 +219,24 @@ const LoginIndex = () => {
       )}
       {password.length >= 8 && (
         <Text style={styles.validText}>✓ Password strength OK</Text>
+      )}
+
+      {isSignUpMode && (
+        <TouchableOpacity
+          style={styles.ageRow}
+          activeOpacity={0.7}
+          onPress={() => {
+            setIs13OrOlder(!is13OrOlder);
+            if (submitted) setSubmitted(false);
+          }}
+        >
+          <View style={[styles.ageCheckbox, is13OrOlder && styles.ageCheckboxChecked]}>
+            {is13OrOlder && <Ionicons name="checkmark" size={13} color="#FFFFFF" />}
+          </View>
+          <Text style={styles.ageText}>
+            I confirm I am 13 years of age or older
+          </Text>
+        </TouchableOpacity>
       )}
 
       <TouchableOpacity
@@ -297,6 +325,33 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 4,
     paddingHorizontal: 4,
+  },
+  ageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '90%',
+    marginTop: 8,
+    marginBottom: 4,
+    gap: 10,
+  },
+  ageCheckbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#6c3b3b',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ageCheckboxChecked: {
+    backgroundColor: '#6c3b3b',
+  },
+  ageText: {
+    flex: 1,
+    color: '#6B7280',
+    fontSize: 12,
+    fontWeight: '500',
   },
   button: {
     width: '90%',

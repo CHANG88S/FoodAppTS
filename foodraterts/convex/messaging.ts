@@ -4,6 +4,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { hasBlockBetween } from "./blocks";
+import { containsProfanity, PROFANITY_ERROR_MESSAGE } from "./profanity";
 
 // Get conversations with tab logic
 export const listConversations = query({
@@ -329,6 +330,10 @@ export const sendMessage = mutation({
 
     if (!args.content.trim()) {
       throw new Error("Message content cannot be empty");
+    }
+
+    if (containsProfanity(args.content)) {
+      throw new Error(PROFANITY_ERROR_MESSAGE);
     }
 
     const conversation = await ctx.db

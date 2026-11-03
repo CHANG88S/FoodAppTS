@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
 import { hasBlockBetween } from "./blocks";
+import { containsProfanity, PROFANITY_ERROR_MESSAGE } from "./profanity";
 
 // 1. GENERATE THE UPLOAD URL
 export const generateUploadUrl = mutation({
@@ -21,6 +22,10 @@ export const createTweet = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Must be logged in to tweet.");
+
+    if (containsProfanity(args.body)) {
+      throw new Error(PROFANITY_ERROR_MESSAGE);
+    }
 
     await ctx.db.insert("tweets", {
       body: args.body,
@@ -194,6 +199,10 @@ export const addCommentToTweet = mutation({
 
     const tweet = await ctx.db.get(args.tweetId);
     if (!tweet) throw new Error("Tweet not found");
+
+    if (containsProfanity(args.body)) {
+      throw new Error(PROFANITY_ERROR_MESSAGE);
+    }
 
     // Enforce blocks: can't comment on a blocked user's tweet
     if (tweet.userId && tweet.userId !== userId) {

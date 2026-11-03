@@ -37,19 +37,6 @@ export default function TermsofServiceScreen() {
             ]
         },
         {
-            id: 'ai-usage',
-            title: 'AI & Machine Learning Features',
-            icon: 'bulb-outline',
-            content: [
-                '• Personalized Recommendations: AI suggests restaurants and menu items based on your taste profile',
-                '• Taste Analysis: Machine learning analyzes your ratings to understand your preferences',
-                '• Smart Search: AI-powered search helps you find exactly what you\'re craving',
-                '• Pattern Recognition: We use AI to identify trends in your dining habits and preferences',
-                '• Automated Moderation: AI helps maintain quality content and detect spam',
-                '• Voice/Text Processing: Natural language processing for reviews and search queries'
-            ]
-        },
-        {
             id: 'data-usage',
             title: 'How We Use Your Data',
             icon: 'cog-outline',
@@ -57,8 +44,7 @@ export default function TermsofServiceScreen() {
                 '• Service Improvement: Your data helps us improve recommendations and app features',
                 '• Personalization: Create a tailored experience based on your preferences',
                 '• Safety & Security: Detect fraud, prevent abuse, and protect user accounts',
-                '• Analytics: Understand user behavior to improve the app',
-                '• Communication: Send updates, security alerts, and relevant notifications',
+                '• Communication: Send notifications about activity related to your account',
                 '• Research: Develop new features and improve existing ones'
             ]
         },
@@ -69,7 +55,8 @@ export default function TermsofServiceScreen() {
             content: [
                 '• We never sell your personal data to third parties',
                 '• Public Data: Reviews, ratings, and social activity are visible to other users',
-                '• Service Providers: We use trusted third-party services for hosting, analytics, and AI processing',
+                '• Service Providers: We use Convex for hosting and data storage, and Mapbox for map displays and address lookup',
+                '• No Ads or Trackers: We do not use third-party advertising, analytics, or tracking services',
                 '• Legal Requirements: We may share data when required by law or to protect our rights',
                 '• Business Transfers: Data may be transferred if we are acquired or merge with another company',
                 '• With Consent: We share data with third parties only when you explicitly consent'
@@ -82,9 +69,8 @@ export default function TermsofServiceScreen() {
             content: [
                 '• Access: View your data and account information anytime',
                 '• Correction: Update or correct your personal information',
-                '• Deletion: Request deletion of your account and associated data',
-                '• Opt-out: Disable personalized features and data collection',
-                '• Export: Download your data in a portable format',
+                '• Deletion: Delete your account and associated data anytime via Account Settings',
+                '• Privacy Settings: Manage data collection preferences in the app',
                 '• Control: Manage privacy settings and visibility preferences'
             ]
         },
@@ -102,29 +88,16 @@ export default function TermsofServiceScreen() {
             ]
         },
         {
-            id: 'ai-transparency',
-            title: 'AI Transparency & Control',
-            icon: 'eye-outline',
-            content: [
-                '• Clear Indicators: AI-powered features are clearly labeled in the app',
-                '• Explainable Decisions: We provide insights into how recommendations are made',
-                '• Human Oversight: AI systems are monitored and can be overridden by human moderators',
-                '• Feedback Loop: You can provide feedback on AI recommendations to improve accuracy',
-                '• Bias Mitigation: We actively work to reduce bias in our AI systems',
-                '• Regular Audits: AI systems are regularly audited for fairness and accuracy'
-            ]
-        },
-        {
             id: 'cookies-tracking',
-            title: 'Cookies & Tracking',
+            title: 'Tracking & Local Storage',
             icon: 'time-outline',
             content: [
-                '• Essential Cookies: Required for basic app functionality',
-                '• Analytics Cookies: Help us understand how you use the app',
-                '• Preference Cookies: Remember your settings and preferences',
-                '• Session Data: Track your activity during a single session',
-                '• Device Info: Collect device type, OS version for compatibility',
-                '• Location Data: Used only when you explicitly grant permission'
+                '• No Cookies: FoodRater is a native app and does not use browser cookies',
+                '• Local Storage: Your login token is stored securely on your device using Expo SecureStore',
+                '• Push Notifications: If you enable notifications, your device push token is stored to deliver them',
+                '• No Ad Tracking: No advertising identifiers or cross-app tracking are used',
+                '• No Location Tracking: The app does not access your device location; restaurant locations come from place data',
+                '• Device Info: Your platform (iOS or Android) is stored with your notification settings for compatibility'
             ]
         },
         {
@@ -132,12 +105,11 @@ export default function TermsofServiceScreen() {
             title: 'Children\'s Privacy',
             icon: 'child-outline',
             content: [
-                '• Age Requirement: This service is intended for users 13+ years old',
-                '• Parental Consent: We seek parental consent for minors under 16',
+                '• Age Requirement: You must be at least 13 years old to create an account; age is confirmed at sign-up',
+                '• No Under-13 Accounts: We do not knowingly allow accounts for children under 13',
                 '• No Targeting: We do not target children with advertising or features',
-                '• Enhanced Protection: Additional privacy protections for underage users',
-                '• Reporting: Mechanisms for reporting inappropriate content involving minors',
-                '• Education: Resources for families about online safety'
+                '• Reporting: Built-in reporting and blocking let users flag inappropriate content and behavior',
+                '• Moderation: Reports are reviewed by moderators, and content that violates our rules is removed'
             ]
         },
         {
@@ -171,7 +143,7 @@ export default function TermsofServiceScreen() {
                 <View style={styles.introCard}>
                     <Ionicons name="document-text-outline" size={32} color="#6c3b3b" />
                     <Text style={styles.introTitle}>FoodRater Terms of Service</Text>
-                    <Text style={styles.introText}>Last updated: August 2026</Text>
+                    <Text style={styles.introText}>Last updated: November 2026</Text>
                     <Text style={styles.introDescription}>
                         Welcome to FoodRater! This Terms of Service governs your use of our app and explains how we collect, use, and protect your data. By using FoodRater, you agree to these terms.
                     </Text>
@@ -179,9 +151,9 @@ export default function TermsofServiceScreen() {
 
                 <View style={styles.highlightBox}>
                     <Text style={styles.highlightTitle}>🔍 Key Points</Text>
-                    <Text style={styles.highlightText}>• We collect data to provide personalized restaurant recommendations</Text>
-                    <Text style={styles.highlightText}>• AI features help match your taste preferences with menu items</Text>
+                    <Text style={styles.highlightText}>• Rate dishes, share reviews, and follow other food lovers</Text>
                     <Text style={styles.highlightText}>• Your data is encrypted and never sold to third parties</Text>
+                    <Text style={styles.highlightText}>• No third-party advertising or tracking services are used</Text>
                     <Text style={styles.highlightText}>• You have full control over your data and can delete it anytime</Text>
                 </View>
 

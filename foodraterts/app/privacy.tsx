@@ -19,7 +19,7 @@ export default function PrivacyScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.lastUpdated}>Last Updated: August 2025</Text>
+        <Text style={styles.lastUpdated}>Last Updated: November 2026</Text>
 
         <Text style={styles.sectionTitle}>1. Information We Collect</Text>
         <Text style={styles.sectionText}>
@@ -46,11 +46,12 @@ export default function PrivacyScreen() {
         </Text>
         <Text style={styles.bullet}>• <Text style={styles.bold}>Convex:</Text> Our backend provider that stores all application data (users, reviews, restaurants, etc.). Data is transmitted securely and stored in compliance with industry standards.</Text>
         <Text style={styles.bullet}>• <Text style={styles.bold}>Expo SecureStore:</Text> Stores your authentication token locally on your device.</Text>
+        <Text style={styles.bullet}>• <Text style={styles.bold}>Mapbox:</Text> Provides map displays and address lookup for restaurant locations. Map requests are handled by Mapbox; it is not used for advertising or tracking.</Text>
         <Text style={styles.bullet}>• No third-party analytics, advertising, or tracking services are used in this app.</Text>
 
         <Text style={styles.sectionTitle}>4. Information Sharing</Text>
         <Text style={styles.sectionText}>
-          We do not sell your personal information. Your content (reviews, ratings, profile, photos) is shared with other users as intended by the app's social features. We may access your data:
+          We do not sell your personal information. Your content (reviews, ratings, profile, photos) is shared with other users as intended by the app&apos;s social features. We may access your data:
         </Text>
         <Text style={styles.bullet}>• To comply with legal obligations</Text>
         <Text style={styles.bullet}>• To protect our rights, privacy, safety, or property</Text>
@@ -69,9 +70,9 @@ export default function PrivacyScreen() {
           We retain your data while your account is active. When you delete your account, your personal information and user-generated content are permanently removed from our servers within a reasonable timeframe.
         </Text>
 
-        <Text style={styles.sectionTitle}>7. Children's Privacy</Text>
+        <Text style={styles.sectionTitle}>7. Children&apos;s Privacy</Text>
         <Text style={styles.sectionText}>
-          FoodRater is not intended for children under 13. We do not knowingly collect data from children under 13.
+          FoodRater is not intended for children under 13. We do not knowingly collect data from children under 13. You must be at least 13 years old to create an account, confirmed at sign-up.
         </Text>
 
         <Text style={styles.sectionTitle}>8. Changes to This Policy</Text>
