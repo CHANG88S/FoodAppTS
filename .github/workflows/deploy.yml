@@ -1,8 +1,12 @@
 name: Deploy
 
+# Manual trigger only for now. To re-enable builds on every push to main:
+#   1. Add an EXPO_TOKEN repo secret (expo.dev account settings -> Access keys)
+#   2. Run one successful local `eas build` first so the bundle id and store
+#      credentials are registered (GitHub builds will fail until then)
+# Auto-building on every push otherwise burns EAS build minutes and fails
+# loudly in email notifications.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       environment:
@@ -47,16 +51,16 @@ jobs:
 
       - name: Build iOS for production
         working-directory: ./foodraterts
-        run: eas build --platform ios --profile production --non-interactive
+        run: eas build --platform ios --profile production --non-interactive --no-wait
 
       - name: Build Android for production
         working-directory: ./foodraterts
-        run: eas build --platform android --profile production --non-interactive
+        run: eas build --platform android --profile production --non-interactive --no-wait
 
       - name: Report deployment success
         run: |
-          echo "## 🚀 Production Deployment Successful" >> $GITHUB_STEP_SUMMARY
-          echo "iOS and Android apps built and submitted to app stores." >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 Production Build Started" >> $GITHUB_STEP_SUMMARY
+          echo "iOS and Android production builds queued on EAS (monitor progress at expo.dev)." >> $GITHUB_STEP_SUMMARY
 
   # Deploy to preview
   deploy-preview:

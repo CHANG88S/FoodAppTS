@@ -11,8 +11,8 @@ const CategoryButtons = () => {
     <View>
       <Text style = {styles.title}>Filter</Text>
       <ScrollView>
-        {foodCategories.map((item, index)=> (
-          <TouchableOpacity onPress={() => {}}>
+        {foodCategories.map((item) => (
+          <TouchableOpacity key={item.title} onPress={() => {}}>
             <MaterialCommunityIcons 
               name = {item.iconName as any}
               size = {16}

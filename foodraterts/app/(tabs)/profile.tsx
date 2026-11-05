@@ -1097,7 +1097,7 @@ export default function Profile() {
                                         <Ionicons name="map-outline" size={48} color="#9CA3AF" />
                                         <Text style={styles.mapPlaceholderTitle}>No Location Data</Text>
                                         <Text style={styles.mapPlaceholderText}>
-                                            The restaurants you've reviewed don't have coordinates yet.
+                                            The restaurants you&apos;ve reviewed don&apos;t have coordinates yet.
                                         </Text>
                                     </View>
                                 )}

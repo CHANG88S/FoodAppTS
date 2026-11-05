@@ -60,7 +60,7 @@ export default function ModerationScreen() {
         <View style={styles.accessDenied}>
           <Ionicons name="lock-closed" size={48} color="#9CA3AF" />
           <Text style={styles.accessDeniedText}>
-            You don't have permission to access this page.
+            You don&apos;t have permission to access this page.
           </Text>
         </View>
       </SafeAreaView>
@@ -396,7 +396,7 @@ export default function ModerationScreen() {
                         {flag.preview.overallRating} ⭐ • {flag.preview.itemName} from {flag.preview.restaurantName}
                       </Text>
                       {flag.preview.notes && (
-                        <Text style={styles.previewNotes}>"{flag.preview.notes}"</Text>
+                        <Text style={styles.previewNotes}>&quot;{flag.preview.notes}&quot;</Text>
                       )}
                     </>
                   ) : flag.preview.kind === 'comment' ? (
@@ -415,7 +415,7 @@ export default function ModerationScreen() {
               )}
 
               {flag.description && (
-                <Text style={styles.descriptionText}>Description: "{flag.description}"</Text>
+                <Text style={styles.descriptionText}>Description: &quot;{flag.description}&quot;</Text>
               )}
 
               <View style={styles.moderationActions}>
@@ -482,7 +482,7 @@ export default function ModerationScreen() {
               </View>
 
               {report.description && (
-                <Text style={styles.descriptionText}>Description: "{report.description}"</Text>
+                <Text style={styles.descriptionText}>Description: &quot;{report.description}&quot;</Text>
               )}
 
               <View style={styles.userActions}>
@@ -567,7 +567,7 @@ export default function ModerationScreen() {
             </View>
 
             <Text style={styles.modalDescription}>
-              Found {potentialChains.length} existing location(s) with the same name "{selectedSuggestion.restaurantName}". Is this a chain location?
+              Found {potentialChains.length} existing location(s) with the same name &quot;{selectedSuggestion.restaurantName}&quot;. Is this a chain location?
             </Text>
 
             {potentialChains.map((chain: any) => (

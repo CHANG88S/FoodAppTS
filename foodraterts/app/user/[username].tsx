@@ -868,7 +868,7 @@ export default function PublicProfileScreen() {
                     <Ionicons name="map-outline" size={48} color="#9CA3AF" />
                     <Text style={styles.mapPlaceholderTitle}>No Location Data</Text>
                     <Text style={styles.mapPlaceholderText}>
-                      The restaurants reviewed by this user don't have coordinates yet.
+                      The restaurants reviewed by this user don&apos;t have coordinates yet.
                     </Text>
                   </View>
                 )}

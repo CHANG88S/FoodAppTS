@@ -46,7 +46,7 @@ export class ErrorBoundary extends Component<Props, State> {
                             {this.state.error?.message || 'An unexpected error occurred'}
                         </Text>
                         <Text style={styles.description}>
-                            Don't worry, your data is safe. Please try again or restart the app.
+                            Don&apos;t worry, your data is safe. Please try again or restart the app.
                         </Text>
 
                         <View style={styles.actions}>

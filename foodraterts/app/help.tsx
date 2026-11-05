@@ -29,7 +29,7 @@ export default function HelpScreen() {
           <Ionicons name="mail-outline" size={32} color="#6c3b3b" />
           <Text style={styles.contactTitle}>Need Help?</Text>
           <Text style={styles.contactText}>
-            We're here to assist you. Reach out with questions, issues, or feedback.
+            We&apos;re here to assist you. Reach out with questions, issues, or feedback.
           </Text>
           <TouchableOpacity style={styles.contactButton} onPress={handleContactSupport}>
             <Text style={styles.contactButtonText}>Email Support</Text>
@@ -41,14 +41,14 @@ export default function HelpScreen() {
         <View style={styles.faqItem}>
           <Text style={styles.faqQuestion}>How do I rate a menu item?</Text>
           <Text style={styles.faqAnswer}>
-            Navigate to a restaurant, tap "RATE ★" on any menu item, and submit your review with ratings and notes.
+            Navigate to a restaurant, tap &quot;RATE ★&quot; on any menu item, and submit your review with ratings and notes.
           </Text>
         </View>
 
         <View style={styles.faqItem}>
           <Text style={styles.faqQuestion}>How do I delete my account?</Text>
           <Text style={styles.faqAnswer}>
-            Open the drawer (top-right menu), go to Account Settings, and tap "Delete Account". This permanently removes all your data.
+            Open the drawer (top-right menu), go to Account Settings, and tap &quot;Delete Account&quot;. This permanently removes all your data.
           </Text>
         </View>
 
@@ -62,40 +62,40 @@ export default function HelpScreen() {
         <View style={styles.faqItem}>
           <Text style={styles.faqQuestion}>How do I suggest a new place or menu item?</Text>
           <Text style={styles.faqAnswer}>
-            Tap "Suggest a Place" from the drawer or Search screen to submit a restaurant. On any restaurant page, tap "Add Item" to suggest a menu item. Suggestions are reviewed before being added.
+            Tap &quot;Suggest a Place&quot; from the drawer or Search screen to submit a restaurant. On any restaurant page, tap &quot;Add Item&quot; to suggest a menu item. Suggestions are reviewed before being added.
           </Text>
         </View>
 
         <View style={styles.faqItem}>
           <Text style={styles.faqQuestion}>What are badges and how do I get them?</Text>
           <Text style={styles.faqAnswer}>
-            Badges are achievements for exploring and rating. View available badges from the drawer ("Badges & Achievements"). Unlock them by using the app!
+            Badges are achievements for exploring and rating. View available badges from the drawer (&quot;Badges & Achievements&quot;). Unlock them by using the app!
           </Text>
         </View>
 
         <View style={styles.faqItem}>
           <Text style={styles.faqQuestion}>How do I change my preferences?</Text>
           <Text style={styles.faqAnswer}>
-            Open the drawer and tap "Boba Preferences" to adjust your taste profile (sweetness, ice, milk base, etc.). This helps personalize your experience.
+            Open the drawer and tap &quot;Boba Preferences&quot; to adjust your taste profile (sweetness, ice, milk base, etc.). This helps personalize your experience.
           </Text>
         </View>
 
         <View style={styles.faqItem}>
           <Text style={styles.faqQuestion}>Is my data private?</Text>
           <Text style={styles.faqAnswer}>
-            Your profile and reviews are visible to other users per the app's social model. You control what you post. See our Privacy Policy for details on data handling.
+            Your profile and reviews are visible to other users per the app&apos;s social model. You control what you post. See our Privacy Policy for details on data handling.
           </Text>
         </View>
 
         <View style={styles.faqItem}>
           <Text style={styles.faqQuestion}>How do I log out?</Text>
           <Text style={styles.faqAnswer}>
-            Open the drawer and tap "Sign Out" at the bottom. You can return anytime by logging back in.
+            Open the drawer and tap &quot;Sign Out&quot; at the bottom. You can return anytime by logging back in.
           </Text>
         </View>
 
         <Text style={styles.footerNote}>
-          Have a suggestion or found a bug? We'd love to hear from you!
+          Have a suggestion or found a bug? We&apos;d love to hear from you!
         </Text>
 
         <Text style={styles.footerSpacer} />

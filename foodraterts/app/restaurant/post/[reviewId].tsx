@@ -213,7 +213,7 @@ export default function PostDetailScreen() {
 
                         {post.notes ? (
                             <View style={styles.notesBox}>
-                                <Text style={styles.notesText}>"{post.notes}"</Text>
+                                <Text style={styles.notesText}>&quot;{post.notes}&quot;</Text>
                             </View>
                         ) : null}
 

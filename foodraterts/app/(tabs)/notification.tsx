@@ -185,7 +185,7 @@ export default function NotificationScreen() {
                typeof notification.message === "string" &&
                notification.message.trim().length > 0 && (
                 <Text style={styles.commentPreview} numberOfLines={1}>
-                  "{notification.message}"
+                  &quot;{notification.message}&quot;
                 </Text>
               )}
 
@@ -317,7 +317,7 @@ export default function NotificationScreen() {
             <Ionicons name="notifications-off-outline" size={64} color="#ccc" />
             <Text style={styles.emptyText}>No notifications yet</Text>
             <Text style={styles.emptySubtext}>
-              When someone interacts with your posts, you'll see it here
+              When someone interacts with your posts, you&apos;ll see it here
             </Text>
           </View>
         )}
