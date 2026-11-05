@@ -103,7 +103,7 @@ export default function OnboardingScreen() {
                         <View style={styles.emojiContainer}>
                             <Text style={styles.emoji}>👋</Text>
                         </View>
-                        <Text style={styles.stepTitle}>Welcome to FoodRater!</Text>
+                        <Text style={styles.stepTitle}>Welcome to BuhEats!</Text>
                         <Text style={styles.stepDescription}>
                             Discover amazing restaurants and share your food experiences with our community
                         </Text>
@@ -221,7 +221,7 @@ export default function OnboardingScreen() {
                         <View style={styles.tipBox}>
                             <Ionicons name="information-circle-outline" size={16} color="#6c3b3b" />
                             <Text style={styles.tipText}>
-                                Don't worry! You can always change these preferences later in settings.
+                                Don&apos;t worry! You can always change these preferences later in settings.
                             </Text>
                         </View>
                     </View>
@@ -233,9 +233,9 @@ export default function OnboardingScreen() {
                         <View style={styles.emojiContainer}>
                             <Text style={styles.emoji}>🎉</Text>
                         </View>
-                        <Text style={styles.stepTitle}>You're All Set!</Text>
+                        <Text style={styles.stepTitle}>You&apos;re All Set!</Text>
                         <Text style={styles.stepDescription}>
-                            Here's a quick overview of what you can do with FoodRater
+                            Here&apos;s a quick overview of what you can do with BuhEats
                         </Text>
 
                         <View style={styles.featuresList}>

@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "foodraterts",
+    "name": "BuhEats",
     "slug": "foodraterts",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "foodraterts",
+    "scheme": "buheats",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.chang88s.foodraterts",
+      "supportsTablet": false,
+      "bundleIdentifier": "com.chang88s.buheats",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -21,7 +21,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.chang88s.foodraterts"
+      "package": "com.chang88s.buheats"
     },
     "web": {
       "bundler": "metro",

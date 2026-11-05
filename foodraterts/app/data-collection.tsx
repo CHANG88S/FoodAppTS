@@ -133,7 +133,7 @@ export default function DataCollectionScreen() {
                     <Ionicons name="shield-checkmark" size={32} color="#6c3b3b" />
                     <Text style={styles.introTitle}>Control Your Data</Text>
                     <Text style={styles.introText}>
-                        Manage how we collect and use your data to improve FoodRater. You can change these settings anytime.
+                        Manage how we collect and use your data to improve BuhEats. You can change these settings anytime.
                     </Text>
                 </View>
 

@@ -79,7 +79,7 @@ const LoginIndex = () => {
     if (isSignUpMode && !is13OrOlder) {
       return Alert.alert(
         "Age Requirement",
-        "You must be at least 13 years old to create a FoodRater account."
+        "You must be at least 13 years old to create a BuhEats account."
       );
     }
 
@@ -98,7 +98,7 @@ const LoginIndex = () => {
 
       if (isSignUpMode) {
         await signIn("password", { email, password, username, name, flow: "signUp" });
-        Alert.alert('Account Created!', 'Welcome to FoodRater!');
+        Alert.alert('Account Created!', 'Welcome to BuhEats!');
         // New users go through the welcome tour (first use only)
         router.replace({ pathname: '/onboarding', params: { from: 'signup' } });
       } else {
@@ -174,7 +174,7 @@ const LoginIndex = () => {
       });
 
       if (fullName) {
-        Alert.alert("Account Created!", "Welcome to FoodRater!");
+        Alert.alert("Account Created!", "Welcome to BuhEats!");
         router.replace({ pathname: "/onboarding", params: { from: "signup" } });
       } else {
         router.replace("/(tabs)/home");
@@ -205,7 +205,7 @@ const LoginIndex = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>FoodRater</Text>
+      <Text style={styles.title}>BuhEats</Text>
       
       {isSignUpMode && (
         <>
@@ -335,7 +335,7 @@ const LoginIndex = () => {
 
       <View style={styles.termsRow}>
         <Text style={styles.termsText}>By continuing, you agree to our </Text>
-        <TouchableOpacity onPress={() => router.push('/terms')}>
+        <TouchableOpacity onPress={() => router.push('/tos')}>
           <Text style={styles.termsLink}>Terms of Service</Text>
         </TouchableOpacity>
         <Text style={styles.termsText}> and </Text>

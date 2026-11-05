@@ -17,7 +17,7 @@ import BookmarksScreen from '../bookmarks';
 import AccountSettingsScreen from '../account-settings';
 import BobaPreferencesScreen from '../boba-preferences';
 import PrivacyScreen from '../privacy';
-import TermsScreen from '../terms';
+import TosScreen from '../tos';
 import TOSScreen from '../tos';
 import DataCollectionScreen from '../data-collection';
 import HelpScreen from '../help';
@@ -256,8 +256,8 @@ export default function TabsDrawerLayout() {
             />
 
             <Drawer.Screen
-                name="terms"
-                component={TermsScreen}
+                name="tos"
+                component={TosScreen}
                 options={{
                     title: "Terms & Conditions",
                     drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Terms & Conditions</Text>,

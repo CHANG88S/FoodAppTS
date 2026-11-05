@@ -39,7 +39,7 @@ const BOUNDARY_TERMS = [
 ];
 
 export const PROFANITY_ERROR_MESSAGE =
-  "This contains language that isn't allowed on FoodRater. Please revise it.";
+  "This contains language that isn't allowed on BuhEats. Please revise it.";
 
 // Lowercase and resolve common leetspeak substitutions. Non-letter
 // characters become spaces so "a$s" normalizes cleanly. "@" and "0" are

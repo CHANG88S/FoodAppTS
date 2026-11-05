@@ -9,7 +9,7 @@ import { Doc } from "./_generated/dataModel";
 // and rotates them automatically. Tokens are RS256 JWTs whose `aud` is
 // our bundle id and whose `sub` is the stable, per-developer Apple user id.
 const APPLE_JWKS = createRemoteJWKSet(new URL("https://appleid.apple.com/auth/keys"));
-const APPLE_BUNDLE_ID = "com.chang88s.foodraterts";
+const APPLE_BUNDLE_ID = "com.chang88s.buheats";
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [

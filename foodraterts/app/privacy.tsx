@@ -23,7 +23,7 @@ export default function PrivacyScreen() {
 
         <Text style={styles.sectionTitle}>1. Information We Collect</Text>
         <Text style={styles.sectionText}>
-          FoodRater collects the following information to provide and improve our service:
+          BuhEats collects the following information to provide and improve our service:
         </Text>
         <Text style={styles.bullet}>• <Text style={styles.bold}>Account Information:</Text> Email address, username, display name, and password (encrypted) required to create an account.</Text>
         <Text style={styles.bullet}>• <Text style={styles.bold}>Profile Information:</Text> Optional profile picture, city, taste preferences (sweetness, ice level, milk base, favorite cuisines, dietary restrictions, spice tolerance).</Text>
@@ -34,7 +34,7 @@ export default function PrivacyScreen() {
         <Text style={styles.sectionText}>
           We use your information to:
         </Text>
-        <Text style={styles.bullet}>• Provide, maintain, and improve the FoodRater service</Text>
+        <Text style={styles.bullet}>• Provide, maintain, and improve the BuhEats service</Text>
         <Text style={styles.bullet}>• Process your reviews, ratings, and social features</Text>
         <Text style={styles.bullet}>• Enable user profiles and social interactions (following, notifications)</Text>
         <Text style={styles.bullet}>• Respond to your requests and customer support</Text>
@@ -72,7 +72,7 @@ export default function PrivacyScreen() {
 
         <Text style={styles.sectionTitle}>7. Children&apos;s Privacy</Text>
         <Text style={styles.sectionText}>
-          FoodRater is not intended for children under 13. We do not knowingly collect data from children under 13. You must be at least 13 years old to create an account, confirmed at sign-up.
+          BuhEats is not intended for children under 13. We do not knowingly collect data from children under 13. You must be at least 13 years old to create an account, confirmed at sign-up.
         </Text>
 
         <Text style={styles.sectionTitle}>8. Changes to This Policy</Text>

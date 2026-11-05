@@ -92,7 +92,7 @@ export default function TermsofServiceScreen() {
             title: 'Tracking & Local Storage',
             icon: 'time-outline',
             content: [
-                '• No Cookies: FoodRater is a native app and does not use browser cookies',
+                '• No Cookies: BuhEats is a native app and does not use browser cookies',
                 '• Local Storage: Your login token is stored securely on your device using Expo SecureStore',
                 '• Push Notifications: If you enable notifications, your device push token is stored to deliver them',
                 '• No Ad Tracking: No advertising identifiers or cross-app tracking are used',
@@ -142,10 +142,10 @@ export default function TermsofServiceScreen() {
             <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
                 <View style={styles.introCard}>
                     <Ionicons name="document-text-outline" size={32} color="#6c3b3b" />
-                    <Text style={styles.introTitle}>FoodRater Terms of Service</Text>
+                    <Text style={styles.introTitle}>BuhEats Terms of Service</Text>
                     <Text style={styles.introText}>Last updated: November 2026</Text>
                     <Text style={styles.introDescription}>
-                        Welcome to FoodRater! This Terms of Service governs your use of our app and explains how we collect, use, and protect your data. By using FoodRater, you agree to these terms.
+                        Welcome to BuhEats! This Terms of Service governs your use of our app and explains how we collect, use, and protect your data. By using BuhEats, you agree to these terms.
                     </Text>
                 </View>
 
@@ -201,7 +201,7 @@ export default function TermsofServiceScreen() {
 
                 <View style={styles.legalNotice}>
                     <Text style={styles.legalText}>
-                        By using FoodRater, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
+                        By using BuhEats, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
                     </Text>
                 </View>
             </ScrollView>
