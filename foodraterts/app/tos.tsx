@@ -192,10 +192,10 @@ export default function TermsofServiceScreen() {
                     </Text>
                     <TouchableOpacity
                         style={styles.contactButton}
-                        onPress={() => Linking.openURL('mailto:support@foodrater.app')}
+                        onPress={() => Linking.openURL('mailto:support@buheats.com')}
                     >
                         <Ionicons name="mail-outline" size={16} color="#6c3b3b" />
-                        <Text style={styles.contactText}>support@foodrater.app</Text>
+                        <Text style={styles.contactText}>support@buheats.com</Text>
                     </TouchableOpacity>
                 </View>
 

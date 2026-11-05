@@ -8,7 +8,7 @@ export default function HelpScreen() {
   const router = useRouter();
 
   const handleContactSupport = () => {
-    Linking.openURL('mailto:support@foodrater.app').catch(() => {
+    Linking.openURL('mailto:support@buheats.com').catch(() => {
       Alert.alert('Error', 'Unable to open email app');
     });
   };

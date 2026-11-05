@@ -49,9 +49,12 @@ jobs:
         run: |
           npm outdated || true
 
+      # Report-only: known advisories in transitive deps of react-native/expo
+      # can't be patched without a framework upgrade (same policy as CI).
       - name: Check for security vulnerabilities
         working-directory: ./foodraterts
         run: npm audit --audit-level=high
+        continue-on-error: true
 
   # Project health report
   project-health:

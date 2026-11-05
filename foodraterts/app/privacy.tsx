@@ -84,7 +84,7 @@ export default function PrivacyScreen() {
         <Text style={styles.sectionText}>
           For questions about this policy or your data, contact us at:
         </Text>
-        <Text style={styles.contactEmail}>support@foodrater.app</Text>
+        <Text style={styles.contactEmail}>support@buheats.com</Text>
 
         <Text style={styles.footerSpacer} />
       </ScrollView>
