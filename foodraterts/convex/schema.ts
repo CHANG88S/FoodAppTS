@@ -12,6 +12,7 @@ export default defineSchema({
     username: v.string(),
     email: v.string(),
     passwordHash: v.optional(v.string()),
+    appleId: v.optional(v.string()),
     profilePicture: v.optional(v.string()),
     city: v.optional(v.string()),
     role: v.union(
@@ -36,6 +37,7 @@ export default defineSchema({
     lastCheckedMessagesAt: v.optional(v.number()),
   })
     .index("by_email", ["email"])
+    .index("by_appleId", ["appleId"])
     .index("by_role", ["role"]),
 
   // 1. MASTER RESTAURANT DIRECTORY

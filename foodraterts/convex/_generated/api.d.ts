@@ -9,6 +9,7 @@
  */
 
 import type * as analytics from "../analytics.js";
+import type * as appleAuth from "../appleAuth.js";
 import type * as auth from "../auth.js";
 import type * as authz from "../authz.js";
 import type * as blocks from "../blocks.js";
@@ -21,6 +22,7 @@ import type * as messaging from "../messaging.js";
 import type * as moderation from "../moderation.js";
 import type * as monitoring from "../monitoring.js";
 import type * as notifications from "../notifications.js";
+import type * as profanity from "../profanity.js";
 import type * as query from "../query.js";
 import type * as rateLimiter from "../rateLimiter.js";
 import type * as restaurantImport from "../restaurantImport.js";
@@ -40,6 +42,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
+  appleAuth: typeof appleAuth;
   auth: typeof auth;
   authz: typeof authz;
   blocks: typeof blocks;
@@ -52,6 +55,7 @@ declare const fullApi: ApiFromModules<{
   moderation: typeof moderation;
   monitoring: typeof monitoring;
   notifications: typeof notifications;
+  profanity: typeof profanity;
   query: typeof query;
   rateLimiter: typeof rateLimiter;
   restaurantImport: typeof restaurantImport;

@@ -10,7 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.chang88s.foodraterts"
+      "bundleIdentifier": "com.chang88s.foodraterts",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -39,18 +42,12 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
-          "mediaLibraryPermission": "Allow $(PRODUCT_NAME) to access your media library.",
-          "storagePermission": "Allow $(PRODUCT_NAME) to access your storage.",
-          "filesPermission": "Allow $(PRODUCT_NAME) to access your files.",
-          "notificationsPermission": "Allow $(PRODUCT_NAME) to send you notifications.",
-          "locationPermission": "Allow $(PRODUCT_NAME) to access your location.",
-          "backgroundLocationPermission": "Allow $(PRODUCT_NAME) to access your location in the background",
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera.",
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos so you can upload images.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera so you can take photos."
         }
       ],
       "expo-secure-store",
+      "expo-apple-authentication",
       "react-native-edge-to-edge",
       "expo-font",
       [

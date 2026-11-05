@@ -1,9 +1,10 @@
-import React, { useState } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, Alert, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { StyleSheet, Text, TextInput, TouchableOpacity, Alert, View, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthActions } from "@convex-dev/auth/react";
+import * as AppleAuthentication from "expo-apple-authentication";
 
 const LoginIndex = () => {  
   const router = useRouter();
@@ -16,6 +17,16 @@ const LoginIndex = () => {
   const [password, setPassword] = useState("");
   const [is13OrOlder, setIs13OrOlder] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [appleAuthAvailable, setAppleAuthAvailable] = useState(false);
+
+  // Sign in with Apple only exists on iOS devices with the capability
+  useEffect(() => {
+    if (Platform.OS === "ios") {
+      AppleAuthentication.isAvailableAsync()
+        .then(setAppleAuthAvailable)
+        .catch(() => setAppleAuthAvailable(false));
+    }
+  }, []);
 
   // Track submission attempt and field interactions
   const [submitted, setSubmitted] = useState(false);
@@ -123,6 +134,57 @@ const LoginIndex = () => {
       console.error("Guest access error:", error);
       // Still allow guest access even if sign out fails
       router.replace('/(tabs)/home');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setLoading(true);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      if (!credential.identityToken) {
+        throw new Error("No identity token returned by Apple");
+      }
+
+      // Apple only returns the name on first authorization — use that as
+      // the signal for a first-time sign-in so new users get the tour.
+      const fullName = credential.fullName
+        ? [credential.fullName.givenName, credential.fullName.familyName]
+            .filter(Boolean)
+            .join(" ") || undefined
+        : undefined;
+
+      // Clear any cached session before signing in (same as password flow)
+      try {
+        await signOut();
+      } catch {
+        console.log("No existing session to sign out");
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      await signIn("apple", {
+        identityToken: credential.identityToken,
+        ...(fullName ? { fullName } : {}),
+      });
+
+      if (fullName) {
+        Alert.alert("Account Created!", "Welcome to FoodRater!");
+        router.replace({ pathname: "/onboarding", params: { from: "signup" } });
+      } else {
+        router.replace("/(tabs)/home");
+      }
+    } catch (error: any) {
+      // User cancelled the Apple sheet — not an error worth an alert
+      if (error?.code !== "ERR_REQUEST_CANCELED") {
+        console.error(error);
+        Alert.alert("Apple Sign-In Failed", error?.message || "Could not sign in with Apple.");
+      }
     } finally {
       setLoading(false);
     }
@@ -248,7 +310,20 @@ const LoginIndex = () => {
           {loading ? "Processing..." : isSignUpMode ? "Create Account" : "Login"}
         </Text>
       </TouchableOpacity>
-      
+
+      {appleAuthAvailable && (
+        <TouchableOpacity
+          style={styles.appleButton}
+          onPress={handleAppleSignIn}
+          disabled={loading}
+        >
+          <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
+          <Text style={styles.appleButtonText}>
+            {loading ? "Processing..." : "Continue with Apple"}
+          </Text>
+        </TouchableOpacity>
+      )}
+
       <TouchableOpacity
         style={styles.switchModeButton}
         onPress={handleToggleMode}
@@ -309,6 +384,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,
+  },
+  appleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 50,
+    width: '90%',
+    backgroundColor: '#000000',
+    borderRadius: 15,
+    marginTop: 10,
+    gap: 8,
+    shadowColor: '#9E9E9E',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  appleButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   errorText: {
     width: '90%',
