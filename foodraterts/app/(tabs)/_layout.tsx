@@ -18,7 +18,6 @@ import AccountSettingsScreen from '../account-settings';
 import BobaPreferencesScreen from '../boba-preferences';
 import PrivacyScreen from '../privacy';
 import TosScreen from '../tos';
-import TOSScreen from '../tos';
 import DataCollectionScreen from '../data-collection';
 import HelpScreen from '../help';
 import ModerationScreen from '../moderation';
@@ -263,18 +262,6 @@ export default function TabsDrawerLayout() {
                     drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Terms & Conditions</Text>,
                     drawerIcon: ({ color, size }) => (
                         <Ionicons name="document-text-outline" size={size} color={color} />
-                    ),
-                }}
-            />
-
-            <Drawer.Screen
-                name="tos"
-                component={TOSScreen}
-                options={{
-                    title: "Data & AI Policy",
-                    drawerLabel: () => <Text style={{ fontSize: 15, fontWeight: '500' }}>Data & AI Policy</Text>,
-                    drawerIcon: ({ color, size }) => (
-                        <Ionicons name="bulb-outline" size={size} color={color} />
                     ),
                 }}
             />
