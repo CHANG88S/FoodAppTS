@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signing you in… — BuhEats</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #FAFAFA;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #3C4858;
+    }
+    .card { text-align: center; padding: 24px; max-width: 320px; }
+    .brand { color: #6c3b3b; font-size: 24px; font-weight: 800; margin-bottom: 16px; }
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid #e5e7eb;
+      border-top-color: #6c3b3b;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .fallback { display: none; font-size: 14px; color: #6B7280; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">BuhEats</div>
+    <div class="spinner"></div>
+    <p>Signing you in…</p>
+    <p class="fallback" id="fallback">
+      If BuhEats doesn't open automatically, return to the app and try signing in again.
+    </p>
+  </div>
+  <script>
+    // OAuth landing page for the BuhEats mobile app (Convex Auth 2.0 flow).
+    // Convex's callback 303s here with a one-time ticket in the query string;
+    // an https redirect can't be detected by the app's auth session on iOS,
+    // so this page bounces the ticket to the app's custom scheme, which the
+    // auth session watches for and intercepts.
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var code = params.get("convexAuthCode");
+      var error = params.get("convexAuthError");
+
+      if (!code && !error) {
+        document.querySelector(".spinner").style.display = "none";
+        document.body.querySelector("p").textContent =
+          "This page is part of the BuhEats sign-in flow and can't be opened directly.";
+        return;
+      }
+
+      var target = "buheats://callback?";
+      if (code) target += "convexAuthCode=" + encodeURIComponent(code);
+      if (error) target += "convexAuthError=" + encodeURIComponent(error);
+      window.location.replace(target);
+
+      // If the app never takes over (e.g. this opened in a regular browser),
+      // show the fallback message after a beat.
+      setTimeout(function () {
+        document.getElementById("fallback").style.display = "block";
+      }, 2000);
+    })();
+  </script>
+</body>
+</html>
