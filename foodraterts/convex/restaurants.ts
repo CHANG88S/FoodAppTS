@@ -3,6 +3,45 @@ import { mutation, query, action } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api } from "./_generated/api";
+import { requireStaff } from "./authz";
+
+const MAPBOX_GEOCODING_URL = "https://api.mapbox.com/geocoding/v5/mapbox.places";
+
+// Geocode an address with the Mapbox Geocoding API (requires MAPBOX_ACCESS_TOKEN
+// in the Convex environment). Returns precise coordinates, or null if unavailable.
+async function mapboxGeocode(
+  address: string,
+  city: string,
+  state: string,
+  zipcode?: string
+): Promise<{ lat: number; lng: number; zipcode?: string } | null> {
+  const token = process.env.MAPBOX_ACCESS_TOKEN;
+  if (!token) return null;
+
+  const query = [address, city, state, zipcode].filter(Boolean).join(", ");
+  const url = `${MAPBOX_GEOCODING_URL}/${encodeURIComponent(query)}.json?country=US&limit=1&access_token=${token}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const feature = data?.features?.[0];
+    if (!feature || !Array.isArray(feature.center) || feature.center.length !== 2) return null;
+
+    let matchedZipcode: string | undefined;
+    for (const context of feature.context || []) {
+      const match = typeof context.id === "string" ? context.id.match(/^postcode[.-](\d{5})/) : null;
+      if (match) {
+        matchedZipcode = match[1];
+        break;
+      }
+    }
+
+    return { lat: feature.center[1], lng: feature.center[0], zipcode: matchedZipcode };
+  } catch {
+    return null;
+  }
+}
 
 // Helper function to convert zipcode to approximate coordinates
 function zipcodeToCoordinates(zipcode: string): { lat: number; lng: number } | null {
@@ -493,25 +532,21 @@ export const getCoordinatesFromZipcode = query({
   },
 });
 
-export const filterRestaurantsByDistance = query({
+export const filterRestaurantsByCoordinates = query({
   args: {
-    zipcode: v.string(),
+    lat: v.number(),
+    lng: v.number(),
     radiusMiles: v.number(),
   },
   handler: async (ctx, args) => {
-    const userCoords = zipcodeToCoordinates(args.zipcode);
-    if (!userCoords) {
-      return [];
-    }
-
     const allRestaurants = await ctx.db.query("restaurants").collect();
 
     const filteredRestaurants = allRestaurants.filter((restaurant) => {
       if (!restaurant.lat || !restaurant.lng) return false;
 
       const distance = calculateDistance(
-        userCoords.lat,
-        userCoords.lng,
+        args.lat,
+        args.lng,
         restaurant.lat,
         restaurant.lng
       );
@@ -529,6 +564,71 @@ export const filterRestaurantsByDistance = query({
     );
 
     return restaurantsWithUrls;
+  },
+});
+
+// Staff-only: edit restaurant details (name, category, address fields)
+export const updateRestaurant = mutation({
+  args: {
+    restaurantId: v.id("restaurants"),
+    restaurantName: v.optional(v.string()),
+    category: v.optional(v.string()),
+    menuCategories: v.optional(v.array(v.string())),
+    city: v.optional(v.string()),
+    state: v.optional(v.string()),
+    address: v.optional(v.string()),
+    zipcode: v.optional(v.string()),
+    lat: v.optional(v.number()),
+    lng: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    await requireStaff(ctx);
+
+    const restaurant = await ctx.db.get(args.restaurantId);
+    if (!restaurant) {
+      throw new Error("Restaurant not found");
+    }
+
+    const { restaurantId: _ignored, ...updates } = args;
+    const cleaned = Object.fromEntries(
+      Object.entries(updates).filter(([, value]) => value !== undefined)
+    );
+
+    if (Object.keys(cleaned).length > 0) {
+      await ctx.db.patch(args.restaurantId, cleaned);
+    }
+
+    return args.restaurantId;
+  },
+});
+
+// Staff-only: create a restaurant immediately, bypassing the suggestion queue
+export const createRestaurantDirect = mutation({
+  args: {
+    restaurantName: v.string(),
+    address: v.string(),
+    city: v.string(),
+    state: v.string(),
+    zipcode: v.optional(v.string()),
+    category: v.optional(v.string()),
+    placeId: v.optional(v.string()),
+    lat: v.optional(v.number()),
+    lng: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    await requireStaff(ctx);
+
+    return await ctx.db.insert("restaurants", {
+      restaurantName: args.restaurantName.trim(),
+      address: args.address.trim(),
+      city: args.city.trim(),
+      state: args.state.trim().toUpperCase(),
+      zipcode: args.zipcode,
+      category: args.category,
+      placeId: args.placeId,
+      lat: args.lat,
+      lng: args.lng,
+    });
   },
 });
 
@@ -575,26 +675,43 @@ export const geocodeRestaurant = action({
       };
     }
 
-    const coords = zipcodeToCoordinates(zipcode);
-    if (!coords) {
-      return {
-        success: false,
-        error: `Coordinates not found for zipcode ${zipcode}. This zipcode region is not in the database yet.`,
-      };
+    // Prefer precise Mapbox geocoding; fall back to the local zipcode map
+    const mapbox = await mapboxGeocode(
+      restaurant.address || "",
+      restaurant.city || "",
+      restaurant.state || "",
+      zipcode
+    );
+
+    let coords: { lat: number; lng: number };
+    let finalZipcode = zipcode;
+
+    if (mapbox) {
+      coords = { lat: mapbox.lat, lng: mapbox.lng };
+      if (mapbox.zipcode) finalZipcode = mapbox.zipcode;
+    } else {
+      const localCoords = zipcodeToCoordinates(zipcode);
+      if (!localCoords) {
+        return {
+          success: false,
+          error: `Coordinates not found for zipcode ${zipcode}. This zipcode region is not in the database yet.`,
+        };
+      }
+      coords = localCoords;
     }
 
     await ctx.runMutation(api.geocoding.updateRestaurantCoordinates, {
       restaurantId: args.restaurantId,
       lat: coords.lat,
       lng: coords.lng,
-      zipcode,
+      zipcode: finalZipcode,
     });
 
     return {
       success: true,
       latitude: coords.lat,
       longitude: coords.lng,
-      zipcode,
+      zipcode: finalZipcode,
       formattedAddress: fullAddress,
     };
   },
@@ -643,23 +760,40 @@ export const batchGeocodeAllRestaurants = action({
           continue;
         }
 
-        const coords = zipcodeToCoordinates(zipcode);
-        if (!coords) {
-          results.failed++;
-          results.errors.push({
-            restaurantId: restaurant._id as string,
-            name: restaurant.restaurantName,
-            error: `Zipcode ${zipcode} not in coordinates database. Please add manually.`,
-          });
-          results.processed++;
-          continue;
+        // Prefer precise Mapbox geocoding; fall back to the local zipcode map
+        const mapbox = await mapboxGeocode(
+          restaurant.address || "",
+          restaurant.city || "",
+          restaurant.state || "",
+          zipcode
+        );
+
+        let coords: { lat: number; lng: number };
+        let finalZipcode = zipcode;
+
+        if (mapbox) {
+          coords = { lat: mapbox.lat, lng: mapbox.lng };
+          if (mapbox.zipcode) finalZipcode = mapbox.zipcode;
+        } else {
+          const localCoords = zipcodeToCoordinates(zipcode);
+          if (!localCoords) {
+            results.failed++;
+            results.errors.push({
+              restaurantId: restaurant._id as string,
+              name: restaurant.restaurantName,
+              error: `Zipcode ${zipcode} not in coordinates database. Please add manually.`,
+            });
+            results.processed++;
+            continue;
+          }
+          coords = localCoords;
         }
 
         await ctx.runMutation(api.geocoding.updateRestaurantCoordinates, {
           restaurantId: restaurant._id,
           lat: coords.lat,
           lng: coords.lng,
-          zipcode,
+          zipcode: finalZipcode,
         });
 
         results.successful++;

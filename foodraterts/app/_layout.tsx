@@ -53,13 +53,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen
             name="restaurant/[id]"
-            options={{
-              title: "Restaurant Details",
-              headerTintColor: "#6C3B3B",
-              headerStyle: { backgroundColor: "#FAFAF9" },
-              headerBackTitle: "Back",
-              headerShadowVisible: false,
-            }}
+            options={{ headerShown: false }}
           />
         </Stack>
       </ConvexAuthProvider>

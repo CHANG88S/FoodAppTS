@@ -11,7 +11,10 @@ import {
     Alert,
     StatusBar,
     Image,
+    Keyboard,
+    TouchableWithoutFeedback,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation } from 'convex/react';
@@ -23,6 +26,7 @@ import { ReportButton } from '../../../components/ReportButton';
 import type { ThreadedComment } from '../../../components/CommentList';
 
 export default function PostDetailScreen() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const { reviewId, activityType = "rated" } = useLocalSearchParams<{ reviewId: string; activityType?: string }>();
 
@@ -162,10 +166,11 @@ export default function PostDetailScreen() {
     };
 
     return (
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={styles.root}>
             <Stack.Screen options={{ headerShown: false }} />
 
-            <View style={styles.headerBar}>
+            <View style={[styles.headerBar, { paddingTop: insets.top + 12 }]}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
                     <Ionicons name="arrow-back" size={22} color="#1F2937" />
                 </TouchableOpacity>
@@ -185,7 +190,7 @@ export default function PostDetailScreen() {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
                 style={{ flex: 1 }}
             >
-                <ScrollView contentContainerStyle={styles.scrollContent}>
+                <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                     <View style={styles.postCard}>
                         <View style={styles.postHeader}>
                             <View style={styles.avatarPlaceholder}>
@@ -304,6 +309,7 @@ export default function PostDetailScreen() {
                 </View>
             </KeyboardAvoidingView>
         </View>
+        </TouchableWithoutFeedback>
     );
 }
 

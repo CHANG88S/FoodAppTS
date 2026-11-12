@@ -7,11 +7,12 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   ActivityIndicator,
   Alert,
   Modal,
+  Clipboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
@@ -22,6 +23,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { formatTimestamp } from '../../utils/formatters';
 import { ReportButton } from '../../components/ReportButton';
 
+const REACTION_EMOJIS = ['❤️', '😂', '😮', '😢', '😡', '👍'];
+
 export default function ChatScreen() {
   const router = useRouter();
   const { conversationId, otherUserId } = useLocalSearchParams();
@@ -30,6 +33,22 @@ export default function ChatScreen() {
   const [selectedImageAsset, setSelectedImageAsset] = useState<any>(null);
   const [isSending, setIsSending] = useState(false);
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [actionMessage, setActionMessage] = useState<any>(null);
+  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
+
+  // Lift the UI above the keyboard manually (KeyboardAvoidingView is unreliable
+  // on the new architecture)
+  useEffect(() => {
+    const onShow = (e: any) => setKeyboardHeight(e.endCoordinates.height);
+    const onHide = () => setKeyboardHeight(0);
+    const showListener = Keyboard.addListener('keyboardWillShow', onShow);
+    const hideListener = Keyboard.addListener('keyboardWillHide', onHide);
+    return () => {
+      showListener.remove();
+      hideListener.remove();
+    };
+  }, []);
 
   const messages = useQuery(api.messaging.getMessages, {
     conversationId: conversationId as string,
@@ -38,6 +57,11 @@ export default function ChatScreen() {
   const currentUser = useQuery(api.users.viewer);
   const otherUser = useQuery(api.users.getUser, {
     userId: otherUserId as string,
+  });
+
+  // Whether this chat is still a pending message request for the current user
+  const requestState = useQuery(api.messaging.getConversationRequestState, {
+    conversationId: conversationId as string,
   });
 
   // Check if conversation exists, if not create it
@@ -83,10 +107,20 @@ export default function ChatScreen() {
   const generateUploadUrlMutation = useMutation(api.messaging.generateUploadUrl);
   const unsendMessageMutation = useMutation(api.messaging.unsendMessage);
   const markAsReadMutation = useMutation(api.messaging.markMessagesAsRead);
+  const acceptRequestMutation = useMutation(api.messaging.acceptConversationRequest);
+  const reactToMessageMutation = useMutation(api.messaging.reactToMessage);
 
   useEffect(() => {
     markAsReadMutation();
   }, []);
+
+  const handleAcceptRequest = async () => {
+    try {
+      await acceptRequestMutation({ conversationId: conversationId as string });
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to accept request');
+    }
+  };
 
   const blockUserMutation = useMutation(api.moderation.blockUser);
   const blockedUsers = useQuery(api.moderation.getBlockedUsers);
@@ -195,8 +229,6 @@ export default function ChatScreen() {
 
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [4, 3],
       quality: 0.8,
     });
 
@@ -216,8 +248,6 @@ export default function ChatScreen() {
 
     let result = await ImagePicker.launchCameraAsync({
       cameraType: ImagePicker.CameraType.back,
-      allowsEditing: true,
-      aspect: [4, 3],
       quality: 0.8,
     });
 
@@ -247,6 +277,20 @@ export default function ChatScreen() {
         },
       ]
     );
+  };
+
+  const handleReact = (message: any, emoji: string) => {
+    if (!message) return;
+    setActionMessage(null);
+    reactToMessageMutation({ messageId: message._id, emoji }).catch((err: any) => {
+      Alert.alert('Error', err.message || 'Failed to add reaction');
+    });
+  };
+
+  const handleCopyMessage = () => {
+    if (!actionMessage?.content) return;
+    Clipboard.setString(actionMessage.content);
+    setActionMessage(null);
   };
 
   const renderMessage = ({ item }: { item: any }) => {
@@ -281,19 +325,32 @@ export default function ChatScreen() {
         )}
 
         {item.imageStorageId ? (
-          <View style={styles.imageMessageContainer}>
-            <Image
-              source={{ uri: messageImages[item.imageStorageId] || item.imageStorageId }}
-              style={styles.messageImage}
-              resizeMode="cover"
-            />
-          </View>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() =>
+              setViewingImageUrl(messageImages[item.imageStorageId] || item.imageStorageId)
+            }
+            onLongPress={() => setActionMessage(item)}
+          >
+            <View style={styles.imageMessageContainer}>
+              <Image
+                source={{ uri: messageImages[item.imageStorageId] || item.imageStorageId }}
+                style={styles.messageImage}
+                resizeMode="cover"
+              />
+            </View>
+          </TouchableOpacity>
         ) : (
-          <View style={[styles.textMessageContainer, isFromMe && styles.myMessageTextContainer]}>
-            <Text style={[styles.messageText, isFromMe ? styles.myMessageText : styles.theirMessageText]}>
-              {item.content}
-            </Text>
-          </View>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onLongPress={() => setActionMessage(item)}
+          >
+            <View style={[styles.textMessageContainer, isFromMe && styles.myMessageTextContainer]}>
+              <Text style={[styles.messageText, isFromMe ? styles.myMessageText : styles.theirMessageText]}>
+                {item.content}
+              </Text>
+            </View>
+          </TouchableOpacity>
         )}
 
         <View style={styles.messageFooter}>
@@ -309,6 +366,30 @@ export default function ChatScreen() {
             </TouchableOpacity>
           )}
         </View>
+
+        {item.reactions && Object.keys(item.reactions).length > 0 && (
+          <View style={styles.reactionsRow}>
+            {Object.entries(
+              Object.values(item.reactions as Record<string, string>).reduce((counts: Record<string, number>, emoji) => {
+                counts[emoji] = (counts[emoji] || 0) + 1;
+                return counts;
+              }, {})
+            ).map(([emoji, count]) => {
+              const isMine = Boolean(currentUser && item.reactions?.[currentUser._id] === emoji);
+              return (
+                <TouchableOpacity
+                  key={emoji}
+                  style={[styles.reactionPill, isMine && styles.reactionPillMine]}
+                  onPress={() => handleReact(item, emoji)}
+                >
+                  <Text style={styles.reactionText}>
+                    {emoji}{count > 1 ? ` ${count}` : ''}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
       </View>
     );
   };
@@ -316,18 +397,39 @@ export default function ChatScreen() {
   const otherUserName = otherUser?.name || otherUser?.username || 'User';
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    <SafeAreaView
+      style={styles.container}
+      edges={Platform.OS === 'ios' && keyboardHeight > 0 ? ["top"] : ["top", "bottom"]}
+    >
+      <View
+        style={[
+          styles.container,
+          Platform.OS === 'ios' && keyboardHeight > 0 && { paddingBottom: keyboardHeight },
+        ]}
       >
         <Stack.Screen
           options={{
             headerShown: true,
-            title: otherUserName,
             headerStyle: { backgroundColor: '#FFFFFF' },
-            headerTitleStyle: { color: '#1F2937', fontWeight: '700' },
+            headerTitle: () => (
+              <TouchableOpacity
+                style={styles.headerTitleButton}
+                onPress={() =>
+                  router.push({
+                    pathname: '/chat-info/[conversationId]' as any,
+                    params: {
+                      conversationId: conversationId as string,
+                      otherUserId: otherUserId as string,
+                    },
+                  } as any)
+                }
+              >
+                <Text style={styles.headerTitleText} numberOfLines={1}>
+                  {otherUserName}
+                </Text>
+                <Ionicons name="chevron-forward" size={15} color="#6B7280" />
+              </TouchableOpacity>
+            ),
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.back()}>
                 <Ionicons name="arrow-back" size={24} color="#1F2937" />
@@ -379,6 +481,23 @@ export default function ChatScreen() {
               }}
             >
               <Ionicons name="close-circle" size={24} color="#DC2626" />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {requestState?.isPendingRequest && !isBlocked && (
+          <View style={styles.requestBanner}>
+            <View style={styles.requestBannerTextContainer}>
+              <Text style={styles.requestBannerTitle}>Message request</Text>
+              <Text style={styles.requestBannerSubtitle}>
+                Accept or reply to move this chat out of Requests.
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.acceptRequestButton}
+              onPress={handleAcceptRequest}
+            >
+              <Text style={styles.acceptRequestButtonText}>Accept</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -460,7 +579,89 @@ export default function ChatScreen() {
             </View>
           </View>
         </Modal>
-      </KeyboardAvoidingView>
+
+        {/* Full-screen image viewer (tap anywhere to close) */}
+        <Modal
+          visible={!!viewingImageUrl}
+          transparent={true}
+          animationType="fade"
+          statusBarTranslucent
+          onRequestClose={() => setViewingImageUrl(null)}
+        >
+          <TouchableOpacity
+            style={styles.viewerOverlay}
+            activeOpacity={1}
+            onPress={() => setViewingImageUrl(null)}
+          >
+            <Image
+              source={{ uri: viewingImageUrl || undefined }}
+              style={styles.viewerImage}
+              resizeMode="contain"
+            />
+            <View style={styles.viewerCloseBadge} pointerEvents="none">
+              <Ionicons name="close" size={24} color="#FFFFFF" />
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
+        {/* Message action sheet — emoji reply / copy / unsend */}
+        <Modal
+          visible={!!actionMessage}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setActionMessage(null)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setActionMessage(null)}
+          >
+            <TouchableOpacity activeOpacity={1} style={styles.actionSheet}>
+              <View style={styles.emojiRow}>
+                {REACTION_EMOJIS.map((emoji) => (
+                  <TouchableOpacity
+                    key={emoji}
+                    style={styles.emojiButton}
+                    onPress={() => handleReact(actionMessage, emoji)}
+                  >
+                    <Text style={styles.emojiText}>{emoji}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {actionMessage && !actionMessage.imageStorageId && (
+                <TouchableOpacity style={styles.actionSheetOption} onPress={handleCopyMessage}>
+                  <Ionicons name="copy-outline" size={22} color="#1F2937" />
+                  <Text style={styles.actionSheetOptionText}>Copy</Text>
+                </TouchableOpacity>
+              )}
+
+              {actionMessage && actionMessage.senderId === currentUser?._id && (
+                <TouchableOpacity
+                  style={styles.actionSheetOption}
+                  onPress={() => {
+                    const messageId = actionMessage._id;
+                    setActionMessage(null);
+                    handleUnsendMessage(messageId);
+                  }}
+                >
+                  <Ionicons name="trash-outline" size={22} color="#DC2626" />
+                  <Text style={[styles.actionSheetOptionText, styles.actionSheetDestructive]}>
+                    Unsend
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={[styles.actionSheetOption, styles.cancelOption]}
+                onPress={() => setActionMessage(null)}
+              >
+                <Text style={[styles.actionSheetOptionText, styles.cancelText]}>Cancel</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
+      </View>
     </SafeAreaView>
   );
 }
@@ -474,6 +675,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  headerTitleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    maxWidth: 230,
+  },
+  headerTitleText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937',
+    maxWidth: 200,
   },
   headerActionButton: {
     padding: 4,
@@ -497,6 +709,40 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#6c3b3b',
+  },
+  requestBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    gap: 12,
+  },
+  requestBannerTextContainer: {
+    flex: 1,
+  },
+  requestBannerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  requestBannerSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  acceptRequestButton: {
+    backgroundColor: '#6c3b3b',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  acceptRequestButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
   },
   messagesList: {
     flexGrow: 1,
@@ -576,6 +822,86 @@ const styles = StyleSheet.create({
   unsendButton: {
     marginLeft: 8,
     padding: 2,
+  },
+  reactionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 4,
+  },
+  reactionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  reactionPillMine: {
+    borderColor: '#6c3b3b',
+    backgroundColor: '#F9F1F1',
+  },
+  reactionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  viewerOverlay: {
+    flex: 1,
+    backgroundColor: '#000000',
+    justifyContent: 'center',
+  },
+  viewerImage: {
+    width: '100%',
+    height: '100%',
+  },
+  viewerCloseBadge: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 16,
+    paddingBottom: 40,
+  },
+  emojiRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+    marginBottom: 8,
+  },
+  emojiButton: {
+    padding: 6,
+  },
+  emojiText: {
+    fontSize: 30,
+  },
+  actionSheetOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  actionSheetOptionText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  actionSheetDestructive: {
+    color: '#DC2626',
   },
   unsentMessageContainer: {
     alignSelf: 'center',

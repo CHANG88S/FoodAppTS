@@ -6,16 +6,6 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const COLOR_OPTIONS = [
-    { name: 'No Theme', value: '#FFFFFF' },
-    { name: 'Classic Milk Tea', value: '#D4A574' },
-    { name: 'Oolong Milk Tea', value: '#E2C097' },
-    { name: 'Jasmine Milk Tea', value: '#E8DCC8' },
-    { name: 'Matcha Latte', value: '#A8C69F' },
-    { name: 'Thai Tea', value: '#FF9966' },
-    { name: 'Taro Milk Tea', value: '#d9bffd' },
-];
-
 const SWEETNESS_OPTIONS = [
     { value: 0, label: '0' },
     { value: 25, label: '25' },
@@ -40,7 +30,6 @@ export default function BobaPreferencesScreen() {
     const [sweetness, setSweetness] = useState(50);
     const [iceLevel, setIceLevel] = useState(50);
     const [milkBase, setMilkBase] = useState('Oat Milk');
-    const [favoriteColor, setFavoriteColor] = useState('#6c3b3b');
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
@@ -49,7 +38,6 @@ export default function BobaPreferencesScreen() {
             if (prefs.sweetness !== undefined) setSweetness(prefs.sweetness);
             if (prefs.iceLevel !== undefined) setIceLevel(prefs.iceLevel);
             if (prefs.milkBase) setMilkBase(prefs.milkBase);
-            if (prefs.favoriteColor) setFavoriteColor(prefs.favoriteColor);
         }
     }, [currentUser]);
 
@@ -60,7 +48,6 @@ export default function BobaPreferencesScreen() {
                 sweetness,
                 iceLevel,
                 milkBase,
-                favoriteColor,
             });
             Alert.alert('Success', 'Your boba preferences have been saved!');
             router.back();
@@ -169,55 +156,6 @@ export default function BobaPreferencesScreen() {
                                 );
                             })}
                         </View>
-                    </View>
-                </View>
-
-                {/* Color/Theme Customization */}
-                <View style={styles.card}>
-                    <Text style={styles.cardTitle}>App Theme Color</Text>
-                    <Text style={styles.cardSubtitle}>
-                        Pick your favorite color to personalize your app experience
-                    </Text>
-
-                    <View style={styles.colorGrid}>
-                        {COLOR_OPTIONS.map((color) => {
-                            const isSelected = favoriteColor === color.value;
-                            return (
-                                <TouchableOpacity
-                                    key={color.value}
-                                    style={[
-                                        styles.colorOption,
-                                        isSelected && {
-                                            borderColor: color.value === '#FFFFFF' ? '#9CA3AF' : color.value,
-                                            backgroundColor: color.value === '#FFFFFF' ? '#F3F4F6' : color.value + '15',
-                                            shadowColor: color.value,
-                                            shadowOffset: { width: 0, height: 2 },
-                                            shadowOpacity: 0.15,
-                                            shadowRadius: 4,
-                                            elevation: 2,
-                                        }
-                                    ]}
-                                    onPress={() => setFavoriteColor(color.value)}
-                                >
-                                    <View style={[styles.colorSwatch, { backgroundColor: color.value }]} />
-                                    <Text style={[
-                                        styles.colorName,
-                                        isSelected && { color: color.value === '#FFFFFF' ? '#1F2937' : color.value, fontWeight: '700' }
-                                    ]}>
-                                        {color.name}
-                                    </Text>
-                                    {isSelected && (
-                                        <Ionicons name="checkmark-circle" size={20} color={color.value === '#FFFFFF' ? '#374151' : color.value} />
-                                    )}
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-
-                    {/* Preview */}
-                    <View style={styles.previewSection}>
-                        <Text style={styles.previewLabel}>Preview with your color:</Text>
-                        <View style={[styles.previewRectangle, { backgroundColor: favoriteColor, borderColor: favoriteColor === '#FFFFFF' ? '#E5E7EB' : '#000000' }]} />
                     </View>
                 </View>
 
@@ -351,51 +289,6 @@ const styles = StyleSheet.create({
     },
     textDark: {
         color: '#4B5563',
-    },
-    colorGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 10,
-    },
-    colorOption: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 20,
-        borderWidth: 1.5,
-        borderColor: '#E5E7EB',
-        backgroundColor: '#FFFFFF',
-    },
-    colorSwatch: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.1)',
-    },
-    colorName: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#6B7280',
-    },
-    previewSection: {
-        gap: 12,
-        paddingTop: 8,
-        borderTopWidth: 1,
-        borderTopColor: '#F3F4F6',
-    },
-    previewLabel: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#374151',
-    },
-    previewRectangle: {
-        height: 100,
-        borderRadius: 16,
-        borderWidth: 2,
-        alignSelf: 'stretch',
     },
     saveButton: {
         backgroundColor: '#6c3b3b',

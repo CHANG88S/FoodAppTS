@@ -45,6 +45,7 @@ export default defineSchema({
     placeId: v.optional(v.string()),
     restaurantName: v.string(),
     category: v.optional(v.string()),
+    menuCategories: v.optional(v.array(v.string())), // Staff-defined menu item categories for this place
     city: v.string(),
     state: v.string(),
     address: v.string(),
@@ -214,6 +215,8 @@ export default defineSchema({
   conversations: defineTable({
     participant1Id: v.string(), // First participant (for 1:1 DMs)
     participant2Id: v.string(), // Second participant (for 1:1 DMs)
+    participant1Accepted: v.optional(v.boolean()), // Participant 1 has accepted the message request
+    participant2Accepted: v.optional(v.boolean()), // Participant 2 has accepted the message request
     lastMessageAt: v.number(),
     createdAt: v.number(),
   })
@@ -227,6 +230,7 @@ export default defineSchema({
     content: v.string(), // Text content
     imageStorageId: v.optional(v.id("_storage")), // Optional image
     isUnsent: v.boolean(), // True if message was unsent
+    reactions: v.optional(v.record(v.id("users"), v.string())), // Emoji reactions: userId -> emoji
     createdAt: v.number(),
   })
     .index("by_conversation", ["conversationId"])

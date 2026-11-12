@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { useQuery, useMutation } from 'convex/react';
@@ -206,6 +208,7 @@ export default function ModerationScreen() {
   const isLoading = !placeSuggestions || !menuItemSuggestions || !pendingFlags || !pendingUserReports;
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <SafeAreaView style={styles.root} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.headerBar}>
@@ -266,7 +269,7 @@ export default function ModerationScreen() {
           </Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           {activeTab === 'places' && suggestions.map((suggestion: any) => (
             <View key={suggestion._id} style={styles.card}>
               <PlaceSuggestionCard suggestion={suggestion} />
@@ -275,7 +278,7 @@ export default function ModerationScreen() {
                 <View style={styles.rejectForm}>
                   <TextInput
                     style={styles.rejectInput}
-                    placeholder="Rejection reason (optional)"
+                    placeholder="Rejection reason (optional)" placeholderTextColor="#6B7280"
                     value={rejectNote}
                     onChangeText={setRejectNote}
                     multiline
@@ -324,7 +327,7 @@ export default function ModerationScreen() {
                 <View style={styles.rejectForm}>
                   <TextInput
                     style={styles.rejectInput}
-                    placeholder="Rejection reason (optional)"
+                    placeholder="Rejection reason (optional)" placeholderTextColor="#6B7280"
                     value={rejectNote}
                     onChangeText={setRejectNote}
                     multiline
@@ -637,6 +640,7 @@ export default function ModerationScreen() {
         </View>
       )}
     </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 }
 

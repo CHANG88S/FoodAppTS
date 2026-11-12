@@ -1,6 +1,6 @@
 import React from 'react';
-import { Tabs, useRouter } from "expo-router";
-import { View, Text } from "react-native";
+import { Tabs, useRouter, useRootNavigationState } from "expo-router";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
     createDrawerNavigator,
@@ -30,8 +30,14 @@ const Drawer = createDrawerNavigator();
 function TabLayout() {
     const unreadCount = useQuery(api.notifications.getUnreadCount);
     const messagesUnreadCount = useQuery(api.messaging.getUnreadCount);
+    const router = useRouter();
+    const rootNavState = useRootNavigationState();
+    // A screen is stacked on top of the tabs (e.g. a restaurant page) —
+    // show a back chevron so the user can return to where they came from.
+    const canGoBack = (rootNavState?.index ?? 0) > 0;
 
     return (
+        <>
         <Tabs
             screenOptions={({ route }) => ({
                 tabBarIcon: ({ focused, color }) => {
@@ -112,8 +118,38 @@ function TabLayout() {
             <Tabs.Screen name="notification" />
             <Tabs.Screen name="profile" />
         </Tabs>
+        {canGoBack && (
+            <TouchableOpacity
+                style={styles.floatingBackButton}
+                onPress={() => router.dismiss()}
+            >
+                <Ionicons name="chevron-back" size={22} color="#1F2937" />
+            </TouchableOpacity>
+        )}
+        </>
     );
 }
+
+const styles = StyleSheet.create({
+    floatingBackButton: {
+        position: 'absolute',
+        bottom: 94,
+        left: 16,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderWidth: 0.5,
+        borderColor: 'rgba(0, 0, 0, 0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+});
 
 function CustomDrawerContent(props: any) {
     const { signOut } = useAuthActions();

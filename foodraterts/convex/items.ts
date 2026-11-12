@@ -201,6 +201,118 @@ export const addMenuItem = mutation({
   },
 });
 
+// Staff-only: edit a menu item's name, category, and/or image
+export const updateMenuItem = mutation({
+  args: {
+    itemId: v.id("menuItems"),
+    itemName: v.optional(v.string()),
+    category: v.optional(v.union(v.string(), v.array(v.string()))),
+    imageStorageId: v.optional(v.union(v.id("_storage"), v.null())),
+  },
+  handler: async (ctx, args) => {
+    await requireStaff(ctx);
+
+    const item = await ctx.db.get(args.itemId);
+    if (!item) {
+      throw new Error("Menu item not found");
+    }
+
+    const updates: Record<string, any> = {};
+    if (args.itemName !== undefined && args.itemName.trim()) {
+      updates.itemName = args.itemName.trim();
+    }
+    if (args.category !== undefined) {
+      updates.category = args.category;
+    }
+    // null clears the image, an id sets/replaces it
+    if (args.imageStorageId !== undefined) {
+      updates.imageStorageId = args.imageStorageId;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await ctx.db.patch(args.itemId, updates);
+    }
+
+    return args.itemId;
+  },
+});
+
+// Staff-only: rename a category across a place's menu items and menu category list
+export const renameMenuCategory = mutation({
+  args: {
+    restaurantId: v.id("restaurants"),
+    oldName: v.string(),
+    newName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireStaff(ctx);
+
+    const oldName = args.oldName.trim();
+    const newName = args.newName.trim();
+    if (!oldName || !newName) {
+      throw new Error("Category names cannot be empty");
+    }
+    if (oldName.toLowerCase() === newName.toLowerCase()) {
+      return args.restaurantId;
+    }
+
+    const items = await ctx.db
+      .query("menuItems")
+      .withIndex("by_restaurantId", (q) => q.eq("restaurantId", args.restaurantId))
+      .collect();
+
+    for (const item of items) {
+      if (Array.isArray(item.category)) {
+        let changed = false;
+        const next = item.category.map((cat: string) => {
+          if (cat.trim().toLowerCase() === oldName.toLowerCase()) {
+            changed = true;
+            return newName;
+          }
+          return cat;
+        });
+        if (changed) {
+          await ctx.db.patch(item._id, { category: next });
+        }
+      } else if (typeof item.category === "string") {
+        let changed = false;
+        const next = item.category
+          .split(",")
+          .map((cat) => cat.trim())
+          .map((cat) => {
+            if (cat.toLowerCase() === oldName.toLowerCase()) {
+              changed = true;
+              return newName;
+            }
+            return cat;
+          })
+          .filter(Boolean);
+        if (changed && next.length > 0) {
+          await ctx.db.patch(item._id, { category: next.join(", ") });
+        }
+      }
+    }
+
+    // Keep the staff-defined menu category list in sync
+    const restaurant = await ctx.db.get(args.restaurantId);
+    if (restaurant?.menuCategories) {
+      let changed = false;
+      const next = restaurant.menuCategories.map((cat: string) => {
+        if (cat.trim().toLowerCase() === oldName.toLowerCase()) {
+          changed = true;
+          return newName;
+        }
+        return cat;
+      });
+      if (changed) {
+        await ctx.db.patch(args.restaurantId, { menuCategories: next });
+      }
+    }
+
+    return args.restaurantId;
+  },
+});
+
 export const createItemReview = mutation({
   args: {
     itemId: v.id("menuItems"),

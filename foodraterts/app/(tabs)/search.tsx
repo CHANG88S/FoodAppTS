@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -120,6 +122,7 @@ export default function SearchScreen() {
   };
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Search Bar */}
       <View style={styles.searchContainer}>
@@ -146,6 +149,7 @@ export default function SearchScreen() {
       {/* Content Area */}
       {renderContent()}
     </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 }
 

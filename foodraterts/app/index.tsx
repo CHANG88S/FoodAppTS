@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, Alert, View, Platform } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, Alert, View, Platform, Keyboard, TouchableWithoutFeedback } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -204,6 +204,7 @@ const LoginIndex = () => {
   };
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>BuhEats</Text>
       
@@ -212,6 +213,7 @@ const LoginIndex = () => {
           <TextInput
             style={styles.textInput}
             placeholder="Username (min. 3 characters)"
+            placeholderTextColor="#6B7280"
             value={username}
             onChangeText={(text) => {
               setUsername(text);
@@ -231,6 +233,7 @@ const LoginIndex = () => {
           <TextInput
             style={styles.textInput}
             placeholder="Display Name (Optional)"
+            placeholderTextColor="#6B7280"
             value={name}
             onChangeText={setName}
             autoCapitalize="words"
@@ -242,6 +245,7 @@ const LoginIndex = () => {
       <TextInput
         style={styles.textInput}
         placeholder="Email"
+        placeholderTextColor="#6B7280"
         value={email}
         onChangeText={(text) => {
           setEmail(text);
@@ -264,7 +268,8 @@ const LoginIndex = () => {
       
       <TextInput 
         style={styles.textInput} 
-        placeholder="Password" 
+        placeholder="Password"
+        placeholderTextColor="#6B7280"
         value={password} 
         onChangeText={(text) => {
           setPassword(text);
@@ -348,6 +353,7 @@ const LoginIndex = () => {
         <Text style={styles.skipText}>Continue as Guest</Text>
       </TouchableOpacity>
     </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 };
 

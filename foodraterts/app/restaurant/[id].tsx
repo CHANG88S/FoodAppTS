@@ -1,12 +1,14 @@
-import React, { useState, useRef } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  ScrollView, 
-  TouchableOpacity, 
-  Linking, 
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Linking,
   Image,
+  Keyboard,
+  TouchableWithoutFeedback,
   TextInput,
   Dimensions,
   ActivityIndicator,
@@ -14,12 +16,15 @@ import {
   FlatList,
   Alert
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { Ionicons } from "@expo/vector-icons";
 import { BookmarkButton } from '../../components/BookmarkButton';
+import * as ImagePicker from 'expo-image-picker';
+import { CommonActions, useNavigation } from '@react-navigation/native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_PADDING = 20;
@@ -28,15 +33,67 @@ const PAGE_WIDTH = SCREEN_WIDTH - (GRID_PADDING * 2);
 export default function RestaurantDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+
+  // Tab navigation from this stacked screen: navigate back to the existing
+  // tabs instance (popping this page) and focus the chosen tab there, so
+  // every tab keeps its scroll/state. (URL-based routing can't focus the
+  // tabs — they live behind the drawer's "mainTabs" screen.)
+  const navigation = useNavigation();
+  const popToTab = (tab: "home" | "search" | "notification" | "profile") => {
+    // pop: true returns to the EXISTING tabs instance (same key, state kept);
+    // without it v7 pushes a fresh copy and every tab resets.
+    navigation.dispatch(
+      CommonActions.navigate(
+        "(tabs)",
+        { screen: "mainTabs", params: { screen: tab } },
+        { pop: true }
+      )
+    );
+  };
   
   // Ref to control the horizontal menu carousel scroll positioning
   const menuCarouselRef = useRef<ScrollView>(null);
   
   const [menuSearchQuery, setMenuSearchQuery] = useState("");
   const [activePageIndex, setActivePageIndex] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [activeTab, setActiveTab] = useState("menu");
+
+  // Staff-only item editing (long-press a menu item)
+  const isStaff = useQuery(api.authz.isStaff) ?? false;
+  const updateMenuItemMutation = useMutation(api.items.updateMenuItem);
+  const generateUploadUrlMutation = useMutation(api.images.generateUploadUrl);
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editItemName, setEditItemName] = useState("");
+  const [editItemCategory, setEditItemCategory] = useState("");
+  const [editCategoryPickerVisible, setEditCategoryPickerVisible] = useState(false);
+  const [editKeyboardHeight, setEditKeyboardHeight] = useState(0);
+  const [editItemImage, setEditItemImage] = useState<{ storageId: string; previewUri: string } | null>(null);
+  const [editItemRemoveImage, setEditItemRemoveImage] = useState(false);
+  const [uploadingItemImage, setUploadingItemImage] = useState(false);
+  const [addChoiceVisible, setAddChoiceVisible] = useState(false);
+  const renameMenuCategoryMutation = useMutation(api.items.renameMenuCategory);
+  const [renamingCategory, setRenamingCategory] = useState<string | null>(null);
+  const [renameCategoryValue, setRenameCategoryValue] = useState("");
+  const [savingRename, setSavingRename] = useState(false);
+  const editingItemImageUrl = useQuery(
+    api.images.getPublicUrl,
+    editingItem?.imageStorageId && !editItemImage
+      ? { storageId: editingItem.imageStorageId }
+      : "skip"
+  );
+
+  // Lift the editor sheet above the keyboard while typing
+  useEffect(() => {
+    const show = Keyboard.addListener("keyboardWillShow", (e) => setEditKeyboardHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener("keyboardWillHide", () => setEditKeyboardHeight(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   // Fetch live backend data bundling restaurant and linked menu items
   const dbData = useQuery(api.restaurants.getRestaurantDetails, { 
@@ -150,25 +207,137 @@ export default function RestaurantDetailScreen() {
     }
   });
 
+  // Fold in staff-defined menu categories so they appear in the filter dropdown
+  dbData?.menuCategories?.forEach((cat: string) => {
+    const trimmed = cat?.trim();
+    if (trimmed && !uniqueCategories.includes(trimmed)) {
+      uniqueCategories.push(trimmed);
+    }
+  });
+
+  // Categories available for the staff item editor (excluding the "All" filter entry)
+  const editCategories = uniqueCategories.filter((cat) => cat !== "All");
+
+  const openItemEditor = (item: any) => {
+    const rawCategory = Array.isArray(item.category)
+      ? item.category.join(", ")
+      : item.category || "";
+    setEditingItem(item);
+    setEditItemName(item.itemName || "");
+    setEditItemCategory(rawCategory.split(",")[0]?.trim() || "");
+    setEditCategoryPickerVisible(false);
+    setEditItemImage(null);
+    setEditItemRemoveImage(false);
+  };
+
+  const handleSaveItemEdit = async () => {
+    if (!editingItem) return;
+    if (!editItemName.trim()) {
+      Alert.alert("Error", "Item name cannot be empty.");
+      return;
+    }
+    try {
+      await updateMenuItemMutation({
+        itemId: editingItem._id,
+        itemName: editItemName.trim(),
+        category: editItemCategory.trim() || undefined,
+        imageStorageId: editItemImage
+          ? (editItemImage.storageId as Id<"_storage">)
+          : editItemRemoveImage
+          ? null
+          : undefined,
+      });
+      setEditingItem(null);
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to update item.");
+    }
+  };
+
+  const handlePickItemImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Permission needed", "Allow photo library access to add an image.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+    const asset = result.assets[0];
+    try {
+      setUploadingItemImage(true);
+      const uploadUrl = await generateUploadUrlMutation();
+      const blob = await (await fetch(asset.uri)).blob();
+      const uploadResult = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": blob.type || "image/jpeg" },
+        body: blob,
+      });
+      if (!uploadResult.ok) throw new Error("Upload failed");
+      const json: any = await uploadResult.json();
+      setEditItemImage({ storageId: json.storageId, previewUri: asset.uri });
+      setEditItemRemoveImage(false);
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to upload image.");
+    } finally {
+      setUploadingItemImage(false);
+    }
+  };
+
+  const handleRemoveItemImage = () => {
+    setEditItemImage(null);
+    setEditItemRemoveImage(true);
+  };
+
+  const openRenameCategory = (name: string) => {
+    setRenamingCategory(name);
+    setRenameCategoryValue(name);
+  };
+
+  const handleSaveCategoryRename = async () => {
+    if (!renamingCategory || !dbData) return;
+    const newName = renameCategoryValue.trim();
+    if (!newName) {
+      Alert.alert("Error", "Category name cannot be empty.");
+      return;
+    }
+    if (newName === renamingCategory) {
+      setRenamingCategory(null);
+      return;
+    }
+    setSavingRename(true);
+    try {
+      await renameMenuCategoryMutation({
+        restaurantId: dbData._id,
+        oldName: renamingCategory,
+        newName,
+      });
+      setSelectedCategories((prev) =>
+        prev.map((c) => (c === renamingCategory ? newName : c))
+      );
+      setRenamingCategory(null);
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to rename category.");
+    } finally {
+      setSavingRename(false);
+    }
+  };
+
   // 2. FILTER MENU ITEMS BASED ON THE UNION FORMAT
   const filteredMenuItems = dbData.menuItems?.filter((item: any) => {
     const matchesSearch = item.itemName?.toLowerCase().includes(menuSearchQuery.toLowerCase());
-    
-    if (selectedCategory === "All") {
+
+    if (selectedCategories.length === 0) {
       return matchesSearch;
     }
 
-    let matchesCategory = false;
-    if (item.category) {
-      if (Array.isArray(item.category)) {
-        matchesCategory = item.category.some((cat: string) => cat.trim() === selectedCategory);
-      } else if (typeof item.category === "string") {
-        matchesCategory = item.category
-          .split(",")
-          .map((c: string) => c.trim())
-          .includes(selectedCategory);
-      }
-    }
+    const itemCats: string[] = Array.isArray(item.category)
+      ? item.category.map((c: string) => c.trim())
+      : typeof item.category === "string"
+        ? item.category.split(",").map((c: string) => c.trim())
+        : [];
+    const matchesCategory = itemCats.some((c: string) => selectedCategories.includes(c));
 
     return matchesSearch && matchesCategory;
   }) || [];
@@ -192,16 +361,29 @@ export default function RestaurantDetailScreen() {
     }
   };
 
+  // Multi-select: toggling a category adds/removes it from the filter; empty = show all
   const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
-    setIsDropdownVisible(false);
+    if (category === "All") {
+      setSelectedCategories([]);
+    } else {
+      setSelectedCategories((prev) =>
+        prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
+      );
+    }
     setActivePageIndex(0);
     menuCarouselRef.current?.scrollTo({ x: 0, y: 0, animated: false });
   };
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+      >
       
       <Stack.Screen 
         options={{
@@ -210,16 +392,16 @@ export default function RestaurantDetailScreen() {
       />
 
       {/* Dynamic Header Section */}
-      <View style={styles.heroContainer}>
+      <View style={[styles.heroContainer, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { top: insets.top + 6 }]}
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
           <Ionicons name="arrow-back" size={24} color="#6c3b3b" />
         </TouchableOpacity>
 
-        <View style={styles.bookmarkButton}>
+        <View style={[styles.bookmarkButton, { top: insets.top + 6 }]}>
           <BookmarkButton targetType="restaurant" targetId={String(id)} size={24} />
         </View>
 
@@ -240,19 +422,19 @@ export default function RestaurantDetailScreen() {
       <View style={styles.tabRow}>
         <TouchableOpacity
           style={[styles.tabPill, activeTab === "menu" && styles.activeTabPill]}
-          onPress={() => setActiveTab("menu")}
+          onPress={() => { Keyboard.dismiss(); setActiveTab("menu"); }}
         >
           <Text style={[styles.tabText, activeTab === "menu" && styles.activeTabText]}>MENU 👋</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tabPill, activeTab === "photos" && styles.activeTabPill]}
-          onPress={() => setActiveTab("photos")}
+          onPress={() => { Keyboard.dismiss(); setActiveTab("photos"); }}
         >
           <Text style={[styles.tabText, activeTab === "photos" && styles.activeTabText]}>PHOTOS</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tabPill, activeTab === "about" && styles.activeTabPill]}
-          onPress={() => setActiveTab("about")}
+          onPress={() => { Keyboard.dismiss(); setActiveTab("about"); }}
         >
           <Text style={[styles.tabText, activeTab === "about" && styles.activeTabText]}>ABOUT</Text>
         </TouchableOpacity>
@@ -299,6 +481,8 @@ export default function RestaurantDetailScreen() {
                 menuCarouselRef.current?.scrollTo({ x: 0, y: 0, animated: false });
               }}
               autoCapitalize="none"
+              returnKeyType="search"
+              onSubmitEditing={() => Keyboard.dismiss()}
             />
             {menuSearchQuery.trim().length > 0 && (
               <TouchableOpacity onPress={() => {
@@ -321,14 +505,24 @@ export default function RestaurantDetailScreen() {
                 activeOpacity={0.7}
               >
                 <Text style={styles.dropdownSelectorText} numberOfLines={1} ellipsizeMode="tail">
-                  {selectedCategory === "All" ? "🏷️ All Categories" : `📁 ${selectedCategory}`}
+                  {selectedCategories.length === 0
+                    ? "🏷️ All Categories"
+                    : selectedCategories.length === 1
+                    ? `📁 ${selectedCategories[0]}`
+                    : `📁 ${selectedCategories.length} selected`}
                 </Text>
                 <Ionicons name="chevron-down" size={14} color="#6c3b3b" style={styles.dropdownChevron} />
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.smallPlusButton}
-                onPress={() => router.push(`/restaurant/${dbData._id}/add-item`)}
+                onPress={() => {
+                  if (isStaff) {
+                    setAddChoiceVisible(true);
+                  } else {
+                    router.push(`/restaurant/${dbData._id}/add-item`);
+                  }
+                }}
                 activeOpacity={0.7}
               >
                 <Ionicons name="add" size={16} color="#6c3b3b" />
@@ -349,30 +543,280 @@ export default function RestaurantDetailScreen() {
             >
               <View style={styles.dropdownMenuContainer}>
                 <Text style={styles.dropdownMenuTitle}>Filter by Category</Text>
+                {selectedCategories.length > 0 && (
+                  <Text style={styles.dropdownMenuHint}>
+                    Tap to toggle · pick as many as you like
+                  </Text>
+                )}
                 <FlatList
                   data={uniqueCategories}
                   keyExtractor={(cat) => cat}
-                  renderItem={({ item }) => (
+                  renderItem={({ item }) => {
+                    const isSelected = item !== "All" && selectedCategories.includes(item);
+                    return (
+                      <TouchableOpacity
+                        style={[
+                          styles.dropdownItem,
+                          isSelected && styles.activeDropdownItem
+                        ]}
+                        onPress={() => handleCategoryChange(item)}
+                        onLongPress={isStaff && item !== "All" ? () => openRenameCategory(item) : undefined}
+                      >
+                        <Text style={[
+                          styles.dropdownItemText,
+                          isSelected && styles.activeDropdownItemText
+                        ]}>
+                          {item === "All" ? "✨ Show All Items" : item}
+                        </Text>
+                        {isSelected && (
+                          <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  }}
+                />
+                <TouchableOpacity
+                  style={styles.dropdownDoneButton}
+                  onPress={() => setIsDropdownVisible(false)}
+                >
+                  <Text style={styles.dropdownDoneButtonText}>
+                    {selectedCategories.length > 0 ? `Done (${selectedCategories.length})` : "Done"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </Modal>
+
+          {/* Staff item editor (long-press a menu item) */}
+          <Modal
+            visible={!!editingItem}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setEditingItem(null)}
+          >
+            <TouchableOpacity
+              style={[styles.editOverlay, editKeyboardHeight > 0 && { paddingBottom: editKeyboardHeight }]}
+              activeOpacity={1}
+              onPress={() => setEditingItem(null)}
+            >
+              <TouchableOpacity activeOpacity={1} style={styles.editSheet}>
+                <Text style={styles.editSheetTitle}>Edit Item</Text>
+                <Text style={styles.editSheetSubtitle}>
+                  Changes are visible to everyone immediately.
+                </Text>
+
+                <Text style={styles.editLabel}>Image</Text>
+                <View style={styles.editImageRow}>
+                  {editItemImage ? (
+                    <Image source={{ uri: editItemImage.previewUri }} style={styles.editImageThumb} />
+                  ) : !editItemRemoveImage && editingItemImageUrl ? (
+                    <Image source={{ uri: editingItemImageUrl }} style={styles.editImageThumb} />
+                  ) : (
+                    <View style={[styles.editImageThumb, styles.editImageThumbEmpty]}>
+                      <Ionicons name="image-outline" size={22} color="#9CA3AF" />
+                    </View>
+                  )}
+                  <View style={styles.editImageActions}>
                     <TouchableOpacity
-                      style={[
-                        styles.dropdownItem,
-                        selectedCategory === item && styles.activeDropdownItem
-                      ]}
-                      onPress={() => handleCategoryChange(item)}
+                      style={styles.editImageButton}
+                      onPress={handlePickItemImage}
+                      disabled={uploadingItemImage}
                     >
-                      <Text style={[
-                        styles.dropdownItemText,
-                        selectedCategory === item && styles.activeDropdownItemText
-                      ]}>
-                        {item === "All" ? "✨ Show All Items" : item}
-                      </Text>
-                      {selectedCategory === item && (
-                        <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                      {uploadingItemImage ? (
+                        <ActivityIndicator size="small" color="#6c3b3b" />
+                      ) : (
+                        <>
+                          <Ionicons name="cloud-upload-outline" size={15} color="#6c3b3b" />
+                          <Text style={styles.editImageButtonText}>
+                            {editItemImage || editingItemImageUrl ? "Replace" : "Add Photo"}
+                          </Text>
+                        </>
                       )}
                     </TouchableOpacity>
+                    {(editItemImage || (!editItemRemoveImage && editingItemImageUrl)) && (
+                      <TouchableOpacity
+                        style={[styles.editImageButton, styles.editImageButtonDanger]}
+                        onPress={handleRemoveItemImage}
+                        disabled={uploadingItemImage}
+                      >
+                        <Ionicons name="trash-outline" size={15} color="#DC2626" />
+                        <Text style={[styles.editImageButtonText, styles.editImageButtonTextDanger]}>
+                          Remove
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+
+                <ScrollView
+                  keyboardShouldPersistTaps="handled"
+                  style={{ maxHeight: editKeyboardHeight > 0 ? 230 : 420 }}
+                >
+                  <Text style={styles.editLabel}>Item name</Text>
+                  <TextInput
+                    style={styles.editInput}
+                    value={editItemName}
+                    onChangeText={setEditItemName}
+                    placeholder="Item name"
+                    placeholderTextColor="#9CA3AF"
+                  />
+
+                  <Text style={styles.editLabel}>Category</Text>
+                  <TouchableOpacity
+                    style={styles.editCategorySelector}
+                    onPress={() => setEditCategoryPickerVisible(!editCategoryPickerVisible)}
+                  >
+                    <Text style={styles.editCategorySelectorText} numberOfLines={1}>
+                      {editItemCategory || "No category"}
+                    </Text>
+                    <Ionicons
+                      name={editCategoryPickerVisible ? "chevron-up" : "chevron-down"}
+                      size={16}
+                      color="#6c3b3b"
+                    />
+                  </TouchableOpacity>
+                  {editCategoryPickerVisible && (
+                    <View style={styles.editCategoryList}>
+                      {editCategories.map((cat) => (
+                        <TouchableOpacity
+                          key={cat}
+                          style={[
+                            styles.editCategoryOption,
+                            editItemCategory === cat && styles.editCategoryOptionActive
+                          ]}
+                          onPress={() => {
+                            setEditItemCategory(cat);
+                            setEditCategoryPickerVisible(false);
+                          }}
+                          onLongPress={isStaff ? () => openRenameCategory(cat) : undefined}
+                        >
+                          <Text
+                            style={[
+                              styles.editCategoryOptionText,
+                              editItemCategory === cat && styles.editCategoryOptionTextActive
+                            ]}
+                          >
+                            {cat}
+                          </Text>
+                          {editItemCategory === cat && (
+                            <Ionicons name="checkmark" size={16} color="#6c3b3b" />
+                          )}
+                        </TouchableOpacity>
+                      ))}
+                    </View>
                   )}
+                </ScrollView>
+
+                <View style={styles.editSheetActions}>
+                  <TouchableOpacity
+                    style={[styles.editSheetButton, styles.editSheetCancelButton]}
+                    onPress={() => setEditingItem(null)}
+                  >
+                    <Text style={styles.editSheetCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.editSheetButton} onPress={handleSaveItemEdit}>
+                    <Text style={styles.editSheetSaveText}>Save</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </Modal>
+
+          {/* Staff: choose what to add from the + button */}
+          <Modal
+            visible={addChoiceVisible}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setAddChoiceVisible(false)}
+          >
+            <TouchableOpacity
+              style={styles.editOverlay}
+              activeOpacity={1}
+              onPress={() => setAddChoiceVisible(false)}
+            >
+              <TouchableOpacity activeOpacity={1} style={styles.editSheet}>
+                <Text style={styles.editSheetTitle}>Add to this place</Text>
+                <View style={styles.addChoiceList}>
+                  <TouchableOpacity
+                    style={styles.addChoiceOption}
+                    onPress={() => {
+                      setAddChoiceVisible(false);
+                      router.push(`/restaurant/${dbData._id}/add-item`);
+                    }}
+                  >
+                    <Ionicons name="restaurant-outline" size={20} color="#6c3b3b" />
+                    <Text style={styles.addChoiceText}>Add an Item</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.addChoiceOption}
+                    onPress={() => {
+                      setAddChoiceVisible(false);
+                      router.push({
+                        pathname: `/restaurant/${dbData._id}/add-item`,
+                        params: { mode: "category" },
+                      } as any);
+                    }}
+                  >
+                    <Ionicons name="pricetag-outline" size={20} color="#6c3b3b" />
+                    <Text style={styles.addChoiceText}>Add a Category</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  style={[styles.editSheetButton, styles.editSheetCancelButton]}
+                  onPress={() => setAddChoiceVisible(false)}
+                >
+                  <Text style={styles.editSheetCancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </Modal>
+
+          {/* Staff: rename a menu category (long-press it) */}
+          <Modal
+            visible={!!renamingCategory}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setRenamingCategory(null)}
+          >
+            <TouchableOpacity
+              style={[styles.editOverlay, editKeyboardHeight > 0 && { paddingBottom: editKeyboardHeight }]}
+              activeOpacity={1}
+              onPress={() => setRenamingCategory(null)}
+            >
+              <TouchableOpacity activeOpacity={1} style={styles.editSheet}>
+                <Text style={styles.editSheetTitle}>Rename Category</Text>
+                <Text style={styles.editSheetSubtitle}>
+                  Updates every item using this category at this place.
+                </Text>
+                <TextInput
+                  style={styles.editInput}
+                  value={renameCategoryValue}
+                  onChangeText={setRenameCategoryValue}
+                  placeholder="Category name"
+                  placeholderTextColor="#9CA3AF"
+                  autoFocus
                 />
-              </View>
+                <View style={styles.editSheetActions}>
+                  <TouchableOpacity
+                    style={[styles.editSheetButton, styles.editSheetCancelButton]}
+                    onPress={() => setRenamingCategory(null)}
+                    disabled={savingRename}
+                  >
+                    <Text style={styles.editSheetCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.editSheetButton}
+                    onPress={handleSaveCategoryRename}
+                    disabled={savingRename}
+                  >
+                    {savingRename ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.editSheetSaveText}>Rename</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
             </TouchableOpacity>
           </Modal>
 
@@ -400,13 +844,14 @@ export default function RestaurantDetailScreen() {
                 {gridPages.map((pageItems: any[], pageIndex: number) => (
                   <View key={`page-${pageIndex}`} style={styles.gridContainer}>
                     {pageItems.map((item: any) => (
-                      <MenuItemCard 
-                        key={item._id} 
-                        item={item} 
-                        restaurantCategory={dbData.category} 
-                        restaurantId={id as string} 
-                        router={router} 
-                        getCategoryEmoji={getCategoryEmoji} 
+                      <MenuItemCard
+                        key={item._id}
+                        item={item}
+                        restaurantCategory={dbData.category}
+                        restaurantId={id as string}
+                        router={router}
+                        getCategoryEmoji={getCategoryEmoji}
+                        onLongPress={isStaff ? () => openItemEditor(item) : undefined}
                       />
                     ))}
                   </View>
@@ -518,35 +963,46 @@ export default function RestaurantDetailScreen() {
       )}
 
       </ScrollView>
+      </TouchableWithoutFeedback>
 
       {/* Floating Pill Navigation */}
       <View style={styles.floatingPillContainer}>
-        <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/home")}>
-          <Ionicons name="home" size={20} color="#000000" />
+        <TouchableOpacity style={styles.pillItem} onPress={() => popToTab("home")}>
+          <Ionicons name="home" size={24} color="#000000" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/search")}>
-          <Ionicons name="search" size={20} color="#000000" />
+        <TouchableOpacity style={styles.pillItem} onPress={() => popToTab("search")}>
+          <Ionicons name="search" size={24} color="#000000" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/notification")}>
-          <Ionicons name="heart-outline" size={20} color="#000000" />
+        <TouchableOpacity style={styles.pillItem} onPress={() => popToTab("notification")}>
+          <Ionicons name="heart-outline" size={24} color="#000000" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/profile")}>
-          <Ionicons name="person-outline" size={20} color="#000000" />
+        <TouchableOpacity style={styles.pillItem} onPress={() => popToTab("profile")}>
+          <Ionicons name="person-outline" size={24} color="#000000" />
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-function MenuItemCard({ item, restaurantCategory, restaurantId, router, getCategoryEmoji }: { item: any; restaurantCategory?: string; restaurantId: string; router: any; getCategoryEmoji: (cat?: string | string[]) => string }) {
+function MenuItemCard({ item, restaurantCategory, restaurantId, router, getCategoryEmoji, onLongPress }: { item: any; restaurantCategory?: string; restaurantId: string; router: any; getCategoryEmoji: (cat?: string | string[]) => string; onLongPress?: () => void }) {
   const imageUrl = useQuery(
     api.images.getPublicUrl,
     item.imageStorageId ? { storageId: item.imageStorageId } : "skip"
   );
 
-  const effectiveCategory = item.category || restaurantCategory;
+  // Placeholder emoji: the item's own category first; if nothing matches (would
+  // default to 🧋), fall back to the restaurant's category before settling on 🧋
+  const itemCategoryEmoji = getCategoryEmoji(item.category);
+  const placeholderEmoji =
+    itemCategoryEmoji !== "🧋" ? itemCategoryEmoji : getCategoryEmoji(restaurantCategory);
 
   return (
+    <TouchableOpacity
+      activeOpacity={0.9}
+      disabled={!onLongPress}
+      onLongPress={onLongPress}
+      style={styles.compactGridCardCell}
+    >
     <View style={styles.compactGridCard}>
       <View style={styles.imageWrapperFrame}>
         {imageUrl ? (
@@ -557,7 +1013,7 @@ function MenuItemCard({ item, restaurantCategory, restaurantId, router, getCateg
           />
         ) : (
           <View style={styles.placeholderImageContainer}>
-            <Text style={{ fontSize: 32 }}>{getCategoryEmoji(effectiveCategory)}</Text>
+            <Text style={{ fontSize: 32 }}>{placeholderEmoji}</Text>
           </View>
         )}
       </View>
@@ -599,6 +1055,7 @@ function MenuItemCard({ item, restaurantCategory, restaurantId, router, getCateg
         </TouchableOpacity>
       </View>
     </View>
+    </TouchableOpacity>
   );
 }
 
@@ -606,6 +1063,202 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FAFAFA"
+  },
+  editOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  editImageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 14,
+  },
+  editImageThumb: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
+  },
+  editImageThumbEmpty: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderStyle: 'dashed',
+  },
+  editImageActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  editImageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+  },
+  editImageButtonDanger: {
+    borderColor: '#FECACA',
+    backgroundColor: '#FEF2F2',
+  },
+  editImageButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#6c3b3b',
+  },
+  editImageButtonTextDanger: {
+    color: '#DC2626',
+  },
+  addChoiceList: {
+    marginTop: 14,
+    marginBottom: 16,
+    gap: 8,
+  },
+  addChoiceOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  addChoiceText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  dropdownMenuHint: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  dropdownDoneButton: {
+    marginTop: 10,
+    backgroundColor: '#6c3b3b',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  dropdownDoneButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  editSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    paddingBottom: 40,
+  },
+  editSheetTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1F2937',
+    textAlign: 'center',
+  },
+  editSheetSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  editLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#4B5563',
+    marginBottom: 6,
+  },
+  editInput: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: '#1F2937',
+    marginBottom: 14,
+  },
+  editCategorySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  editCategorySelectorText: {
+    fontSize: 15,
+    color: '#1F2937',
+    flex: 1,
+    marginRight: 8,
+  },
+  editCategoryList: {
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    overflow: 'hidden',
+  },
+  editCategoryOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
+  },
+  editCategoryOptionActive: {
+    backgroundColor: '#F9F1F1',
+  },
+  editCategoryOptionText: {
+    fontSize: 14,
+    color: '#1F2937',
+  },
+  editCategoryOptionTextActive: {
+    color: '#6c3b3b',
+    fontWeight: '700',
+  },
+  editSheetActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 18,
+  },
+  editSheetButton: {
+    flex: 1,
+    backgroundColor: '#6c3b3b',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  editSheetCancelButton: {
+    backgroundColor: '#F3F4F6',
+  },
+  editSheetCancelText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#6B7280',
+  },
+  editSheetSaveText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   scrollView: {
     flex: 1,
@@ -809,8 +1462,11 @@ const styles = StyleSheet.create({
     paddingBottom: 10, 
     marginRight: GRID_PADDING * 2 
   },
-  compactGridCard: { 
-    width: '32%', 
+  compactGridCardCell: {
+    width: '32%',
+  },
+  compactGridCard: {
+    width: '100%',
     backgroundColor: "#FFFFFF", 
     borderRadius: 12, 
     padding: 6, 
@@ -964,15 +1620,15 @@ const styles = StyleSheet.create({
   },
   floatingPillContainer: {
     position: "absolute",
-    bottom: 25,
+    bottom: 30,
     left: 0,
     right: 0,
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    marginHorizontal: 60,
-    height: 46,
-    borderRadius: 23,
+    marginHorizontal: 40,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderWidth: 0.5,
     borderColor: "rgba(0, 0, 0, 0.1)",
@@ -981,8 +1637,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 5,
-    paddingBottom: 4,
-    paddingTop: 4,
+    paddingBottom: 6,
+    paddingTop: 6,
   },
   pillItem: {
     padding: 3,

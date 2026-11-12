@@ -11,6 +11,8 @@ import {
     ScrollView,
     Alert,
     ActivityIndicator,
+    Keyboard,
+    TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
@@ -124,8 +126,6 @@ export default function Upload() {
         }
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [1, 1],
             quality: 0.8,
         });
         if (!result.canceled) {
@@ -144,8 +144,6 @@ export default function Upload() {
             return;
         }
         const result = await ImagePicker.launchCameraAsync({
-            allowsEditing: true,
-            aspect: [1, 1],
             quality: 0.8,
         });
         if (!result.canceled) {
@@ -234,6 +232,7 @@ export default function Upload() {
     };
 
     return (
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <GestureHandlerRootView style={{ flex: 1 }}>
             <SafeAreaView style={styles.root}>
                 
@@ -386,7 +385,7 @@ export default function Upload() {
                                 <Text style={styles.emptyCriteriaText}>+ Add criteria (Texture, Portion, Sweetness...)</Text>
                             </TouchableOpacity>
                         ) : (
-                            <ScrollView style={styles.criteriaScrollView} showsVerticalScrollIndicator={true}>
+                            <ScrollView style={styles.criteriaScrollView} showsVerticalScrollIndicator={true} keyboardShouldPersistTaps="handled">
                                 <View style={styles.criteriaListContainer}>
                                     {criteriaList.map((c) => (
                                         <View key={c.id} style={styles.criterionRow}>
@@ -489,6 +488,7 @@ export default function Upload() {
 
             </SafeAreaView>
         </GestureHandlerRootView>
+        </TouchableWithoutFeedback>
     );
 }
 

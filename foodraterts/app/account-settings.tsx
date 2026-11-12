@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Alert, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
@@ -51,6 +51,7 @@ export default function AccountSettingsScreen() {
     };
 
     return (
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <SafeAreaView style={styles.root} edges={['top']}>
             <Stack.Screen options={{ headerShown: false }} />
 
@@ -139,6 +140,7 @@ export default function AccountSettingsScreen() {
                 onRequestClose={() => setDeleteModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
+                    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
                             <Ionicons name="trash" size={28} color="#DC2626" />
@@ -191,9 +193,11 @@ export default function AccountSettingsScreen() {
                             </TouchableOpacity>
                         </View>
                     </View>
+                    </TouchableWithoutFeedback>
                 </View>
             </Modal>
         </SafeAreaView>
+        </TouchableWithoutFeedback>
     );
 }
 

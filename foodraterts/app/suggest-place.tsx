@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { useMutation } from 'convex/react';
@@ -81,6 +83,7 @@ export default function SuggestPlaceScreen() {
   };
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Hides Expo Router's automatic default header */}
       <Stack.Screen options={{ headerShown: false }} />
@@ -106,7 +109,7 @@ export default function SuggestPlaceScreen() {
         <Text style={styles.label}>Restaurant Name *</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g., Kung Fu Tea"
+          placeholder="e.g., Kung Fu Tea" placeholderTextColor="#6B7280"
           value={restaurantName}
           onChangeText={setRestaurantName}
         />
@@ -114,7 +117,7 @@ export default function SuggestPlaceScreen() {
         <Text style={styles.label}>Address *</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g., 123 Main St"
+          placeholder="e.g., 123 Main St" placeholderTextColor="#6B7280"
           value={address}
           onChangeText={setAddress}
         />
@@ -122,7 +125,7 @@ export default function SuggestPlaceScreen() {
         <Text style={styles.label}>City *</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g., San Francisco"
+          placeholder="e.g., San Francisco" placeholderTextColor="#6B7280"
           value={city}
           onChangeText={setCity}
         />
@@ -130,7 +133,7 @@ export default function SuggestPlaceScreen() {
         <Text style={styles.label}>State *</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g., CA"
+          placeholder="e.g., CA" placeholderTextColor="#6B7280"
           value={state}
           onChangeText={setState}
           autoCapitalize="characters"
@@ -139,7 +142,7 @@ export default function SuggestPlaceScreen() {
         <Text style={styles.label}>Phone (Optional)</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g., (415) 555-0123"
+          placeholder="e.g., (415) 555-0123" placeholderTextColor="#6B7280"
           value={phone}
           onChangeText={setPhone}
           keyboardType="phone-pad"
@@ -168,7 +171,7 @@ export default function SuggestPlaceScreen() {
         <Text style={styles.label}>Website (Optional)</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g., https://example.com"
+          placeholder="e.g., https://example.com" placeholderTextColor="#6B7280"
           value={website}
           onChangeText={setWebsite}
           keyboardType="url"
@@ -194,6 +197,7 @@ export default function SuggestPlaceScreen() {
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 }
 

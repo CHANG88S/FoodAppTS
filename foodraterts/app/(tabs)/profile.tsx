@@ -15,7 +15,10 @@ import {
     UIManager,
     TextInput,
     Dimensions,
+    Keyboard,
+    TouchableWithoutFeedback,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { FollowersModal } from '../../components/FollowersModal';
@@ -49,6 +52,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 export default function Profile() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const navigation = useNavigation<any>();
 
@@ -345,9 +349,6 @@ export default function Profile() {
     const userHandle = (currentUser as any)?.username ? `@${(currentUser as any).username}` : "@user";
     const userFullName = (currentUser as any)?.name ? (currentUser as any).name : null;
 
-    // Dynamic theme color from boba preferences
-    const themeColor = (currentUser as any)?.preferences?.favoriteColor || '#6c3b3b';
-
     const badgesDirectory: Record<string, string> = {
         'First Review': '🌟',
     };
@@ -426,10 +427,11 @@ export default function Profile() {
     };
 
     return (
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={styles.root}>
             <Stack.Screen options={{ headerShown: false }} />
 
-            <View style={styles.topHeaderBar}>
+            <View style={[styles.topHeaderBar, { paddingTop: insets.top + 4 }]}>
                 <View style={{ width: 24 }} />
                 <View style={styles.headerRightContainer}>
                     <TouchableOpacity
@@ -450,6 +452,7 @@ export default function Profile() {
             <ScrollView
                 contentContainerStyle={styles.scrollContainer}
                 scrollEnabled={activeTab !== 'REVIEWS' || reviewsViewMode !== 'map'}
+                keyboardShouldPersistTaps="handled"
             >
                 <View style={styles.profileSectionUnderHeader}>
                     <View style={styles.profileTopRow}>
@@ -1107,7 +1110,7 @@ export default function Profile() {
                 )}
 
                 {activeTab === 'PREFERENCES' && (
-                    <View style={[styles.preferenceBobaCard, { backgroundColor: themeColor, shadowOpacity: 0, elevation: 0 }]}>
+                    <View style={styles.preferenceBobaCard}>
                         <View style={styles.cardHeaderRow}>
                             <View style={styles.cardHeaderLeft}>
                                 <Text style={styles.cardTitle}>My Boba Taste Fingerprint</Text>
@@ -1115,7 +1118,7 @@ export default function Profile() {
                             </View>
                             <TouchableOpacity
                                 style={styles.editButton}
-                                onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+                                onPress={() => router.push('/boba-preferences')}
                             >
                                 <Ionicons name="pencil-outline" size={16} color="#6c3b3b" />
                                 <Text style={styles.editButtonText}>Edit</Text>
@@ -1291,6 +1294,7 @@ export default function Profile() {
                 initialTab={followersModalTab}
             />
         </View>
+        </TouchableWithoutFeedback>
     );
 }
 

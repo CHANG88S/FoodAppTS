@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
+import { CommonActions, useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -48,6 +49,23 @@ const TABS = ["ACTIVITY", "TWEETS", "REVIEWS", "PREFERENCES"];
 export default function PublicProfileScreen() {
   const router = useRouter();
   const { username } = useLocalSearchParams();
+
+  // Tab navigation from this stacked screen: navigate back to the existing
+  // tabs instance (popping this page) and focus the chosen tab there, so
+  // every tab keeps its scroll/state. (URL-based routing can't focus the
+  // tabs — they live behind the drawer's "mainTabs" screen.)
+  const navigation = useNavigation();
+  const popToTab = (tab: "home" | "search" | "notification" | "profile") => {
+    // pop: true returns to the EXISTING tabs instance (same key, state kept);
+    // without it v7 pushes a fresh copy and every tab resets.
+    navigation.dispatch(
+      CommonActions.navigate(
+        "(tabs)",
+        { screen: "mainTabs", params: { screen: tab } },
+        { pop: true }
+      )
+    );
+  };
 
   const [followersModalVisible, setFollowersModalVisible] = useState(false);
   const [followersModalTab, setFollowersModalTab] = useState<'followers' | 'following'>('followers');
@@ -239,7 +257,6 @@ export default function PublicProfileScreen() {
   const sweetnessPref = userPreferences.sweetness ?? 50;
   const icePref = userPreferences.iceLevel ?? 50;
   const milkPref = userPreferences.milkBase ?? 'Oat Milk';
-  const themeColor = userPreferences.favoriteColor || '#6c3b3b';
 
   const getSweetnessLabel = (val: number) => {
     if (val === 0) return 'No Sweetness';
@@ -878,7 +895,7 @@ export default function PublicProfileScreen() {
         )}
 
         {activeTab === 'PREFERENCES' && (
-          <View style={[styles.preferenceBobaCard, { backgroundColor: themeColor, shadowOpacity: 0, elevation: 0 }]}>
+          <View style={styles.preferenceBobaCard}>
             <View style={styles.cardHeaderRow}>
               <View style={styles.cardHeaderLeft}>
                 <Text style={styles.cardTitle}>My Boba Taste Fingerprint</Text>
@@ -990,17 +1007,17 @@ export default function PublicProfileScreen() {
 
       {/* Floating Pill Navigation */}
       <View style={styles.floatingPillContainer}>
-        <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/home")}>
-          <Ionicons name="home" size={20} color="#000000" />
+        <TouchableOpacity style={styles.pillItem} onPress={() => popToTab("home")}>
+          <Ionicons name="home" size={24} color="#000000" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/search")}>
-          <Ionicons name="search" size={20} color="#000000" />
+        <TouchableOpacity style={styles.pillItem} onPress={() => popToTab("search")}>
+          <Ionicons name="search" size={24} color="#000000" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/notification")}>
-          <Ionicons name="heart-outline" size={20} color="#000000" />
+        <TouchableOpacity style={styles.pillItem} onPress={() => popToTab("notification")}>
+          <Ionicons name="heart-outline" size={24} color="#000000" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.pillItem} onPress={() => router.push("/(tabs)/profile")}>
-          <Ionicons name="person-outline" size={20} color="#000000" />
+        <TouchableOpacity style={styles.pillItem} onPress={() => popToTab("profile")}>
+          <Ionicons name="person-outline" size={24} color="#000000" />
         </TouchableOpacity>
       </View>
 
@@ -1803,15 +1820,15 @@ const styles = StyleSheet.create({
   },
   floatingPillContainer: {
     position: "absolute",
-    bottom: 25,
+    bottom: 30,
     left: 0,
     right: 0,
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    marginHorizontal: 60,
-    height: 46,
-    borderRadius: 23,
+    marginHorizontal: 40,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderWidth: 0.5,
     borderColor: "rgba(0, 0, 0, 0.1)",
@@ -1820,8 +1837,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 5,
-    paddingBottom: 4,
-    paddingTop: 4,
+    paddingBottom: 6,
+    paddingTop: 6,
   },
   pillItem: {
     padding: 3,

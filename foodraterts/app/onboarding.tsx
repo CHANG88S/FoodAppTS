@@ -9,6 +9,8 @@ import {
     Image,
     TextInput,
     ActivityIndicator,
+    Keyboard,
+    TouchableWithoutFeedback,
 } from 'react-native';
 import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -275,6 +277,7 @@ export default function OnboardingScreen() {
     };
 
     return (
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <SafeAreaView style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
 
@@ -299,7 +302,7 @@ export default function OnboardingScreen() {
                 <View style={{ width: 24 }} />
             </View>
 
-            <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+            <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer} keyboardShouldPersistTaps="handled">
                 {renderStep()}
             </ScrollView>
 
@@ -319,6 +322,7 @@ export default function OnboardingScreen() {
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
+        </TouchableWithoutFeedback>
     );
 }
 
