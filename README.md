@@ -1,4 +1,4 @@
-# FoodRater 🍔✨
+# BuhEats 🥩🧋
 
 A comprehensive restaurant rating and social discovery app built with modern full-stack development practices.
 
