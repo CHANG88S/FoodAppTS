@@ -37,7 +37,8 @@ export default defineSchema({
     .index("by_email", ["email"])
     .index("by_appleId", ["appleId"])
     .index("by_googleId", ["googleId"])
-    .index("by_role", ["role"]),
+    .index("by_role", ["role"])
+    .index("by_username", ["username"]),
 
   // 1. MASTER RESTAURANT DIRECTORY
   restaurants: defineTable({

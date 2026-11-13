@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { useRouter, Stack, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery, useAction, useMutation } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
@@ -32,9 +32,9 @@ function describePasswordError(userError: any): string {
 export default function SettingsScreen() {
   const router = useRouter();
   const currentUser = useQuery(api.users.viewer) as any;
-  const updateProfileProfile = useAction(api.users.updateProfile);
+  const updateProfileProfile = useMutation(api.users.updateUser);
   // Password changes go through 2.0's changePassword, which verifies the
-  // current password server-side (updateProfile no longer touches credentials).
+  // current password server-side (updateUser never touches credentials).
   const changePassword = useMutation(api.auth.changePassword);
 
   const [name, setName] = useState('');

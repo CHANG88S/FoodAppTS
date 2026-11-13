@@ -1,5 +1,4 @@
-import { query, action, mutation, QueryCtx, internalQuery, internalMutation } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { query, mutation, QueryCtx, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { vAppleProfile } from "@convex-dev/auth/methods/apple/server";
@@ -92,9 +91,34 @@ export const updateUser = mutation({
       }
     }
 
+    // Checked inside this mutation so the check and the write are one
+    // transaction: two people cannot both pass it for the same name.
+    let username: string | undefined;
+    if (args.username !== undefined) {
+      username = args.username.trim();
+      // The auth username component accepts 1-100 characters and the sign-up
+      // screen requires 3, so a stricter rule here would reject the post
+      // sign-up mirror of a name the component already accepted.
+      if (username.length < 3 || username.length > 100) {
+        throw new Error("Username must be 3 to 100 characters.");
+      }
+      // Settings resends the current username on every save; only a change
+      // is checked, so rows that already share a name can still edit the rest.
+      const current = await ctx.db.get(userId);
+      if (username !== current?.username) {
+        const holders = await ctx.db
+          .query("users")
+          .withIndex("by_username", (q) => q.eq("username", username!))
+          .take(2);
+        if (holders.some((u) => u._id !== userId)) {
+          throw new Error("Username is already taken.");
+        }
+      }
+    }
+
     const updates: any = {};
     if (args.name !== undefined) updates.name = args.name;
-    if (args.username !== undefined) updates.username = args.username;
+    if (username !== undefined) updates.username = username;
     if (args.email !== undefined) updates.email = args.email;
     if (args.city !== undefined) updates.city = args.city;
     if (args.preferences !== undefined) updates.preferences = args.preferences;
@@ -104,69 +128,13 @@ export const updateUser = mutation({
   },
 });
 
-// Profile field updates (name/username/email). Password changes go through
-// api.auth.changePassword (Convex Auth 2.0 verifies the current password
-// server-side), so this action no longer touches credentials.
-export const updateProfile = action({
-  args: {
-    name: v.optional(v.string()),
-    username: v.optional(v.string()),
-    email: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    // ActionCtx's runQuery rest-args type is structurally narrower than the
-    // GenericQueryCtx one this helper declares, so the ctx needs a cast.
-    const userId = await getAuthUserId(ctx as any);
-    if (!userId) throw new Error("Unauthorized");
-
-    const currentUser = (await ctx.runQuery(internal.users.getInternalViewer, {})) as any;
-    if (!currentUser) throw new Error("User not found");
-
-    if (args.username && args.username !== currentUser.username) {
-      const existingUser = (await ctx.runQuery(internal.users.getInternalUserByUsername, { username: args.username })) as any;
-      if (existingUser && existingUser._id !== userId) {
-        throw new Error("Username is already taken.");
-      }
-    }
-
-    await ctx.runMutation(internal.users.patchUserProfile, {
-      userId: userId as Id<"users">,
-      name: args.name,
-      username: args.username,
-      email: args.email,
-    });
-
-    return true;
-  },
-});
-
-export const getInternalViewer = internalQuery({
-  args: {},
-  handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
-    return await ctx.db.get(userId as any);
-  },
-});
-
-export const getInternalUserByUsername = internalQuery({
-  args: { username: v.optional(v.string()) },
-  handler: async (ctx, args) => {
-    if (!args.username) return null;
-    return await ctx.db
-      .query("users")
-      .filter((q) => q.eq(q.field("username"), args.username))
-      .first();
-  },
-});
-
 export const getUserByUsername = query({
   args: { username: v.optional(v.string()) },
   handler: async (ctx, args) => {
     if (!args.username) return null;
     return await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("username"), args.username))
+      .withIndex("by_username", (q) => q.eq("username", args.username!))
       .first();
   },
 });
@@ -175,23 +143,6 @@ export const getUser = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.userId as Id<"users">);
-  },
-});
-
-export const patchUserProfile = internalMutation({
-  args: {
-    userId: v.id("users"),
-    name: v.optional(v.string()),
-    username: v.optional(v.string()),
-    email: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const updates: any = {};
-    if (args.name !== undefined) updates.name = args.name;
-    if (args.username !== undefined) updates.username = args.username;
-    if (args.email !== undefined) updates.email = args.email;
-
-    await ctx.db.patch(args.userId, updates);
   },
 });
 
@@ -469,7 +420,7 @@ async function generateUsername(ctx: QueryCtx, email: string, name?: string): Pr
     const candidate = `${base}${Math.random().toString(36).slice(2, 6)}`;
     const taken = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("username"), candidate))
+      .withIndex("by_username", (q) => q.eq("username", candidate))
       .first();
     if (!taken) return candidate;
   }
