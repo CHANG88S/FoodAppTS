@@ -1,7 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { requireStaff } from "./authz";
+import { requireStaff, requireActiveUser } from "./authz";
 import { hasBlockBetween } from "./blocks";
 import { detectSpam } from "./moderation";
 import { containsProfanity, PROFANITY_ERROR_MESSAGE } from "./profanity";
@@ -332,8 +332,7 @@ export const createItemReview = mutation({
     editReviewId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Must be logged in to submit a review.");
+    const userId = await requireActiveUser(ctx);
 
     if (containsProfanity(args.notes) || containsProfanity(args.orderNotes || "")) {
       throw new Error(PROFANITY_ERROR_MESSAGE);
@@ -500,8 +499,7 @@ export const toggleLikeReview = mutation({
     activityType: v.optional(v.string())
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    const userId = await requireActiveUser(ctx);
 
     const actualId = args.reviewId.split("-")[0] as any;
     const review: any = await ctx.db.get(actualId);
@@ -553,8 +551,7 @@ export const addCommentToReview = mutation({
     replyToCommentId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    const userId = await requireActiveUser(ctx);
 
     const user: any = await ctx.db.get(userId as any);
     const actualId = args.reviewId.split("-")[0] as any;

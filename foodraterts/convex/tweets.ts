@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { requireActiveUser } from "./authz";
 import { internal } from "./_generated/api";
 import { hasBlockBetween } from "./blocks";
 import { containsProfanity, PROFANITY_ERROR_MESSAGE } from "./profanity";
@@ -25,8 +26,7 @@ export const createTweet = mutation({
     imageStorageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Must be logged in to tweet.");
+    const userId = await requireActiveUser(ctx);
 
     if (containsProfanity(args.body)) {
       throw new Error(PROFANITY_ERROR_MESSAGE);
@@ -117,8 +117,7 @@ export const deleteTweet = mutation({
 export const toggleLikeTweet = mutation({
   args: { tweetId: v.id("tweets") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    const userId = await requireActiveUser(ctx);
 
     const tweet = await ctx.db.get(args.tweetId);
     if (!tweet) throw new Error("Tweet not found");
@@ -199,8 +198,7 @@ export const addCommentToTweet = mutation({
     replyToCommentId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    const userId = await requireActiveUser(ctx);
 
     const tweet = await ctx.db.get(args.tweetId);
     if (!tweet) throw new Error("Tweet not found");

@@ -1,7 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { requireStaff } from "./authz";
+import { requireStaff, requireActiveUser } from "./authz";
 import { internal } from "./_generated/api";
 import { createNotificationForSuggestion } from "./notifications";
 
@@ -66,8 +66,7 @@ export const suggestPlace = mutation({
     lng: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Must be logged in to suggest a place");
+    const userId = await requireActiveUser(ctx);
 
     const mapsLocation =
       args.lat != null && args.lng != null
@@ -431,8 +430,7 @@ export const suggestMenuItem = mutation({
     price: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Must be logged in to suggest an item");
+    const userId = await requireActiveUser(ctx);
 
     return await ctx.db.insert("menuItemSuggestions", {
       suggestedBy: userId,
