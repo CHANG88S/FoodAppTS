@@ -5,6 +5,7 @@ import { requireStaff } from "./authz";
 import { hasBlockBetween } from "./blocks";
 import { detectSpam } from "./moderation";
 import { containsProfanity, PROFANITY_ERROR_MESSAGE } from "./profanity";
+import { syncLikeNotification } from "./notifications";
 
 export const searchMenuItems = query({
   args: {
@@ -526,18 +527,16 @@ export const toggleLikeReview = mutation({
       await ctx.db.patch(actualId, { likes: updatedLikes });
     }
 
-    // Create notification for new like (if liking someone else's review)
-    if (!hasLiked && review.userId !== userId) {
-      const { internal } = await import("./_generated/api");
-      await ctx.runMutation((internal as any).notifications.createNotificationInternal, {
-        recipientId: review.userId,
-        senderId: userId,
-        type: "like",
-        targetType: "review",
-        targetId: args.reviewId,
-        message: undefined,
-      });
-    }
+    // Screens pass either the bare id or the `${id}-created|updated` key, so
+    // the notification is keyed on one normalized form; the post screen
+    // opens both forms.
+    await syncLikeNotification(ctx, {
+      recipientId: review.userId,
+      senderId: userId,
+      targetType: "review",
+      targetId: `${actualId}-${isUpdate ? "updated" : "created"}`,
+      liked: !hasLiked,
+    });
 
     return !hasLiked;
   },
