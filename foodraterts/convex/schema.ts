@@ -208,7 +208,8 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_recipient", ["recipientId"])
-    .index("by_recipient_and_read", ["recipientId", "isRead"]),
+    .index("by_recipient_and_read", ["recipientId", "isRead"])
+    .index("by_sender", ["senderId"]),
 
   // 8. MESSAGING - CONVERSATIONS
   conversations: defineTable({

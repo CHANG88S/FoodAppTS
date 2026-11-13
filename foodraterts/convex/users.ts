@@ -1,5 +1,5 @@
-import { query, action, mutation, QueryCtx, internalQuery, internalMutation } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { query, action, mutation, QueryCtx, MutationCtx, internalQuery, internalMutation } from "./_generated/server";
+import { components, internal } from "./_generated/api";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { vAppleProfile } from "@convex-dev/auth/methods/apple/server";
@@ -360,95 +360,167 @@ export const updatePreferences = mutation({
   },
 });
 
+// Account deletion. The mutation the client calls removes the account itself
+// in one small transaction: the profile row, the profile picture, the
+// sign-in username and every other session. Everything the user created is
+// then removed by purgeUserData in batches, each its own transaction, so a
+// very active account cannot exceed the per-transaction write limit and leave
+// nothing deleted.
 export const deleteAccount = mutation({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
 
-    const followsAsFollower = await ctx.db
-      .query("follows")
-      .withIndex("by_follower", (q) => q.eq("followerId", userId as string))
-      .collect();
-    for (const follow of followsAsFollower) {
-      await ctx.db.delete(follow._id);
+    const user = await ctx.db.get(userId);
+    await deleteFile(ctx, user?.profilePicture);
+
+    // The current session is left for the client's signOut call, which
+    // clears the stored tokens on the device as well.
+    const currentSessionId = (await ctx.auth.getUserIdentity())?.subject;
+    const sessions = await ctx.runQuery(components.auth.public.listSessions, { userId });
+    const otherSessionIds = sessions
+      .map((s) => s.sessionId as string)
+      .filter((id) => id !== currentSessionId);
+    if (otherSessionIds.length > 0) {
+      await ctx.runMutation(components.auth.public.revokeSessions, { sessionIds: otherSessionIds });
     }
+    // Frees the name and stops username + password sign-in to this account.
+    await ctx.runMutation(components.authUsername.public.deleteUsername, { userId });
 
-    const followsAsFollowing = await ctx.db
-      .query("follows")
-      .withIndex("by_following", (q) => q.eq("followingId", userId as string))
-      .collect();
-    for (const follow of followsAsFollowing) {
-      await ctx.db.delete(follow._id);
-    }
+    if (user) await ctx.db.delete(userId);
 
-    const notifications = await ctx.db
-      .query("notifications")
-      .withIndex("by_recipient", (q) => q.eq("recipientId", userId as string))
-      .collect();
-    for (const notification of notifications) {
-      await ctx.db.delete(notification._id);
-    }
-
-    const sentNotifications = await ctx.db
-      .query("notifications")
-      .filter((q) => q.eq(q.field("senderId"), userId as string))
-      .collect();
-    for (const notification of sentNotifications) {
-      await ctx.db.delete(notification._id);
-    }
-
-    const reviews = await ctx.db
-      .query("itemReviews")
-      .withIndex("by_user", (q) => q.eq("userId", userId as string))
-      .collect();
-    for (const review of reviews) {
-      await ctx.db.delete(review._id);
-    }
-
-    const tweets = await ctx.db
-      .query("tweets")
-      .withIndex("by_user", (q) => q.eq("userId", userId as string))
-      .collect();
-    for (const tweet of tweets) {
-      await ctx.db.delete(tweet._id);
-    }
-
-    const conversations1 = await ctx.db
-      .query("conversations")
-      .withIndex("by_participant1", (q) => q.eq("participant1Id", userId as string))
-      .collect();
-    for (const conversation of conversations1) {
-      const messages = await ctx.db
-        .query("messages")
-        .withIndex("by_conversation", (q) => q.eq("conversationId", conversation._id as string))
-        .collect();
-      for (const message of messages) {
-        await ctx.db.delete(message._id);
-      }
-      await ctx.db.delete(conversation._id);
-    }
-
-    const conversations2 = await ctx.db
-      .query("conversations")
-      .withIndex("by_participant2", (q) => q.eq("participant2Id", userId as string))
-      .collect();
-    for (const conversation of conversations2) {
-      const messages = await ctx.db
-        .query("messages")
-        .withIndex("by_conversation", (q) => q.eq("conversationId", conversation._id as string))
-        .collect();
-      for (const message of messages) {
-        await ctx.db.delete(message._id);
-      }
-      await ctx.db.delete(conversation._id);
-    }
-
-    await ctx.db.delete(userId as any);
-
+    await ctx.scheduler.runAfter(0, internal.users.purgeUserData, { userId, step: 0 });
     return { success: true };
   },
 });
+
+const PURGE_BATCH = 200;
+
+async function deleteFile(ctx: MutationCtx, value: string | undefined) {
+  const fileId = value ? ctx.db.system.normalizeId("_storage", value) : null;
+  if (fileId && (await ctx.db.system.get(fileId))) {
+    await ctx.storage.delete(fileId);
+  }
+}
+
+// Deletes the rows (and their files) and reports whether the range is empty.
+async function deleteRows<T extends { _id: Id<any> }>(
+  ctx: MutationCtx,
+  rows: T[],
+  filesOf?: (row: T) => Promise<(string | undefined)[]> | (string | undefined)[],
+) {
+  for (const row of rows) {
+    for (const file of (await filesOf?.(row)) ?? []) {
+      await deleteFile(ctx, file);
+    }
+    await ctx.db.delete(row._id);
+  }
+  return rows.length < PURGE_BATCH;
+}
+
+// One entry per index range that holds the user's rows. Each call deletes at
+// most PURGE_BATCH rows and returns true once its range is empty.
+const PURGE_STEPS: Array<(ctx: MutationCtx, userId: Id<"users">) => Promise<boolean>> = [
+  async (ctx, userId) =>
+    deleteRows(ctx, await ctx.db.query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", userId)).take(PURGE_BATCH)),
+  async (ctx, userId) =>
+    deleteRows(ctx, await ctx.db.query("follows")
+      .withIndex("by_following", (q) => q.eq("followingId", userId)).take(PURGE_BATCH)),
+  async (ctx, userId) =>
+    deleteRows(ctx, await ctx.db.query("notifications")
+      .withIndex("by_recipient", (q) => q.eq("recipientId", userId)).take(PURGE_BATCH)),
+  async (ctx, userId) =>
+    deleteRows(ctx, await ctx.db.query("notifications")
+      .withIndex("by_sender", (q) => q.eq("senderId", userId)).take(PURGE_BATCH)),
+  async (ctx, userId) =>
+    deleteRows(
+      ctx,
+      await ctx.db.query("itemReviews")
+        .withIndex("by_user", (q) => q.eq("userId", userId)).take(PURGE_BATCH),
+      async (review) => {
+        // A review photo can also be its menu item's photo (and from there a
+        // chain location's copy), so it is kept while the item still uses it.
+        const item = await ctx.db.get(review.itemId);
+        return [review.imageStorageId, review.originalImageStorageId, review.updatedImageStorageId]
+          .filter((file) => file && file !== item?.imageStorageId);
+      },
+    ),
+  async (ctx, userId) =>
+    deleteRows(
+      ctx,
+      await ctx.db.query("tweets")
+        .withIndex("by_user", (q) => q.eq("userId", userId)).take(PURGE_BATCH),
+      (tweet) => [tweet.imageStorageId],
+    ),
+  async (ctx, userId) => purgeConversation(ctx, "participant1Id", userId),
+  async (ctx, userId) => purgeConversation(ctx, "participant2Id", userId),
+  async (ctx, userId) =>
+    deleteRows(ctx, await ctx.db.query("bookmarks")
+      .withIndex("by_user_and_type", (q) => q.eq("userId", userId)).take(PURGE_BATCH)),
+  async (ctx, userId) =>
+    deleteRows(ctx, await ctx.db.query("userBlocks")
+      .withIndex("by_blocker", (q) => q.eq("blockerId", userId)).take(PURGE_BATCH)),
+  async (ctx, userId) =>
+    deleteRows(ctx, await ctx.db.query("restaurantVisits")
+      .withIndex("by_user_and_restaurant", (q) => q.eq("userId", userId)).take(PURGE_BATCH)),
+  async (ctx, userId) =>
+    deleteRows(ctx, await ctx.db.query("contentFlags")
+      .withIndex("by_reportedBy", (q) => q.eq("reportedBy", userId)).take(PURGE_BATCH)),
+  async (ctx, userId) =>
+    deleteRows(ctx, await ctx.db.query("userReports")
+      .withIndex("by_reporterId", (q) => q.eq("reporterId", userId)).take(PURGE_BATCH)),
+  async (ctx, userId) =>
+    deleteRows(ctx, await ctx.db.query("placeSuggestions")
+      .withIndex("by_suggester", (q) => q.eq("suggestedBy", userId)).take(PURGE_BATCH)),
+  async (ctx, userId) =>
+    deleteRows(ctx, await ctx.db.query("menuItemSuggestions")
+      .withIndex("by_suggester", (q) => q.eq("suggestedBy", userId)).take(PURGE_BATCH)),
+  async (ctx, userId) =>
+    deleteRows(ctx, await ctx.db.query("pushTokens")
+      .withIndex("by_userId", (q) => q.eq("userId", userId)).take(PURGE_BATCH)),
+];
+
+// Deletes one conversation's messages a batch at a time, then the
+// conversation, then reports done once the user is in no conversation.
+async function purgeConversation(
+  ctx: MutationCtx,
+  side: "participant1Id" | "participant2Id",
+  userId: Id<"users">,
+) {
+  const conversation = await ctx.db
+    .query("conversations")
+    .withIndex(side === "participant1Id" ? "by_participant1" : "by_participant2", (q: any) =>
+      q.eq(side, userId))
+    .first();
+  if (!conversation) return true;
+
+  const messages = await ctx.db
+    .query("messages")
+    .withIndex("by_conversation", (q) => q.eq("conversationId", conversation._id))
+    .take(PURGE_BATCH);
+  const messagesDone = await deleteRows(ctx, messages, (message) => [message.imageStorageId]);
+  if (messagesDone) await ctx.db.delete(conversation._id);
+  return false;
+}
+
+export const purgeUserData = internalMutation({
+  args: { userId: v.id("users"), step: v.number() },
+  returns: v.null(),
+  handler: async (ctx, args): Promise<null> => {
+    const run = PURGE_STEPS[args.step];
+    if (!run) return null;
+
+    const stepDone = await run(ctx, args.userId);
+    await ctx.scheduler.runAfter(0, internal.users.purgeUserData, {
+      userId: args.userId,
+      step: stepDone ? args.step + 1 : args.step,
+    });
+    return null;
+  },
+});
+
 // ── Convex Auth 2.0 user-creation callbacks ────────────────────────────────
 // Each sign-in method calls its callback for a *new* identity only; returning
 // an existing user's id links that identity onto the existing account.
