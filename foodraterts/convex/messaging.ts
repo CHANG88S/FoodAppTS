@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
+import { assertMaxLength, MAX_POST_LENGTH } from "./validation";
 import { hasBlockBetween } from "./blocks";
 import { containsProfanity, PROFANITY_ERROR_MESSAGE } from "./profanity";
 
@@ -302,6 +303,8 @@ export const sendMessage = mutation({
     if (containsProfanity(args.content)) {
       throw new Error(PROFANITY_ERROR_MESSAGE);
     }
+
+    assertMaxLength(args.content, MAX_POST_LENGTH, "Message");
 
     const conversation = await ctx.db
       .query("conversations")

@@ -4,6 +4,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
 import { hasBlockBetween } from "./blocks";
 import { containsProfanity, PROFANITY_ERROR_MESSAGE } from "./profanity";
+import { assertMaxLength, MAX_COMMENT_LENGTH, MAX_POST_LENGTH } from "./validation";
 
 // 1. GENERATE THE UPLOAD URL
 export const generateUploadUrl = mutation({
@@ -26,6 +27,8 @@ export const createTweet = mutation({
     if (containsProfanity(args.body)) {
       throw new Error(PROFANITY_ERROR_MESSAGE);
     }
+
+    assertMaxLength(args.body, MAX_POST_LENGTH, "Post");
 
     await ctx.db.insert("tweets", {
       body: args.body,
@@ -203,6 +206,8 @@ export const addCommentToTweet = mutation({
     if (containsProfanity(args.body)) {
       throw new Error(PROFANITY_ERROR_MESSAGE);
     }
+
+    assertMaxLength(args.body, MAX_COMMENT_LENGTH, "Comment");
 
     // Enforce blocks: can't comment on a blocked user's tweet
     if (tweet.userId && tweet.userId !== userId) {
