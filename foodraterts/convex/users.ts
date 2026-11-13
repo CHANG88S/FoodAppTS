@@ -4,8 +4,25 @@ import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { vAppleProfile } from "@convex-dev/auth/methods/apple/server";
 import { vGoogleProfile } from "@convex-dev/auth/methods/google/server";
-import { Id } from "./_generated/dataModel";
+import { Doc, Id } from "./_generated/dataModel";
 import { hasBlockBetween } from "./blocks";
+
+// The fields of another user's row that any client may see. Every query that
+// returns someone else's profile goes through this, so email, appleId,
+// googleId, role and city stay on the server. Only `viewer` returns the
+// caller's own full row.
+export function publicUser(user: Doc<"users"> | null) {
+  if (!user) return null;
+  return {
+    _id: user._id,
+    _creationTime: user._creationTime,
+    username: user.username,
+    name: user.name,
+    profilePicture: user.profilePicture,
+    displayedBadge: user.displayedBadge,
+    preferences: user.preferences,
+  };
+}
 
 // Helper function to fetch a user document safely with type casting
 async function fetchUserViewer(ctx: QueryCtx) {
@@ -13,24 +30,6 @@ async function fetchUserViewer(ctx: QueryCtx) {
   if (!userId) return null;
   return await ctx.db.get(userId as any);
 }
-
-export const getUserRole = query({
-  args: { email: v.string() },
-  handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.email))
-      .first();
-
-    if (!user) return null;
-    return { 
-      userId: user._id, 
-      role: user.role, 
-      username: user.username, 
-      name: user.name ?? null 
-    };
-  },
-});
 
 export const viewer = query({
   args: {},
@@ -164,17 +163,20 @@ export const getUserByUsername = query({
   args: { username: v.optional(v.string()) },
   handler: async (ctx, args) => {
     if (!args.username) return null;
-    return await ctx.db
+    const user = await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("username"), args.username))
       .first();
+    return publicUser(user);
   },
 });
 
 export const getUser = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.userId as Id<"users">);
+    // normalizeId rejects ids from other tables, which db.get would read.
+    const id = ctx.db.normalizeId("users", args.userId);
+    return id ? publicUser(await ctx.db.get(id)) : null;
   },
 });
 
@@ -284,10 +286,9 @@ export const getFollowers = query({
       .collect();
 
     const followers = await Promise.all(
-      follows.map(async (follow) => {
-        const user = await ctx.db.get(follow.followerId as Id<"users">);
-        return user;
-      })
+      follows.map(async (follow) =>
+        publicUser(await ctx.db.get(follow.followerId as Id<"users">))
+      )
     );
 
     return followers.filter(Boolean);
@@ -303,30 +304,37 @@ export const getFollowing = query({
       .collect();
 
     const following = await Promise.all(
-      follows.map(async (follow) => {
-        const user = await ctx.db.get(follow.followingId as Id<"users">);
-        return user;
-      })
+      follows.map(async (follow) =>
+        publicUser(await ctx.db.get(follow.followingId as Id<"users">))
+      )
     );
 
     return following.filter(Boolean);
   },
 });
 
+// shortcut: kept for installed app builds whose search tab still calls
+// users.searchUsers({ query }); the app itself uses messaging.searchUsers.
+// Same rules as that query: signed in, 2+ characters, 20 results, public
+// fields only. Delete once no supported build calls it.
 export const searchUsers = query({
   args: { query: v.string() },
   handler: async (ctx, args) => {
-    if (!args.query.trim()) return [];
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const term = args.query.toLowerCase().trim();
+    if (term.length < 2) return [];
 
     const users = await ctx.db.query("users").collect();
-    const queryLower = args.query.toLowerCase();
-
-    return users.filter((u: any) => {
-      return (
-        u.username?.toLowerCase().includes(queryLower) ||
-        u.name?.toLowerCase().includes(queryLower)
-      );
-    });
+    return users
+      .filter(
+        (u) =>
+          u._id !== userId &&
+          (u.username.toLowerCase().includes(term) || !!u.name?.toLowerCase().includes(term))
+      )
+      .slice(0, 20)
+      .map((u) => publicUser(u));
   },
 });
 
