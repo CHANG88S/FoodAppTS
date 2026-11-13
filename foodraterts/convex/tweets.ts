@@ -5,6 +5,19 @@ import { internal } from "./_generated/api";
 import { hasBlockBetween } from "./blocks";
 import { containsProfanity, PROFANITY_ERROR_MESSAGE } from "./profanity";
 
+// shortcut: kept for installed app builds that still call
+// tweets.generateUploadUrl; the app itself uses images.generateUploadUrl.
+// Delete once no supported build calls it.
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
 // CREATE A TWEET WITH AN IMAGE STORAGE ID OR TEXT
 export const createTweet = mutation({
   args: { 
