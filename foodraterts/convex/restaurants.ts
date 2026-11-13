@@ -409,34 +409,6 @@ export const getRestaurantDetails = query({
   },
 });
 
-export const userHasReviewedRestaurant = query({
-  args: { restaurantId: v.id("restaurants") },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return false;
-
-    const menuItems = await ctx.db
-      .query("menuItems")
-      .withIndex("by_restaurantId", (q) => q.eq("restaurantId", args.restaurantId))
-      .collect();
-
-    const itemIds = menuItems.map((item) => item._id);
-    if (itemIds.length === 0) return false;
-
-    for (const itemId of itemIds) {
-      const review = await ctx.db
-        .query("itemReviews")
-        .withIndex("by_itemId", (q) => q.eq("itemId", itemId))
-        .filter((q) => q.eq(q.field("userId"), userId))
-        .first();
-      
-      if (review) return true;
-    }
-
-    return false;
-  },
-});
-
 export const getVisitCount = query({
   args: { restaurantId: v.id("restaurants") },
   handler: async (ctx, args) => {

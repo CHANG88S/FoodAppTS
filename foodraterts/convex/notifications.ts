@@ -1,6 +1,7 @@
 import { query, mutation, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import type { MutationCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 
 export const listNotifications = query({
@@ -109,29 +110,19 @@ export const createNotificationInternal = mutation({
     message: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Don't create notification if sender is recipient
-    if (args.recipientId === args.senderId) return;
-
-    await ctx.db.insert("notifications", {
-      recipientId: args.recipientId,
-      senderId: args.senderId,
-      type: args.type,
-      targetType: args.targetType,
-      targetId: args.targetId,
-      message: args.message,
-      isRead: false,
-      createdAt: Date.now(),
-    });
+    await createNotificationForSuggestion(ctx, args);
   },
 });
 
-// Shared helper for creating notifications (used by other mutations internally)
+// The one place a notification row is written. Despite the name it serves
+// every notification type; createNotificationInternal delegates here, and
+// mutations that already run in a transaction call it directly.
 export async function createNotificationForSuggestion(
-  ctx: any,
+  ctx: MutationCtx,
   args: {
     recipientId: string;
     senderId: string;
-    type: "follow" | "like" | "comment" | "mention" | "suggestion";
+    type: "follow" | "like" | "comment" | "mention" | "suggestion" | "moderation";
     targetType: "tweet" | "review" | "user" | "suggestion";
     targetId?: string;
     message?: string;
