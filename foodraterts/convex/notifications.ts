@@ -2,6 +2,7 @@ import { query, mutation, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
+import { publicUser } from "./users";
 
 export const listNotifications = query({
   args: {},
@@ -20,7 +21,7 @@ export const listNotifications = query({
     // Enrich with sender information with proper typing cast
     const enrichedNotifications = await Promise.all(
       notifications.map(async (notification) => {
-        const sender = await ctx.db.get(notification.senderId as Id<"users">);
+        const sender = publicUser(await ctx.db.get(notification.senderId as Id<"users">));
         return {
           ...notification,
           sender,

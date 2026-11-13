@@ -113,8 +113,9 @@ export const getReviewById = query({
     reviewId: v.string(),
   },
   handler: async (ctx, args) => {
-    const actualId = args.reviewId.split("-")[0] as any;
-    return await ctx.db.get(actualId);
+    // normalizeId rejects ids from other tables, which db.get would read.
+    const actualId = ctx.db.normalizeId("itemReviews", args.reviewId.split("-")[0]);
+    return actualId ? await ctx.db.get(actualId) : null;
   },
 });
 
@@ -125,10 +126,11 @@ export const getReviewActivityById = query({
   handler: async (ctx, args) => {
     // Parse composite key: `${reviewId}-created|updated`
     const parts = args.reviewId.split("-");
-    const actualId = parts[0] as any;
+    const actualId = ctx.db.normalizeId("itemReviews", parts[0]);
+    if (!actualId) return null;
     const suffix = parts[parts.length - 1]; // Get last part
 
-    const review = (await ctx.db.get(actualId as any)) as any;
+    const review = (await ctx.db.get(actualId)) as any;
     if (!review) return null;
 
     // Hydrate item and restaurant

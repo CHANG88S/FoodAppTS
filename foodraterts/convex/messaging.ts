@@ -5,6 +5,7 @@ import { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { hasBlockBetween } from "./blocks";
 import { containsProfanity, PROFANITY_ERROR_MESSAGE } from "./profanity";
+import { publicUser } from "./users";
 
 // Shared helper: attach other-user info and last message to conversations
 async function enrichConversations(
@@ -17,7 +18,7 @@ async function enrichConversations(
       const otherParticipantId = conv.participant1Id === userId
         ? conv.participant2Id
         : conv.participant1Id;
-      const otherUser = await ctx.db.get(otherParticipantId as Id<"users">);
+      const otherUser = publicUser(await ctx.db.get(otherParticipantId as Id<"users">));
 
       const lastMessage = await ctx.db
         .query("messages")
@@ -107,7 +108,7 @@ export const getMessages = query({
       messages.map(async (message) => {
         if (message.isUnsent) return message;
 
-        const sender = await ctx.db.get(message.senderId as Id<"users">);
+        const sender = publicUser(await ctx.db.get(message.senderId as Id<"users">));
         return {
           ...message,
           sender,

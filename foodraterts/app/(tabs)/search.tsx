@@ -56,8 +56,8 @@ export default function SearchScreen() {
 
   // When searching, only search for users
   const userResults = useQuery(
-    api.users.searchUsers,
-    isSearching && searchQuery.trim() ? { query: searchQuery } : "skip"
+    api.messaging.searchUsers,
+    isSearching && searchQuery.trim() ? { searchQuery } : "skip"
   );
 
   const handleUserPress = (user: User) => {
