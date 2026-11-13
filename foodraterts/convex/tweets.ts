@@ -5,15 +5,20 @@ import { internal } from "./_generated/api";
 import { hasBlockBetween } from "./blocks";
 import { containsProfanity, PROFANITY_ERROR_MESSAGE } from "./profanity";
 
-// 1. GENERATE THE UPLOAD URL
+// shortcut: kept for installed app builds that still call
+// tweets.generateUploadUrl; the app itself uses images.generateUploadUrl.
+// Delete once no supported build calls it.
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
     return await ctx.storage.generateUploadUrl();
   },
 });
 
-// 2. CREATE A TWEET WITH AN IMAGE STORAGE ID OR TEXT
+// CREATE A TWEET WITH AN IMAGE STORAGE ID OR TEXT
 export const createTweet = mutation({
   args: { 
     body: v.string(),
@@ -101,7 +106,7 @@ export const deleteTweet = mutation({
     const tweet = await ctx.db.get(args.tweetId);
     if (!tweet) throw new Error("Tweet not found");
 
-    if (tweet.userId && tweet.userId !== userId) {
+    if (tweet.userId !== userId) {
       throw new Error("You are not authorized to delete this tweet");
     }
 

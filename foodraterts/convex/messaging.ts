@@ -510,8 +510,11 @@ export const markMessagesAsRead = mutation({
   },
 });
 
-// Generate upload URL for message images
+// shortcut: kept for installed app builds that still call
+// messaging.generateUploadUrl; the app itself uses images.generateUploadUrl.
+// Delete once no supported build calls it.
 export const generateUploadUrl = mutation({
+  args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");

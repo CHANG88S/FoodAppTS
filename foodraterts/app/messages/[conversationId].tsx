@@ -104,7 +104,7 @@ export default function ChatScreen() {
 
   const sendMessageMutation = useMutation(api.messaging.sendMessage);
   const sendImageMutation = useMutation(api.messaging.sendImageMessage);
-  const generateUploadUrlMutation = useMutation(api.messaging.generateUploadUrl);
+  const generateUploadUrlMutation = useMutation(api.images.generateUploadUrl);
   const unsendMessageMutation = useMutation(api.messaging.unsendMessage);
   const markAsReadMutation = useMutation(api.messaging.markMessagesAsRead);
   const acceptRequestMutation = useMutation(api.messaging.acceptConversationRequest);
