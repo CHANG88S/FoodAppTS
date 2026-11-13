@@ -5,6 +5,14 @@ import { requireStaff } from "./authz";
 import { hasBlockBetween } from "./blocks";
 import { detectSpam } from "./moderation";
 import { containsProfanity, PROFANITY_ERROR_MESSAGE } from "./profanity";
+import {
+  assertMaxLength,
+  assertRating,
+  MAX_COMMENT_LENGTH,
+  MAX_POST_LENGTH,
+  MAX_REVIEW_CRITERIA,
+  MAX_SHORT_TEXT_LENGTH,
+} from "./validation";
 
 export const searchMenuItems = query({
   args: {
@@ -337,6 +345,13 @@ export const createItemReview = mutation({
       throw new Error(PROFANITY_ERROR_MESSAGE);
     }
 
+    assertRating(args.overallRating);
+    assertMaxLength(args.notes, MAX_POST_LENGTH, "Review notes");
+    assertMaxLength(args.orderNotes, MAX_SHORT_TEXT_LENGTH, "Order notes");
+    if (args.criteriaList.length > MAX_REVIEW_CRITERIA) {
+      throw new Error(`A review can have at most ${MAX_REVIEW_CRITERIA} criteria.`);
+    }
+
     const now = Date.now();
     const cleanImageId = args.imageStorageId ?? undefined;
 
@@ -562,6 +577,8 @@ export const addCommentToReview = mutation({
     if (containsProfanity(args.text)) {
       throw new Error(PROFANITY_ERROR_MESSAGE);
     }
+
+    assertMaxLength(args.text, MAX_COMMENT_LENGTH, "Comment");
 
     // Enforce blocks: can't comment on a blocked user's review
     if (review.userId && review.userId !== userId) {
