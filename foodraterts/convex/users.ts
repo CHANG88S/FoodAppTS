@@ -1,4 +1,5 @@
-import { query, mutation, QueryCtx, internalMutation } from "./_generated/server";
+import { query, action, mutation, QueryCtx, internalMutation } from "./_generated/server";
+import { api } from "./_generated/api";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { vAppleProfile } from "@convex-dev/auth/methods/apple/server";
@@ -125,6 +126,21 @@ export const updateUser = mutation({
 
     await ctx.db.patch(userId as any, updates);
     return true;
+  },
+});
+
+// shortcut: kept for installed app builds whose settings screen still calls
+// this action; the app itself calls updateUser. It forwards to updateUser so
+// the username check and the write stay one transaction. Delete once no
+// supported build calls it.
+export const updateProfile = action({
+  args: {
+    name: v.optional(v.string()),
+    username: v.optional(v.string()),
+    email: v.optional(v.string()),
+  },
+  handler: async (ctx, args): Promise<boolean> => {
+    return await ctx.runMutation(api.users.updateUser, args);
   },
 });
 
