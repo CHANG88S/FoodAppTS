@@ -2,6 +2,7 @@ import { query, action, mutation, QueryCtx, internalQuery, internalMutation } fr
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { requireActiveUser } from "./authz";
 import { vAppleProfile } from "@convex-dev/auth/methods/apple/server";
 import { vGoogleProfile } from "@convex-dev/auth/methods/google/server";
 import { Doc, Id } from "./_generated/dataModel";
@@ -50,8 +51,7 @@ export const setDisplayedBadge = mutation({
 export const setProfilePicture = mutation({
   args: { imageStorageId: v.string() },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    const userId = await requireActiveUser(ctx);
     await ctx.db.patch(userId as any, { profilePicture: args.imageStorageId });
   },
 });
@@ -78,8 +78,7 @@ export const updateUser = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    const userId = await requireActiveUser(ctx);
 
     if (args.email !== undefined) {
       const taken = await ctx.db
@@ -201,8 +200,7 @@ export const patchUserProfile = internalMutation({
 export const followUser = mutation({
   args: { followingId: v.id("users") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    const userId = await requireActiveUser(ctx);
     if (userId === args.followingId) throw new Error("Cannot follow yourself");
 
     // Enforce blocks: can't follow a user you blocked or who blocked you

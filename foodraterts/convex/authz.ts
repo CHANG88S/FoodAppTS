@@ -7,6 +7,36 @@ const STAFF_ROLES = ["owner", "admin", "moderator", "developer"] as const;
 const ADMIN_ROLES = ["owner", "developer"] as const;
 
 /**
+ * Server-side helper for every mutation that creates content or interacts
+ * with another user: returns the caller's id, and throws if they are signed
+ * out or a moderator has suspended or banned them (users.restriction, set by
+ * moderation.reviewUserReport). Deleting your own content and editing your
+ * own settings stay on plain getAuthUserId so a restricted user can still
+ * clean up and delete their account.
+ */
+export async function requireActiveUser(ctx: QueryCtx) {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) {
+    throw new Error("Unauthorized: must be logged in");
+  }
+
+  const user = await ctx.db.get(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (user.restriction) {
+    throw new Error(
+      user.restriction === "banned"
+        ? "This account has been banned."
+        : "This account is suspended."
+    );
+  }
+
+  return userId;
+}
+
+/**
  * Server-side helper: ensures the current user has a staff role.
  * Throws if not authenticated or role is not in STAFF_ROLES.
  * Use this in mutations/actions to gate administrative operations.

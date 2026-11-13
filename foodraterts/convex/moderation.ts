@@ -1,7 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { requireStaff } from "./authz";
+import { requireStaff, requireActiveUser } from "./authz";
 import { severFollowsBetween } from "./blocks";
 import { internal } from "./_generated/api";
 
@@ -22,8 +22,7 @@ export const flagContent = mutation({
         description: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("Must be logged in to flag content");
+        const userId = await requireActiveUser(ctx);
 
         // Check for duplicate flags
         const existingFlag = await ctx.db
@@ -348,8 +347,7 @@ export const reportUser = mutation({
         description: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("Authentication required");
+        const userId = await requireActiveUser(ctx);
 
         if (userId as string === args.reportedUserId) {
             throw new Error("Cannot report yourself");
@@ -421,6 +419,21 @@ export const reviewUserReport = mutation({
 
         const now = Date.now();
         const status = args.action === "dismissed" ? "dismissed" : "resolved";
+
+        // Suspend and ban take effect through users.restriction, which
+        // requireActiveUser checks on every content and interaction write.
+        // A ban is never downgraded to a suspension by a later report.
+        if (args.action === "suspended" || args.action === "banned") {
+            const reportedId = ctx.db.normalizeId("users", report.reportedUserId);
+            const reported = reportedId ? await ctx.db.get(reportedId) : null;
+            if (!reported) throw new Error("Reported user not found");
+            if (reported.role !== "user") {
+                throw new Error("Staff accounts can't be suspended or banned from a report");
+            }
+            if (reported.restriction !== "banned") {
+                await ctx.db.patch(reported._id, { restriction: args.action });
+            }
+        }
 
         await ctx.db.patch(args.reportId, {
             status,

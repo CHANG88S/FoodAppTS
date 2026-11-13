@@ -1,6 +1,7 @@
 import { query, mutation, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { requireActiveUser } from "./authz";
 import { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { hasBlockBetween } from "./blocks";
@@ -189,8 +190,7 @@ export const getUnreadCount = query({
 export const startConversation = mutation({
   args: { otherUserId: v.string() },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    const userId = await requireActiveUser(ctx);
 
     if (userId === args.otherUserId) {
       throw new Error("Cannot start conversation with yourself");
@@ -303,8 +303,7 @@ export const sendMessage = mutation({
     content: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    const userId = await requireActiveUser(ctx);
 
     if (!args.content.trim()) {
       throw new Error("Message content cannot be empty");
@@ -383,8 +382,7 @@ export const sendImageMessage = mutation({
     imageStorageId: v.id("_storage"),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    const userId = await requireActiveUser(ctx);
 
     const conversation = await ctx.db
       .query("conversations")
@@ -475,8 +473,7 @@ export const unsendMessage = mutation({
 export const reactToMessage = mutation({
   args: { messageId: v.id("messages"), emoji: v.string() },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    const userId = await requireActiveUser(ctx);
 
     const message = await ctx.db.get(args.messageId);
     if (!message) {

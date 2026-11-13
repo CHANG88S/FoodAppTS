@@ -33,6 +33,8 @@ export default defineSchema({
     ),
     displayedBadge: v.optional(v.string()),
     lastCheckedMessagesAt: v.optional(v.number()),
+    // Set by moderation.reviewUserReport; enforced by authz.requireActiveUser.
+    restriction: v.optional(v.union(v.literal("suspended"), v.literal("banned"))),
   })
     .index("by_email", ["email"])
     .index("by_appleId", ["appleId"])

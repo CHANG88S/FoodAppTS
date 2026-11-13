@@ -3,7 +3,7 @@ import { mutation, query, action } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "./_generated/api";
-import { requireStaff } from "./authz";
+import { requireStaff, requireActiveUser } from "./authz";
 
 const MAPBOX_GEOCODING_URL = "https://api.mapbox.com/geocoding/v5/mapbox.places";
 
@@ -498,8 +498,7 @@ export const listAllRestaurantsWithVisits = query({
 export const recordVisit = mutation({
   args: { restaurantId: v.id("restaurants") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Must be logged in to record a visit.");
+    const userId = await requireActiveUser(ctx);
 
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
