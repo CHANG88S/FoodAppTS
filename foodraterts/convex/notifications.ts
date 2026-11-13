@@ -9,11 +9,11 @@ export const listNotifications = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
 
+    // by_recipient orders by recipient then creation time. by_recipient_and_read
+    // would sort every read notification ahead of every unread one.
     const notifications = await ctx.db
       .query("notifications")
-      .withIndex("by_recipient_and_read", (q) =>
-        q.eq("recipientId", userId)
-      )
+      .withIndex("by_recipient", (q) => q.eq("recipientId", userId))
       .order("desc")
       .take(50);
 

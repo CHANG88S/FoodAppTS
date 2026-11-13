@@ -68,9 +68,11 @@ export const getRandomReviewsFromOthers = query({
   handler: async (ctx, args) => {
     const limit = args.limit || 20;
 
-    // Get all reviews, excluding the current user's reviews
+    // The 100 newest reviews by other users; ascending order would pin the
+    // feed to the oldest 100 forever.
     const allReviews = await ctx.db
       .query("itemReviews")
+      .order("desc")
       .filter((q) => q.neq(q.field("userId"), args.excludeUserId))
       .take(100);
 

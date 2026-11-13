@@ -49,14 +49,18 @@ export const listConversations = query({
     const user = await ctx.db.get(userId as Id<"users">);
     if (!user) return [];
 
+    // The 50 most recently active on each side, so the merged top 50 below is
+    // exact. Reading by participant alone returns the 50 oldest instead.
     const [asP1, asP2] = await Promise.all([
       ctx.db
         .query("conversations")
-        .withIndex("by_participant1", (q) => q.eq("participant1Id", userId))
+        .withIndex("by_participant1_and_lastMessage", (q) => q.eq("participant1Id", userId))
+        .order("desc")
         .take(50),
       ctx.db
         .query("conversations")
-        .withIndex("by_participant2", (q) => q.eq("participant2Id", userId))
+        .withIndex("by_participant2_and_lastMessage", (q) => q.eq("participant2Id", userId))
+        .order("desc")
         .take(50),
     ]);
 
