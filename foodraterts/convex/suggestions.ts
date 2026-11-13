@@ -2,7 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { requireStaff } from "./authz";
-import { api } from "./_generated/api";
+import { internal } from "./_generated/api";
 import { createNotificationForSuggestion } from "./notifications";
 
 // Helper function to find potential chain locations by name
@@ -405,7 +405,7 @@ export const rejectPlaceSuggestion = mutation({
     });
 
     // Notify the suggester using ctx.runMutation
-    await ctx.runMutation(api.notifications.createNotificationInternal, {
+    await ctx.runMutation(internal.notifications.createNotificationInternal, {
       recipientId: suggestion.suggestedBy,
       senderId: reviewer._id,
       type: "suggestion" as any,
@@ -532,7 +532,7 @@ export const approveMenuItemSuggestion = mutation({
     }
 
     // Notify the suggester using ctx.runMutation
-    await ctx.runMutation(api.notifications.createNotificationInternal, {
+    await ctx.runMutation(internal.notifications.createNotificationInternal, {
       recipientId: suggestion.suggestedBy,
       senderId: reviewer._id,
       type: "suggestion" as any,
@@ -567,7 +567,7 @@ export const rejectMenuItemSuggestion = mutation({
     });
 
     // Notify the suggester using ctx.runMutation
-    await ctx.runMutation(api.notifications.createNotificationInternal, {
+    await ctx.runMutation(internal.notifications.createNotificationInternal, {
       recipientId: suggestion.suggestedBy,
       senderId: reviewer._id,
       type: "suggestion" as any,

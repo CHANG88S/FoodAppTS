@@ -1,4 +1,4 @@
-import { query, mutation, QueryCtx } from "./_generated/server";
+import { query, mutation, internalMutation, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
@@ -99,7 +99,7 @@ export const deleteNotification = mutation({
 });
 
 // Internal function to create notifications (called by other mutations)
-export const createNotificationInternal = mutation({
+export const createNotificationInternal = internalMutation({
   args: {
     recipientId: v.string(),
     senderId: v.string(),
