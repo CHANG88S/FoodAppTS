@@ -25,7 +25,6 @@ import type * as query from "../query.js";
 import type * as rateLimiter from "../rateLimiter.js";
 import type * as restaurantImport from "../restaurantImport.js";
 import type * as restaurants from "../restaurants.js";
-import type * as review from "../review.js";
 import type * as security from "../security.js";
 import type * as seed from "../seed.js";
 import type * as suggestions from "../suggestions.js";
@@ -56,7 +55,6 @@ declare const fullApi: ApiFromModules<{
   rateLimiter: typeof rateLimiter;
   restaurantImport: typeof restaurantImport;
   restaurants: typeof restaurants;
-  review: typeof review;
   security: typeof security;
   seed: typeof seed;
   suggestions: typeof suggestions;
