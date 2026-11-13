@@ -501,25 +501,27 @@ export const recordVisit = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Must be logged in to record a visit.");
 
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    // A rolling 24 hours, not "today": Convex runs in UTC, so a calendar day
+    // would reset at 4 or 5 PM for California users.
+    const now = Date.now();
+    const windowStart = now - 24 * 60 * 60 * 1000;
 
-    const todayVisits = await ctx.db
+    const recentVisits = await ctx.db
       .query("restaurantVisits")
-      .withIndex("by_user_and_restaurant", (q) => 
+      .withIndex("by_user_and_restaurant", (q) =>
         q.eq("userId", userId).eq("restaurantId", args.restaurantId)
       )
-      .filter((q) => q.gte(q.field("timestamp"), startOfDay.getTime()))
+      .filter((q) => q.gte(q.field("timestamp"), windowStart))
       .collect();
 
-    if (todayVisits.length >= 3) {
-      throw new Error("You have already checked into this place 3 times today!");
+    if (recentVisits.length >= 3) {
+      throw new Error("You have already checked into this place 3 times in the last 24 hours!");
     }
 
     return await ctx.db.insert("restaurantVisits", {
       userId,
       restaurantId: args.restaurantId,
-      timestamp: Date.now(),
+      timestamp: now,
     });
   },
 });
