@@ -223,7 +223,9 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_participant1", ["participant1Id"])
-    .index("by_participant2", ["participant2Id"]),
+    .index("by_participant2", ["participant2Id"])
+    .index("by_participant1_and_lastMessage", ["participant1Id", "lastMessageAt"])
+    .index("by_participant2_and_lastMessage", ["participant2Id", "lastMessageAt"]),
 
   // 9. MESSAGING - MESSAGES
   messages: defineTable({
