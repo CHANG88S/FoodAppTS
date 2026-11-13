@@ -303,10 +303,8 @@ export const sendMessage = mutation({
       throw new Error(PROFANITY_ERROR_MESSAGE);
     }
 
-    const conversation = await ctx.db
-      .query("conversations")
-      .filter((q) => q.eq(q.field("_id"), args.conversationId as any))
-      .first();
+    const conversationId = ctx.db.normalizeId("conversations", args.conversationId);
+    const conversation = conversationId ? await ctx.db.get(conversationId) : null;
 
     if (!conversation) {
       throw new Error("Conversation not found");
@@ -375,10 +373,8 @@ export const sendImageMessage = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
 
-    const conversation = await ctx.db
-      .query("conversations")
-      .filter((q) => q.eq(q.field("_id"), args.conversationId as any))
-      .first();
+    const conversationId = ctx.db.normalizeId("conversations", args.conversationId);
+    const conversation = conversationId ? await ctx.db.get(conversationId) : null;
 
     if (!conversation) {
       throw new Error("Conversation not found");
