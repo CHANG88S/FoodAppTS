@@ -4,6 +4,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
 import { hasBlockBetween } from "./blocks";
 import { containsProfanity, PROFANITY_ERROR_MESSAGE } from "./profanity";
+import { syncLikeNotification } from "./notifications";
 
 // 1. GENERATE THE UPLOAD URL
 export const generateUploadUrl = mutation({
@@ -133,53 +134,14 @@ export const toggleLikeTweet = mutation({
 
     await ctx.db.patch(args.tweetId, { likes: updatedLikes });
 
-    // Create notification for new like (if liking someone else's tweet for the first time)
-    if (!hasLiked && tweet.userId && tweet.userId !== userId) {
-      // Check if notification already exists for this like
-      const existingNotification = await ctx.db
-        .query("notifications")
-        .withIndex("by_recipient", (q) => q.eq("recipientId", tweet.userId as string))
-        .filter((q) =>
-          q.and(
-            q.eq(q.field("senderId"), userId),
-            q.eq(q.field("type"), "like"),
-            q.eq(q.field("targetType"), "tweet"),
-            q.eq(q.field("targetId"), args.tweetId as string)
-          )
-        )
-        .first();
-
-      // Only create notification if one doesn't already exist
-      if (!existingNotification) {
-        await ctx.runMutation((internal as any).notifications.createNotificationInternal, {
-          recipientId: tweet.userId,
-          senderId: userId,
-          type: "like",
-          targetType: "tweet",
-          targetId: args.tweetId as string,
-          message: undefined,
-        });
-      }
-    }
-
-    // Remove notification if unliking
-    if (hasLiked && tweet.userId && tweet.userId !== userId) {
-      const existingNotification = await ctx.db
-        .query("notifications")
-        .withIndex("by_recipient", (q) => q.eq("recipientId", tweet.userId as string))
-        .filter((q) =>
-          q.and(
-            q.eq(q.field("senderId"), userId),
-            q.eq(q.field("type"), "like"),
-            q.eq(q.field("targetType"), "tweet"),
-            q.eq(q.field("targetId"), args.tweetId as string)
-          )
-        )
-        .first();
-
-      if (existingNotification) {
-        await ctx.db.delete(existingNotification._id);
-      }
+    if (tweet.userId) {
+      await syncLikeNotification(ctx, {
+        recipientId: tweet.userId,
+        senderId: userId,
+        targetType: "tweet",
+        targetId: args.tweetId,
+        liked: !hasLiked,
+      });
     }
 
     return !hasLiked;

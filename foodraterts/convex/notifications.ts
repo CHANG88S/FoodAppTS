@@ -1,6 +1,7 @@
 import { query, mutation, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import type { MutationCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 
 export const listNotifications = query({
@@ -150,4 +151,45 @@ export async function createNotificationForSuggestion(
     isRead: false,
     createdAt: Date.now(),
   });
+}
+
+// One like notification per sender and target: created on like, removed on
+// unlike, never duplicated by repeated toggling. Shared by
+// tweets.toggleLikeTweet and items.toggleLikeReview so the rule lives once.
+export async function syncLikeNotification(
+  ctx: MutationCtx,
+  args: {
+    recipientId: string;
+    senderId: string;
+    targetType: "tweet" | "review";
+    targetId: string;
+    liked: boolean;
+  }
+) {
+  if (args.recipientId === args.senderId) return;
+
+  const existing = await ctx.db
+    .query("notifications")
+    .withIndex("by_recipient", (q) => q.eq("recipientId", args.recipientId))
+    .filter((q) =>
+      q.and(
+        q.eq(q.field("senderId"), args.senderId),
+        q.eq(q.field("type"), "like"),
+        q.eq(q.field("targetType"), args.targetType),
+        q.eq(q.field("targetId"), args.targetId)
+      )
+    )
+    .first();
+
+  if (args.liked && !existing) {
+    await createNotificationForSuggestion(ctx, {
+      recipientId: args.recipientId,
+      senderId: args.senderId,
+      type: "like",
+      targetType: args.targetType,
+      targetId: args.targetId,
+    });
+  } else if (!args.liked && existing) {
+    await ctx.db.delete(existing._id);
+  }
 }
