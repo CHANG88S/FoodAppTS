@@ -1001,9 +1001,11 @@ const styles = StyleSheet.create({
     marginTop: 25, 
     marginBottom: 12
   },
-  listContainer: { 
-    paddingHorizontal: 20, 
-    paddingBottom: 20
+  listContainer: {
+    paddingHorizontal: 20,
+    // Clears the floating tab pill (bottom: 30 + height: 54) so the last
+    // card's hours line doesn't clip behind it
+    paddingBottom: 120
   },
   card: { 
     flexDirection: "row", 
@@ -1065,24 +1067,28 @@ const styles = StyleSheet.create({
   metaText: { 
     fontSize: 13, 
     color: "#4B5563", 
-    fontWeight: "500"
+    fontWeight: "500",
+    marginLeft: -1
   },
   locationSubText: { 
     fontSize: 12, 
     color: "#6B7280", 
     marginTop: 1, 
-    paddingLeft: 21, 
+    paddingLeft: 22, 
     fontWeight: "500" 
   },
   hoursText: {
     fontSize: 12,
+    lineHeight: 18,
     color: "#9CA3AF",
-    marginTop: 3
+    marginTop: 3,
+    marginLeft: -2
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center"
+    
   },
   emptyContainer: { 
     alignItems: "center", 

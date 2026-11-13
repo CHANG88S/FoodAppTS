@@ -1,5 +1,6 @@
 import { ConvexReactClient } from "convex/react";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
+import { api } from "../convex/_generated/api";
 import { Stack } from "expo-router";
 import React, { useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
@@ -47,7 +48,15 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ConvexAuthProvider client={convex} storage={secureStorage}>
+      <ConvexAuthProvider
+        client={convex}
+        storage={secureStorage}
+        api={{
+          refreshSession: api.auth.refreshSession,
+          signOut: api.auth.signOut,
+          isAuthenticated: api.auth.isAuthenticated,
+        }}
+      >
         <Stack>
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

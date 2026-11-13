@@ -19,12 +19,26 @@ import { api } from '../convex/_generated/api';
 
 export default function OnboardingScreen() {
     const router = useRouter();
-    const { from } = useLocalSearchParams<{ from?: string }>();
+    const { from, needsProfile } = useLocalSearchParams<{ from?: string; needsProfile?: string }>();
     const updateUser = useMutation(api.users.updateUser);
     const currentUser = useQuery(api.users.viewer);
 
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
+
+    // OAuth sign-ups (Google/Apple) never chose a username or display name —
+    // the backend generated placeholders — so they get an extra profile step.
+    const hasProfileStep = needsProfile === '1';
+    const [displayName, setDisplayName] = useState('');
+    const [profileUsername, setProfileUsername] = useState('');
+
+    // Live availability check while the user types a username.
+    const usernameCheck = useQuery(
+        api.users.getUserByUsername,
+        profileUsername.trim().length >= 3
+            ? { username: profileUsername.trim() }
+            : 'skip'
+    );
 
     // Taste preference states
     const [sweetness, setSweetness] = useState(50);
@@ -32,7 +46,30 @@ export default function OnboardingScreen() {
     const [milkBase, setMilkBase] = useState('Oat Milk');
     const [favoriteCuisines, setFavoriteCuisines] = useState<string[]>([]);
 
-    const totalSteps = 4;
+    // Step order with/without the profile step for OAuth-created users.
+    const stepKeys: string[] = hasProfileStep
+        ? ['welcome', 'profile', 'taste', 'cuisines', 'allset']
+        : ['welcome', 'taste', 'cuisines', 'allset'];
+    const totalSteps = stepKeys.length;
+    const currentKey = stepKeys[step - 1];
+
+    // Only letters, numbers, and underscores make it into the input anyway
+    // (sanitized on change), so availability is the real gate here.
+    const profileStepValid =
+        profileUsername.trim().length >= 3 &&
+        /^[a-z0-9_]+$/.test(profileUsername.trim()) &&
+        (usernameCheck == null || usernameCheck._id === currentUser?._id);
+
+    // Prefill the profile step once the viewer loads (Google supplies the
+    // display name; the backend generated the username). The viewer query's
+    // return type is a union across tables, so this reads it as any.
+    React.useEffect(() => {
+        if (currentUser) {
+            const viewer = currentUser as any;
+            setDisplayName((prev) => prev || viewer.name || '');
+            setProfileUsername((prev) => prev || viewer.username);
+        }
+    }, [currentUser]);
 
     const handleNext = async () => {
         if (step < totalSteps) {
@@ -58,6 +95,14 @@ export default function OnboardingScreen() {
         try {
             // Guests can browse the tour from the drawer but have no profile to save to.
             if (currentUser) {
+                if (hasProfileStep) {
+                    // Replace the backend-generated placeholder identity.
+                    await updateUser({
+                        username: profileUsername.trim(),
+                        ...(displayName.trim() ? { name: displayName.trim() } : {}),
+                    });
+                }
+
                 await updateUser({
                     preferences: {
                         sweetness,
@@ -98,8 +143,8 @@ export default function OnboardingScreen() {
     ];
 
     const renderStep = () => {
-        switch (step) {
-            case 1:
+        switch (currentKey) {
+            case 'welcome':
                 return (
                     <View style={styles.stepContent}>
                         <View style={styles.emojiContainer}>
@@ -131,7 +176,56 @@ export default function OnboardingScreen() {
                     </View>
                 );
 
-            case 2:
+            case 'profile':
+                return (
+                    <View style={styles.stepContent}>
+                        <View style={styles.emojiContainer}>
+                            <Text style={styles.emoji}>👤</Text>
+                        </View>
+                        <Text style={styles.stepTitle}>Set up your profile</Text>
+                        <Text style={styles.stepDescription}>
+                            Choose how you&apos;ll appear to other food lovers on BuhEats
+                        </Text>
+
+                        <View style={styles.profileForm}>
+                            <Text style={styles.preferenceLabel}>Display Name</Text>
+                            <TextInput
+                                style={styles.textInput}
+                                placeholder="Display Name (optional)"
+                                placeholderTextColor="#9CA3AF"
+                                value={displayName}
+                                onChangeText={setDisplayName}
+                                autoCapitalize="words"
+                                maxLength={50}
+                            />
+
+                            <Text style={styles.preferenceLabel}>Username</Text>
+                            <TextInput
+                                style={styles.textInput}
+                                placeholder="username"
+                                placeholderTextColor="#9CA3AF"
+                                value={profileUsername}
+                                onChangeText={(text) =>
+                                    setProfileUsername(text.toLowerCase().replace(/[^a-z0-9_]/g, ''))
+                                }
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                maxLength={20}
+                            />
+                            {profileUsername.length > 0 && profileUsername.length < 3 && (
+                                <Text style={styles.fieldHintError}>At least 3 characters</Text>
+                            )}
+                            {profileUsername.length >= 3 && usernameCheck === null && (
+                                <Text style={styles.fieldHintOk}>✓ {profileUsername} is available</Text>
+                            )}
+                            {profileUsername.length >= 3 && usernameCheck != null && usernameCheck._id !== currentUser?._id && (
+                                <Text style={styles.fieldHintError}>That username is taken</Text>
+                            )}
+                        </View>
+                    </View>
+                );
+
+            case 'taste':
                 return (
                     <View style={styles.stepContent}>
                         <View style={styles.emojiContainer}>
@@ -191,7 +285,7 @@ export default function OnboardingScreen() {
                     </View>
                 );
 
-            case 3:
+            case 'cuisines':
                 return (
                     <View style={styles.stepContent}>
                         <View style={styles.emojiContainer}>
@@ -229,7 +323,7 @@ export default function OnboardingScreen() {
                     </View>
                 );
 
-            case 4:
+            case 'allset':
                 return (
                     <View style={styles.stepContent}>
                         <View style={styles.emojiContainer}>
@@ -308,9 +402,9 @@ export default function OnboardingScreen() {
 
             <View style={styles.footer}>
                 <TouchableOpacity
-                    style={[styles.nextButton, loading && styles.disabledButton]}
+                    style={[styles.nextButton, (loading || (currentKey === 'profile' && !profileStepValid)) && styles.disabledButton]}
                     onPress={handleNext}
-                    disabled={loading}
+                    disabled={loading || (currentKey === 'profile' && !profileStepValid)}
                 >
                     {loading ? (
                         <ActivityIndicator color="#FFFFFF" />
@@ -375,6 +469,36 @@ const styles = StyleSheet.create({
     },
     stepContent: {
         alignItems: 'center',
+    },
+    profileForm: {
+        width: '100%',
+        gap: 4,
+    },
+    textInput: {
+        height: 50,
+        backgroundColor: '#FFFFFF',
+        borderColor: '#E5E7EB',
+        borderWidth: 1,
+        borderRadius: 12,
+        marginTop: 8,
+        marginBottom: 8,
+        paddingHorizontal: 16,
+        fontSize: 16,
+        color: '#3C4858',
+    },
+    fieldHintOk: {
+        width: '100%',
+        color: '#059669',
+        fontSize: 12,
+        fontWeight: '500',
+        marginBottom: 8,
+    },
+    fieldHintError: {
+        width: '100%',
+        color: '#DC2626',
+        fontSize: 12,
+        fontWeight: '500',
+        marginBottom: 8,
     },
     emojiContainer: {
         marginBottom: 20,

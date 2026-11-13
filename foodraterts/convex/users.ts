@@ -2,7 +2,8 @@ import { query, action, mutation, QueryCtx, internalQuery, internalMutation } fr
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { retrieveAccount, modifyAccountCredentials } from "@convex-dev/auth/server";
+import { vAppleProfile } from "@convex-dev/auth/methods/apple/server";
+import { vGoogleProfile } from "@convex-dev/auth/methods/google/server";
 import { Id } from "./_generated/dataModel";
 import { hasBlockBetween } from "./blocks";
 
@@ -56,11 +57,14 @@ export const setProfilePicture = mutation({
   },
 });
 
-// Update user mutation supporting onboarding and profile edits safely
+// Update user mutation supporting onboarding and profile edits safely.
+// In Convex Auth 2.0 sign-up only carries the username, so email/name are
+// attached right after sign-up through this mutation.
 export const updateUser = mutation({
   args: {
     name: v.optional(v.string()),
     username: v.optional(v.string()),
+    email: v.optional(v.string()),
     city: v.optional(v.string()),
     preferences: v.optional(
       v.object({
@@ -78,9 +82,20 @@ export const updateUser = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
 
+    if (args.email !== undefined) {
+      const taken = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", args.email!))
+        .first();
+      if (taken && taken._id !== userId) {
+        throw new Error("Email is already in use by another account.");
+      }
+    }
+
     const updates: any = {};
     if (args.name !== undefined) updates.name = args.name;
     if (args.username !== undefined) updates.username = args.username;
+    if (args.email !== undefined) updates.email = args.email;
     if (args.city !== undefined) updates.city = args.city;
     if (args.preferences !== undefined) updates.preferences = args.preferences;
 
@@ -89,16 +104,19 @@ export const updateUser = mutation({
   },
 });
 
+// Profile field updates (name/username/email). Password changes go through
+// api.auth.changePassword (Convex Auth 2.0 verifies the current password
+// server-side), so this action no longer touches credentials.
 export const updateProfile = action({
   args: {
     name: v.optional(v.string()),
     username: v.optional(v.string()),
     email: v.optional(v.string()),
-    currentPassword: v.optional(v.string()),
-    newPassword: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    // ActionCtx's runQuery rest-args type is structurally narrower than the
+    // GenericQueryCtx one this helper declares, so the ctx needs a cast.
+    const userId = await getAuthUserId(ctx as any);
     if (!userId) throw new Error("Unauthorized");
 
     const currentUser = (await ctx.runQuery(internal.users.getInternalViewer, {})) as any;
@@ -109,32 +127,6 @@ export const updateProfile = action({
       if (existingUser && existingUser._id !== userId) {
         throw new Error("Username is already taken.");
       }
-    }
-
-    if (args.newPassword && args.newPassword.trim().length > 0) {
-      if (!args.currentPassword) {
-        throw new Error("Current password is required to set a new password.");
-      }
-
-      const email = currentUser.email;
-      if (!email) {
-        throw new Error("User email not found.");
-      }
-
-      const provider = "password";
-      const retrieved = await retrieveAccount(ctx, {
-        provider,
-        account: { id: email, secret: args.currentPassword },
-      });
-
-      if (retrieved === null) {
-        throw new Error("Incorrect current password.");
-      }
-
-      await modifyAccountCredentials(ctx, {
-        provider,
-        account: { id: email, secret: args.newPassword },
-      });
     }
 
     await ctx.runMutation(internal.users.patchUserProfile, {
@@ -455,5 +447,147 @@ export const deleteAccount = mutation({
     await ctx.db.delete(userId as any);
 
     return { success: true };
+  },
+});
+// ── Convex Auth 2.0 user-creation callbacks ────────────────────────────────
+// Each sign-in method calls its callback for a *new* identity only; returning
+// an existing user's id links that identity onto the existing account.
+
+const DEFAULT_PREFERENCES = {
+  sweetness: 0.5,
+  iceLevel: 0.5,
+  milkBase: "Oat Milk",
+  favoriteCuisines: [] as string[],
+  dietaryRestrictions: [] as string[],
+};
+
+async function generateUsername(ctx: QueryCtx, email: string, name?: string): Promise<string> {
+  const source = name || email.split("@")[0] || "user";
+  const base = source.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 15) || "user";
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const candidate = `${base}${Math.random().toString(36).slice(2, 6)}`;
+    const taken = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("username"), candidate))
+      .first();
+    if (!taken) return candidate;
+  }
+  return `${base}${Date.now().toString(36)}`;
+}
+
+// Username + password sign-up. The 2.0 method keeps the username in its own
+// component (it maps username → user id at sign-in), so at create time the
+// callback sees an empty profile — a temporary placeholder fills the required
+// column and the client mirrors the real username (plus email and display
+// name) into the row via updateUser right after the session is live.
+export const createUserFromUsernamePassword = internalMutation({
+  args: {
+    method: v.object({
+      name: v.literal("usernamePassword"),
+      profile: v.object({}),
+    }),
+  },
+  returns: v.id("users"),
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("users", {
+      username: `pending-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      role: "user",
+      preferences: DEFAULT_PREFERENCES,
+    });
+  },
+});
+
+// Apple sign-up. Port of the v1 provider logic: relink v1-era users by
+// appleId, link onto an existing account sharing the verified email, else
+// create an Apple-only profile with a generated username. Users who declined
+// the email scope get a stable placeholder (never used for mail).
+export const createUserFromApple = internalMutation({
+  args: {
+    method: v.object({
+      name: v.literal("apple"),
+      profile: vAppleProfile,
+    }),
+  },
+  returns: v.id("users"),
+  handler: async (ctx, args) => {
+    const appleId = args.method.profile.id;
+    const email = args.method.profile.email;
+
+    const existingByAppleId = await ctx.db
+      .query("users")
+      .withIndex("by_appleId", (q) => q.eq("appleId", appleId))
+      .first();
+    if (existingByAppleId) {
+      return existingByAppleId._id;
+    }
+
+    if (email) {
+      const byEmail = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", email))
+        .first();
+      if (byEmail && !byEmail.appleId) {
+        await ctx.db.patch(byEmail._id, { appleId });
+        return byEmail._id;
+      }
+    }
+
+    const username = await generateUsername(ctx, email ?? appleId, args.method.profile.name);
+    return await ctx.db.insert("users", {
+      username,
+      email: email ?? `${appleId}@apple-sso.placeholder`,
+      ...(args.method.profile.name ? { name: args.method.profile.name } : {}),
+      appleId,
+      role: "user",
+      preferences: DEFAULT_PREFERENCES,
+    });
+  },
+});
+
+// Google sign-up. Same relink-and-create pattern as Apple: relink v1-era
+// users by googleId, link onto an existing account sharing a *verified*
+// email (Google only sometimes attests verification, so don't trust
+// unverified addresses for linking), else create a Google-only profile.
+export const createUserFromGoogle = internalMutation({
+  args: {
+    method: v.object({
+      name: v.literal("google"),
+      profile: vGoogleProfile,
+    }),
+  },
+  returns: v.id("users"),
+  handler: async (ctx, args) => {
+    const googleId = args.method.profile.id;
+    const email = args.method.profile.email;
+
+    const existingByGoogleId = await ctx.db
+      .query("users")
+      .withIndex("by_googleId", (q) => q.eq("googleId", googleId))
+      .first();
+    if (existingByGoogleId) {
+      return existingByGoogleId._id;
+    }
+
+    if (email && args.method.profile.emailVerified) {
+      const byEmail = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", email))
+        .first();
+      if (byEmail && !byEmail.googleId) {
+        await ctx.db.patch(byEmail._id, { googleId });
+        return byEmail._id;
+      }
+    }
+
+    const username = await generateUsername(ctx, email ?? googleId, args.method.profile.name);
+    return await ctx.db.insert("users", {
+      username,
+      email: email ?? `${googleId}@google-sso.placeholder`,
+      ...(args.method.profile.name ? { name: args.method.profile.name } : {}),
+      googleId,
+      role: "user",
+      preferences: DEFAULT_PREFERENCES,
+    });
   },
 });

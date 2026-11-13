@@ -1,96 +1,54 @@
-import { Password } from "@convex-dev/auth/providers/Password";
-import { ConvexCredentials } from "@convex-dev/auth/providers/ConvexCredentials";
-import { convexAuth } from "@convex-dev/auth/server";
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { setupConvexAuth } from "@convex-dev/auth/server";
+import { setupUsernamePassword } from "@convex-dev/auth/methods/username-password/server";
+import { setupApple } from "@convex-dev/auth/methods/apple/server";
+import { setupGoogle } from "@convex-dev/auth/methods/google/server";
+import { components } from "./_generated/api";
 import { internal } from "./_generated/api";
-import { Doc } from "./_generated/dataModel";
 
-// Apple publishes its signing keys at a fixed JWKS endpoint; jose caches
-// and rotates them automatically. Tokens are RS256 JWTs whose `aud` is
-// our bundle id and whose `sub` is the stable, per-developer Apple user id.
-const APPLE_JWKS = createRemoteJWKSet(new URL("https://appleid.apple.com/auth/keys"));
-const APPLE_BUNDLE_ID = "com.chang88s.buheats";
+export const auth = setupConvexAuth({
+  component: components.auth,
+  usersTable: "users",
+});
+export const { signOut, refreshSession, isAuthenticated } = auth;
 
-export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [
-    Password({
-      profile(params) {
-        return {
-          email: params.email as string,
-          username: params.username as string,
-          ...(params.name ? { name: params.name as string } : {}),
-          role: "user",
-          preferences: {
-            sweetness: 0.5,
-            iceLevel: 0.5,
-            milkBase: "Oat Milk",
-            favoriteCuisines: [],
-            dietaryRestrictions: [],
-          },
-        };
-      },
-    }),
-    ConvexCredentials({
-      id: "apple",
-      authorize: async (credentials, ctx) => {
-        const identityToken = credentials.identityToken;
-        if (typeof identityToken !== "string") {
-          throw new Error("Missing Apple identity token");
-        }
+// Username + password sign-in. The username component owns account
+// resolution; the users row (with role and default boba preferences) is
+// created by internal.users.createUserFromUsernamePassword.
+export const {
+  signUpWithUsernamePassword,
+  signInWithUsernamePassword,
+  changePassword,
+} = setupUsernamePassword(auth, {
+  component: components.authPassword,
+  usernameComponent: components.authUsername,
+}).attachUserCallbacks({
+  createUser: internal.users.createUserFromUsernamePassword,
+});
 
-        const { payload } = await jwtVerify(identityToken, APPLE_JWKS, {
-          issuer: "https://appleid.apple.com",
-          audience: APPLE_BUNDLE_ID,
-        });
+// Apple sign-in (web OAuth flow — 2.0 has no native identity-token
+// method, so the client drives it through an in-app auth session and
+// completes it with the one-time code). `redirectTo` must be an https
+// origin listed in allowedRedirectOrigins below.
+export const { startSignInWithApple, completeSignInWithApple } = setupApple(
+  auth,
+  {
+    component: components.authApple,
+    allowedRedirectOrigins: ["https://chang88s.github.io"],
+  },
+).attachUserCallbacks({
+  createUser: internal.users.createUserFromApple,
+});
 
-        const appleId = payload.sub;
-        if (!appleId) {
-          throw new Error("Invalid Apple identity token");
-        }
-
-        // Returning Apple user
-        const existingByAppleId: Doc<"users"> | null = await ctx.runQuery(
-          internal.appleAuth.getByAppleId,
-          { appleId }
-        );
-        if (existingByAppleId) {
-          return { userId: existingByAppleId._id };
-        }
-
-        // Apple includes `email` in every token where the user granted the
-        // email scope (relay addresses included) — it is always verified.
-        const email =
-          typeof payload.email === "string" && payload.email ? payload.email : null;
-        const name =
-          typeof credentials.fullName === "string" && credentials.fullName
-            ? credentials.fullName
-            : undefined;
-
-        // First Apple sign-in matching an existing password account: link
-        // them so both sign-in methods reach the same profile.
-        if (email) {
-          const byEmail: Doc<"users"> | null = await ctx.runQuery(
-            internal.appleAuth.getByEmail,
-            { email }
-          );
-          if (byEmail && !byEmail.appleId) {
-            await ctx.runMutation(internal.appleAuth.linkAppleId, {
-              userId: byEmail._id,
-              appleId,
-            });
-            return { userId: byEmail._id };
-          }
-        }
-
-        // Brand-new Apple-only user. Users who declined the email scope get
-        // a stable placeholder (unique per Apple ID, never used for mail).
-        const userId = await ctx.runMutation(internal.appleAuth.createAppleUser, {
-          appleId,
-          email: email ?? `${appleId}@apple-sso.placeholder`,
-          ...(name ? { name } : {}),
-        });
-        return { userId };
-      },
-    }),
-  ],
+// Google sign-in (same web OAuth flow as Apple — the client opens the
+// authorize URL in an in-app auth session and completes it with the one-time
+// ticket code). `redirectTo` must be an https origin listed in
+// allowedRedirectOrigins below.
+export const { startSignInWithGoogle, completeSignInWithGoogle } = setupGoogle(
+  auth,
+  {
+    component: components.authGoogle,
+    allowedRedirectOrigins: ["https://chang88s.github.io"],
+  },
+).attachUserCallbacks({
+  createUser: internal.users.createUserFromGoogle,
 });

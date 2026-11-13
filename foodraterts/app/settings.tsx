@@ -2,15 +2,40 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { useRouter, Stack, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery, useAction } from 'convex/react';
+import { useQuery, useAction, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
+
+// Human messages for the 2.0 changePassword userError envelope.
+function describePasswordError(userError: any): string {
+  switch (userError?.error) {
+    case 'INVALID_CREDENTIALS':
+      return 'Your current password is incorrect.';
+    case 'RATE_LIMITED':
+      return 'Too many attempts. Please try again shortly.';
+    case 'PASSWORD_TOO_SHORT':
+      return `New password must be at least ${userError.minimumLength} characters long.`;
+    case 'PASSWORD_TOO_LONG':
+      return `New password must be at most ${userError.maximumLength} characters long.`;
+    case 'PASSWORD_TOO_COMMON':
+      return 'That password is too common — please pick a stronger one.';
+    case 'PASSWORD_HAS_SURROUNDING_WHITESPACE':
+      return "Password can't start or end with spaces.";
+    case 'NOT_LOGGED_IN':
+      return 'Your session expired. Please log in again.';
+    default:
+      return 'Could not change your password.';
+  }
+}
 
 export default function SettingsScreen() {
   const router = useRouter();
   const currentUser = useQuery(api.users.viewer) as any;
   const updateProfileProfile = useAction(api.users.updateProfile);
+  // Password changes go through 2.0's changePassword, which verifies the
+  // current password server-side (updateProfile no longer touches credentials).
+  const changePassword = useMutation(api.auth.changePassword);
 
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
@@ -63,9 +88,18 @@ export default function SettingsScreen() {
           name: name.trim(),
           username: username.trim(),
           email: email.trim(),
+        });
+      }
+
+      if (newPassword.trim().length > 0) {
+        const result = await changePassword({
           currentPassword: currentPassword.trim(),
           newPassword: newPassword.trim(),
         });
+        if (!result.success) {
+          Alert.alert('Password Not Changed', describePasswordError(result.userError));
+          return;
+        }
       }
 
       Alert.alert('Success', 'Profile updated successfully!');

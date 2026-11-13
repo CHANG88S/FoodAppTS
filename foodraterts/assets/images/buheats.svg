@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Deep Night Mode Outer Gradient -->
+    <linearGradient id="nightBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A1C23" />
+      <stop offset="100%" stop-color="#0E1015" />
+    </linearGradient>
+
+    <!-- Vibrant Coral/Orange Accent Gradient (from your original design) -->
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF5A5F" />
+      <stop offset="100%" stop-color="#FF8E53" />
+    </linearGradient>
+
+    <!-- Gold Gradient for Stars -->
+    <linearGradient id="starGold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFD43B" />
+      <stop offset="100%" stop-color="#FFA900" />
+    </linearGradient>
+
+    <!-- Soft Shadows for Depth -->
+    <filter id="shadowBubble" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+
+    <filter id="shadowBadge" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+
+    <!-- Half-Star Clip Path -->
+    <clipPath id="halfStar">
+      <rect x="0" y="0" width="12" height="24" />
+    </clipPath>
+  </defs>
+
+  <!-- iOS / Android Squircle Base (Night Mode Dark Slate/Black) -->
+  <rect x="16" y="16" width="480" height="480" rx="112" ry="112" fill="url(#nightBg)" />
+
+  <!-- Subtle Rim Light on the Squircle Edge -->
+  <rect x="18" y="18" width="476" height="476" rx="110" ry="110" fill="none" stroke="#FFFFFF" stroke-opacity="0.12" stroke-width="3" />
+
+  <!-- Main Social Chat Bubble (Inverted to Dark Mode: Dark Charcoal Interior) -->
+  <g filter="url(#shadowBubble)">
+    <path d="M256 96
+             C163.2 96 88 164.5 88 249
+             C88 291.8 107.3 330.5 138.4 358.2
+             L122 414
+             C120.2 420.1 125.9 425.7 132 423.8
+             L194.2 404.1
+             C213.7 410.4 234.5 413.8 256 413.8
+             C348.8 413.8 424 345.3 424 260.8
+             C424 176.3 348.8 96 256 96 Z" fill="#242733" stroke="#353948" stroke-width="4" />
+  </g>
+
+  <!-- Exact Layout from Your Original Design (Fork + 'B' Bowls + Steam) -->
+  <g transform="translate(0, -10)">
+    <!-- Fork (Left Spine of the 'B') -->
+    <g fill="url(#accentGrad)">
+      <!-- Fork Tines -->
+      <rect x="178" y="172" width="7" height="42" rx="3.5" />
+      <rect x="191" y="172" width="7" height="42" rx="3.5" />
+      <rect x="204" y="172" width="7" height="42" rx="3.5" />
+      <!-- Fork Neck & Base -->
+      <path d="M178 206 C178 220 211 220 211 206 L211 214 C211 226 199 230 199 238 L199 314 C199 318.4 195.4 322 191 322 L198 322 C193.6 322 190 318.4 190 314 L190 238 C190 230 178 226 178 214 Z" />
+    </g>
+
+    <!-- Two Stacked Bowls Forming the 'B' Curves -->
+    <!-- Top Bowl (Smaller) -->
+    <path d="M226 184 H316 C316 218 292 238 266 238 H226 Z" fill="url(#accentGrad)" />
+    
+    <!-- Steam / Aroma Accent above Top Bowl -->
+    <path d="M254 166 C254 160 260 158 260 152" stroke="#FFD43B" stroke-width="5" stroke-linecap="round" fill="none" />
+    <path d="M276 168 C276 162 282 160 282 154" stroke="#FFD43B" stroke-width="5" stroke-linecap="round" fill="none" />
+
+    <!-- Bottom Bowl (Larger) -->
+    <path d="M226 252 H334 C334 294 306 322 272 322 H226 Z" fill="url(#accentGrad)" />
+  </g>
+
+  <!-- Floating Rating Pill Badge (Bottom Right, perfectly matching your layout) -->
+  <g transform="translate(242, 340)" filter="url(#shadowBadge)">
+    <!-- Dark Pill Base -->
+    <rect x="0" y="0" width="204" height="74" rx="37" fill="#15171E" stroke="#353948" stroke-width="4" />
+
+    <!-- 5-Star Visual Indicator -->
+    <g transform="translate(20, 25)">
+      <!-- Star 1 -->
+      <path d="M12 1 L15.1 7.3 L22 8.3 L17 13.2 L18.2 20.1 L12 16.8 L5.8 20.1 L7 13.2 L2 8.3 L8.9 7.3 Z" fill="url(#starGold)" />
+      <!-- Star 2 -->
+      <g transform="translate(24, 0)">
+        <path d="M12 1 L15.1 7.3 L22 8.3 L17 13.2 L18.2 20.1 L12 16.8 L5.8 20.1 L7 13.2 L2 8.3 L8.9 7.3 Z" fill="url(#starGold)" />
+      </g>
+      <!-- Star 3 -->
+      <g transform="translate(48, 0)">
+        <path d="M12 1 L15.1 7.3 L22 8.3 L17 13.2 L18.2 20.1 L12 16.8 L5.8 20.1 L7 13.2 L2 8.3 L8.9 7.3 Z" fill="url(#starGold)" />
+      </g>
+      <!-- Star 4 -->
+      <g transform="translate(72, 0)">
+        <path d="M12 1 L15.1 7.3 L22 8.3 L17 13.2 L18.2 20.1 L12 16.8 L5.8 20.1 L7 13.2 L2 8.3 L8.9 7.3 Z" fill="url(#starGold)" />
+      </g>
+      <!-- Star 5 (Half Star) -->
+      <g transform="translate(96, 0)">
+        <path d="M12 1 L15.1 7.3 L22 8.3 L17 13.2 L18.2 20.1 L12 16.8 L5.8 20.1 L7 13.2 L2 8.3 L8.9 7.3 Z" fill="#3A3E4E" />
+        <path d="M12 1 L15.1 7.3 L22 8.3 L17 13.2 L18.2 20.1 L12 16.8 L5.8 20.1 L7 13.2 L2 8.3 L8.9 7.3 Z" fill="url(#starGold)" clip-path="url(#halfStar)" />
+      </g>
+    </g>
+
+    <!-- Crisp "4.5" Text -->
+    <text x="146" y="46" font-family="-apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, Roboto, Helvetica, Arial, sans-serif" font-weight="800" font-size="25" fill="#FFFFFF" letter-spacing="-0.5">4.5</text>
+  </g>
+</svg>

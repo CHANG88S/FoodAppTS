@@ -133,8 +133,10 @@ export default function PublicProfileScreen() {
   // Map/List View Toggle for Reviews tab
   const [reviewsViewMode, setReviewsViewMode] = useState<'list' | 'map'>('list');
 
-  // Selected review modal popup state for map pins
-  const [selectedPinReview, setSelectedPinReview] = useState<any | null>(null);
+  // Map pin state: selectedPinReviews holds every review at the tapped
+  // place; pinItemsOpen shows the item list when a place has several.
+  const [selectedPinReviews, setSelectedPinReviews] = useState<any[] | null>(null);
+  const [pinItemsOpen, setPinItemsOpen] = useState(false);
 
   // Unified Location Filter States for Reviews tab
   const [selectedStateFilter, setSelectedStateFilter] = useState<string>('ALL');
@@ -317,6 +319,27 @@ export default function PublicProfileScreen() {
     acc[place].push(review);
     return acc;
   }, {});
+
+  // Map pins are per place, not per review — one pin per restaurant,
+  // however many items were reviewed there.
+  const pinPlaces: { name: string; lat: number; lng: number; reviews: any[] }[] = [];
+  const pinPlaceKeys = new Map<string, number>();
+  filteredReviews.forEach((review: any) => {
+    if (!review.lat || !review.lng) return;
+    const key = `${review.restaurantName}|${review.lat}|${review.lng}`;
+    const existing = pinPlaceKeys.get(key);
+    if (existing !== undefined) {
+      pinPlaces[existing].reviews.push(review);
+    } else {
+      pinPlaceKeys.set(key, pinPlaces.length);
+      pinPlaces.push({
+        name: review.restaurantName || 'Other Locations',
+        lat: review.lat,
+        lng: review.lng,
+        reviews: [review],
+      });
+    }
+  });
 
   const getLocationButtonLabel = () => {
     if (selectedStateFilter === 'ALL') return 'Location: All Locations';
@@ -844,24 +867,24 @@ export default function PublicProfileScreen() {
                         filteredReviews.find((r: any) => r.lat && r.lng)?.lat || 37.7749,
                       ]}
                     />
-                    {filteredReviews.map((review: any, index: number) => {
-                      if (review.lat && review.lng && PointAnnotation) {
+                    {pinPlaces.map((place, index) => {
+                      if (PointAnnotation) {
                         return (
                           <PointAnnotation
-                            key={`marker-${review._id || index}`}
-                            id={`marker-${review._id || index}`}
-                            coordinate={[review.lng, review.lat]}
-                            onSelected={() => setSelectedPinReview(review)}
+                            key={`place-${index}`}
+                            id={`place-${index}`}
+                            coordinate={[place.lng, place.lat]}
+                            onSelected={() => setSelectedPinReviews(place.reviews)}
                           >
-                            <TouchableOpacity 
+                            <TouchableOpacity
                               activeOpacity={0.9}
-                              onPress={() => setSelectedPinReview(review)}
+                              onPress={() => setSelectedPinReviews(place.reviews)}
                               style={styles.mapPinContainer}
                             >
                               <View style={styles.mapPinBubble}>
                                 <Ionicons name="storefront" size={12} color="#FFFFFF" />
                                 <Text style={styles.mapPinText} numberOfLines={1}>
-                                  {review.restaurantName}
+                                  {place.name}
                                 </Text>
                               </View>
                               <View style={styles.mapPinPointer} />
@@ -932,74 +955,112 @@ export default function PublicProfileScreen() {
         )}
       </ScrollView>
 
-      {/* Split Modal Popup for Map Pin Actions */}
+      {/* Split Modal Popup for Map Pin Actions — one modal that swaps
+          between the action cards and the items list (stacking two
+          visible Modals is unreliable on iOS). */}
       <Modal
-        visible={selectedPinReview !== null}
+        visible={selectedPinReviews !== null}
         animationType="fade"
         transparent={true}
-        onRequestClose={() => setSelectedPinReview(null)}
+        onRequestClose={() => {
+          if (pinItemsOpen) {
+            setPinItemsOpen(false);
+          } else {
+            setSelectedPinReviews(null);
+          }
+        }}
       >
         <View style={styles.splitModalOverlay}>
           <View style={styles.splitModalContainer}>
             <View style={styles.splitModalHeader}>
-              <Ionicons name="storefront" size={24} color="#6c3b3b" />
-              <Text style={styles.splitModalTitle} numberOfLines={1}>{selectedPinReview?.restaurantName}</Text>
+              <Ionicons name={pinItemsOpen ? "restaurant-outline" : "storefront"} size={24} color="#6c3b3b" />
+              <Text style={styles.splitModalTitle} numberOfLines={1}>{selectedPinReviews?.[0]?.restaurantName}</Text>
               <Text style={styles.splitModalSubtitle} numberOfLines={1}>
-                Reviewed: {selectedPinReview?.itemName} (⭐ {formatRating(selectedPinReview?.overallRating)})
+                Items Reviewed: {selectedPinReviews?.length ?? 0}
               </Text>
             </View>
 
-            <View style={styles.splitCardsRow}>
-              <TouchableOpacity
-                style={styles.splitCard}
-                activeOpacity={0.8}
-                onPress={() => {
-                  const rId = selectedPinReview?.restaurantId || selectedPinReview?.shopId;
-                  console.log('🔍 Debug: Navigating to restaurant with ID:', rId, 'Type:', typeof rId);
-                  setSelectedPinReview(null);
-                  if (rId) {
-                    try {
+            {pinItemsOpen ? (
+              <ScrollView style={styles.pinItemsList}>
+                {(selectedPinReviews ?? []).map((review: any) => (
+                  <TouchableOpacity
+                    key={review._id}
+                    style={styles.pinItemRow}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      setSelectedPinReviews(null);
+                      setPinItemsOpen(false);
+                      router.push({
+                        pathname: '/restaurant/post/[reviewId]',
+                        params: { reviewId: review._id, activityType: review.activityType || 'review' }
+                      });
+                    }}
+                  >
+                    <Ionicons name="star-outline" size={18} color="#6c3b3b" />
+                    <Text style={styles.pinItemName} numberOfLines={1}>{review.itemName}</Text>
+                    <Text style={styles.pinItemRating}>⭐ {formatRating(review.overallRating)}</Text>
+                    <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.splitCardsRow}>
+                <TouchableOpacity
+                  style={styles.splitCard}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    const rId = selectedPinReviews?.[0]?.restaurantId || selectedPinReviews?.[0]?.shopId;
+                    setSelectedPinReviews(null);
+                    if (rId) {
                       router.push(`/restaurant/${String(rId)}` as any);
-                    } catch (error) {
-                      console.error('❌ Navigation error:', error);
                     }
-                  }
-                }}
-              >
-                <View style={styles.splitCardIconBox}>
-                  <Ionicons name="business-outline" size={32} color="#6c3b3b" />
-                </View>
-                <Text style={styles.splitCardTitle}>Restaurant</Text>
-                <Text style={styles.splitCardDesc}>View establishment & menu</Text>
-              </TouchableOpacity>
+                  }}
+                >
+                  <View style={styles.splitCardIconBox}>
+                    <Ionicons name="business-outline" size={32} color="#6c3b3b" />
+                  </View>
+                  <Text style={styles.splitCardTitle}>Restaurant</Text>
+                  <Text style={styles.splitCardDesc}>View establishment & menu</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.splitCard}
-                activeOpacity={0.8}
-                onPress={() => {
-                  const revId = selectedPinReview?._id;
-                  setSelectedPinReview(null);
-                  if (revId) {
-                    router.push({
-                      pathname: '/restaurant/post/[reviewId]',
-                      params: { reviewId: revId, activityType: selectedPinReview?.activityType || 'review' }
-                    });
-                  }
-                }}
-              >
-                <View style={styles.splitCardIconBox}>
-                  <Ionicons name="star-outline" size={32} color="#6c3b3b" />
-                </View>
-                <Text style={styles.splitCardTitle}>Full Review</Text>
-                <Text style={styles.splitCardDesc}>View ratings & notes</Text>
-              </TouchableOpacity>
-            </View>
+                <TouchableOpacity
+                  style={styles.splitCard}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    const reviews = selectedPinReviews;
+                    if (!reviews || reviews.length === 0) return;
+                    if (reviews.length === 1) {
+                      // Only one item rated here — straight to it.
+                      setSelectedPinReviews(null);
+                      router.push({
+                        pathname: '/restaurant/post/[reviewId]',
+                        params: { reviewId: reviews[0]._id, activityType: reviews[0].activityType || 'review' }
+                      });
+                    } else {
+                      setPinItemsOpen(true);
+                    }
+                  }}
+                >
+                  <View style={styles.splitCardIconBox}>
+                    <Ionicons name="star-outline" size={32} color="#6c3b3b" />
+                  </View>
+                  <Text style={styles.splitCardTitle}>Reviews</Text>
+                  <Text style={styles.splitCardDesc}>Browse rated items</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             <TouchableOpacity
               style={styles.splitModalCloseButton}
-              onPress={() => setSelectedPinReview(null)}
+              onPress={() => {
+                if (pinItemsOpen) {
+                  setPinItemsOpen(false);
+                } else {
+                  setSelectedPinReviews(null);
+                }
+              }}
             >
-              <Text style={styles.splitModalCloseText}>Cancel</Text>
+              <Text style={styles.splitModalCloseText}>{pinItemsOpen ? 'Back' : 'Cancel'}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1985,5 +2046,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#374151',
+  },
+  pinItemsList: {
+    width: '100%',
+    maxHeight: 280,
+    marginBottom: 16,
+  },
+  pinItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  pinItemName: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  pinItemRating: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6c3b3b',
   },
 });

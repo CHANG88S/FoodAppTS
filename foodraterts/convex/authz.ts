@@ -71,7 +71,9 @@ export const getCurrentUserRole = internalQuery({
  * Use this in actions for sensitive administrative operations.
  */
 export async function requireAdminAction(ctx: ActionCtx) {
-  const userId = await getAuthUserId(ctx);
+  // ActionCtx's runQuery rest-args type is structurally narrower than the
+  // GenericQueryCtx one this helper declares, so the ctx needs a cast.
+  const userId = await getAuthUserId(ctx as any);
   if (!userId) {
     throw new Error("Unauthorized: must be logged in");
   }

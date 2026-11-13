@@ -1,18 +1,16 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { authTables } from "@convex-dev/auth/server";
 
 export default defineSchema({
-
-  ...authTables,
 
   // 0. USERS & ROLES TABLE WITH FULL HIERARCHY
   users: defineTable({
     name: v.optional(v.string()),
     username: v.string(),
-    email: v.string(),
+    email: v.optional(v.string()), // attached after sign-up via updateUser (2.0 sign-up carries only the username)
     passwordHash: v.optional(v.string()),
     appleId: v.optional(v.string()),
+    googleId: v.optional(v.string()),
     profilePicture: v.optional(v.string()),
     city: v.optional(v.string()),
     role: v.union(
@@ -38,6 +36,7 @@ export default defineSchema({
   })
     .index("by_email", ["email"])
     .index("by_appleId", ["appleId"])
+    .index("by_googleId", ["googleId"])
     .index("by_role", ["role"]),
 
   // 1. MASTER RESTAURANT DIRECTORY
