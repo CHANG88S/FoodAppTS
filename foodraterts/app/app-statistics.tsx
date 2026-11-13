@@ -10,7 +10,9 @@ export default function AppStatisticsScreen() {
   const router = useRouter();
 
   const currentUser = useQuery(api.users.viewer) as any;
-  const appStats = useQuery(api.geocoding.getAppStatistics);
+  // The query throws for non-admins, so only subscribe once the role allows it.
+  const isAdmin = currentUser?.role === 'owner' || currentUser?.role === 'developer';
+  const appStats = useQuery(api.geocoding.getAppStatistics, isAdmin ? {} : 'skip');
 
   // 🔑 Admin Guard: Check the user's role property (owner or developer only)
   useEffect(() => {
