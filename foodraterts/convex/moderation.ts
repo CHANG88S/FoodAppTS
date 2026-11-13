@@ -2,6 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { requireStaff } from "./authz";
+import { severFollowsBetween } from "./blocks";
 import { internal } from "./_generated/api";
 
 // Content flagging and moderation system
@@ -297,6 +298,10 @@ export const blockUser = mutation({
                 blockedId: args.blockedUserId,
                 createdAt: now,
             });
+
+            // Sever existing follows in both directions
+            await severFollowsBetween(ctx, userId as string, args.blockedUserId);
+
             return { action: "blocked", blockedUserId: args.blockedUserId };
         }
     },
