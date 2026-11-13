@@ -233,42 +233,15 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 }
 
+// Returns raw rows: logoStorageId stays a storage id. The home list resolves
+// logos per visible card through images.getPublicUrl, so resolving every
+// restaurant's URL here only multiplied the work on each rerun.
+// shortcut: reads the whole directory, fine at a few thousand rows; paginate
+// the home list when it outgrows that.
 export const listAllRestaurants = query({
-  args: { 
-    cityFilter: v.optional(v.string()),
-    stateFilter: v.optional(v.string()),
-  }, 
-  handler: async (ctx, args) => {
-    const allRestaurants = await ctx.db.query("restaurants").collect();
-
-    if (!args.cityFilter || !args.stateFilter || args.cityFilter === "All") {
-      return Promise.all(
-        allRestaurants.map(async (restaurant) => ({
-          ...restaurant,
-          logoStorageId: restaurant.logoStorageId 
-            ? await ctx.storage.getUrl(restaurant.logoStorageId) 
-            : null,
-        }))
-      );
-    }
-
-    const targetCity = args.cityFilter.trim().toLowerCase();
-    const targetState = args.stateFilter.trim().toLowerCase();
-
-    const filtered = allRestaurants.filter((shop) => {
-      const shopCity = shop.city?.trim().toLowerCase();
-      const shopState = shop.state?.trim().toLowerCase();
-      return shopCity === targetCity && shopState === targetState;
-    });
-
-    return Promise.all(
-      filtered.map(async (restaurant) => ({
-        ...restaurant,
-        logoStorageId: restaurant.logoStorageId 
-          ? await ctx.storage.getUrl(restaurant.logoStorageId) 
-          : null,
-      }))
-    );
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("restaurants").collect();
   },
 });
 
@@ -290,54 +263,6 @@ export const getRestaurantByName = query({
       ...restaurant,
       logoStorageId,
     };
-  },
-});
-
-export const searchRestaurantsByName = query({
-  args: { searchTerm: v.string() },
-  handler: async (ctx, args) => {
-    const allRestaurants = await ctx.db.query("restaurants").collect();
-
-    let results = allRestaurants;
-    if (args.searchTerm && args.searchTerm.trim()) {
-      const lowerSearch = args.searchTerm.toLowerCase().trim();
-      results = allRestaurants
-        .filter((r) => r.restaurantName.toLowerCase().includes(lowerSearch))
-        .slice(0, 15);
-    }
-
-    return Promise.all(
-      results.map(async (restaurant) => ({
-        ...restaurant,
-        logoStorageId: restaurant.logoStorageId 
-          ? await ctx.storage.getUrl(restaurant.logoStorageId) 
-          : null,
-      }))
-    );
-  },
-});
-
-export const searchAllByName = query({
-  args: { namePattern: v.string() }, 
-  handler: async (ctx, args) => {
-    const allRestaurants = await ctx.db.query("restaurants").collect();
-
-    let results = allRestaurants;
-    if (args.namePattern && args.namePattern.trim()) {
-      const pattern = args.namePattern.toLowerCase().trim(); 
-      results = allRestaurants
-        .filter((r) => r.restaurantName.toLowerCase().startsWith(pattern))
-        .slice(0, 25);
-    }
-
-    return Promise.all(
-      results.map(async (restaurant) => ({
-        ...restaurant,
-        logoStorageId: restaurant.logoStorageId 
-          ? await ctx.storage.getUrl(restaurant.logoStorageId) 
-          : null,
-      }))
-    );
   },
 });
 
@@ -453,48 +378,6 @@ export const getVisitCount = query({
   },
 });
 
-export const listAllRestaurantsWithVisits = query({
-  args: {
-    cityFilter: v.optional(v.string()),
-    stateFilter: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const allRestaurants = await ctx.db.query("restaurants").collect();
-
-    const restaurantsToReturn = !args.cityFilter || !args.stateFilter || args.cityFilter === "All"
-      ? allRestaurants
-      : allRestaurants.filter((shop) => {
-          const targetCity = args.cityFilter!.trim().toLowerCase();
-          const targetState = args.stateFilter!.trim().toLowerCase();
-          const shopCity = shop.city?.trim().toLowerCase();
-          const shopState = shop.state?.trim().toLowerCase();
-          return shopCity === targetCity && shopState === targetState;
-        });
-
-    const restaurantsWithVisits = await Promise.all(
-      restaurantsToReturn.map(async (restaurant) => {
-        const visits = await ctx.db
-          .query("restaurantVisits")
-          .filter((q) => q.eq(q.field("restaurantId"), restaurant._id))
-          .collect();
-
-        const uniqueVisitors = new Set(visits.map((v) => v.userId));
-
-        return {
-          ...restaurant,
-          logoStorageId: restaurant.logoStorageId
-            ? await ctx.storage.getUrl(restaurant.logoStorageId)
-            : null,
-          visitCount: visits.length,
-          uniqueVisitorCount: uniqueVisitors.size,
-        };
-      })
-    );
-
-    return restaurantsWithVisits;
-  },
-});
-
 export const recordVisit = mutation({
   args: { restaurantId: v.id("restaurants") },
   handler: async (ctx, args) => {
@@ -554,16 +437,8 @@ export const filterRestaurantsByCoordinates = query({
       return distance <= args.radiusMiles;
     });
 
-    const restaurantsWithUrls = await Promise.all(
-      filteredRestaurants.map(async (restaurant) => ({
-        ...restaurant,
-        logoStorageId: restaurant.logoStorageId
-          ? await ctx.storage.getUrl(restaurant.logoStorageId)
-          : null,
-      }))
-    );
-
-    return restaurantsWithUrls;
+    // Raw rows, like listAllRestaurants: the card resolves its own logo URL.
+    return filteredRestaurants;
   },
 });
 
