@@ -2,7 +2,7 @@
 import { mutation, query, action } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { requireStaff } from "./authz";
 
 const MAPBOX_GEOCODING_URL = "https://api.mapbox.com/geocoding/v5/mapbox.places";
@@ -700,7 +700,7 @@ export const geocodeRestaurant = action({
       coords = localCoords;
     }
 
-    await ctx.runMutation(api.geocoding.updateRestaurantCoordinates, {
+    await ctx.runMutation(internal.geocoding.updateRestaurantCoordinates, {
       restaurantId: args.restaurantId,
       lat: coords.lat,
       lng: coords.lng,
@@ -789,7 +789,7 @@ export const batchGeocodeAllRestaurants = action({
           coords = localCoords;
         }
 
-        await ctx.runMutation(api.geocoding.updateRestaurantCoordinates, {
+        await ctx.runMutation(internal.geocoding.updateRestaurantCoordinates, {
           restaurantId: restaurant._id,
           lat: coords.lat,
           lng: coords.lng,

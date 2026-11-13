@@ -510,16 +510,6 @@ export const markMessagesAsRead = mutation({
   },
 });
 
-// Generate upload URL for message images
-export const generateUploadUrl = mutation({
-  handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
-
-    return await ctx.storage.generateUploadUrl();
-  },
-});
-
 // Search users by username or name
 export const searchUsers = query({
   args: {

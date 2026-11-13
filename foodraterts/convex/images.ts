@@ -1,57 +1,20 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
-// 1. GENERATE THE UPLOAD URL
+// The one upload URL source for every screen (reviews, profile, tweets, DMs).
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
     return await ctx.storage.generateUploadUrl();
   },
 });
 
-// 2. SAVE RESTAURANT PHOTO / CREATE A TWEET
-export const saveRestaurantPhoto = mutation({
-  args: { 
-    restaurantId: v.id("restaurants"), 
-    imageStorageId: v.string(), // Accept as string to avoid strict ID mismatch, then cast
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-
-    await ctx.db.insert("tweets", {
-      imageStorageId: args.imageStorageId as Id<"_storage">,
-      body: "Uploaded a new photo!",
-      userId: identity ? identity.subject : undefined,
-      likes: [],
-      comments: [],
-      createdAt: Date.now(),
-    });
-  },
-});
-
-// 3. CREATE A TWEET WITH AN IMAGE STORAGE ID
-export const createTweet = mutation({
-  args: { 
-    body: v.string(),
-    restaurantId: v.optional(v.id("restaurants")),
-    imageStorageId: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-
-    await ctx.db.insert("tweets", {
-      body: args.body,
-      imageStorageId: args.imageStorageId as Id<"_storage"> | undefined,
-      userId: identity ? identity.subject : undefined,
-      likes: [],
-      comments: [],
-      createdAt: Date.now(),
-    });
-  },
-});
-
-// 4. GET THE PUBLIC URL
+// GET THE PUBLIC URL
 export const getPublicUrl = query({
   args: { storageId: v.optional(v.string()) },
   handler: async (ctx, args) => {
@@ -66,7 +29,7 @@ export const getPublicUrl = query({
   },
 });
 
-// 5. GET MULTIPLE PUBLIC URLS
+// GET MULTIPLE PUBLIC URLS
 export const getPublicUrls = query({
   args: { storageIds: v.array(v.string()) },
   handler: async (ctx, args) => {

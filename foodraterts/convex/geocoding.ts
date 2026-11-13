@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 /**
@@ -56,7 +56,7 @@ export const getAppStatistics = query({
  * Update restaurant with coordinates and zipcode (mutation)
  * Used by restaurant geocoding functions
  */
-export const updateRestaurantCoordinates = mutation({
+export const updateRestaurantCoordinates = internalMutation({
   args: {
     restaurantId: v.id("restaurants"),
     lat: v.number(),

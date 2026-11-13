@@ -85,7 +85,7 @@ export default function Profile() {
     // Queries & mutations for tweets feature
     const userTweets = useQuery(api.tweets?.getUserTweets) || [];
     const createTweetMutation = useMutation(api.tweets?.createTweet);
-    const generateUploadUrlMutation = useMutation(api.tweets?.generateUploadUrl);
+    const generateUploadUrlMutation = useMutation(api.images.generateUploadUrl);
     const deleteTweetMutation = useMutation(api.tweets?.deleteTweet);
     const toggleLikeTweet = useMutation(api.tweets?.toggleLikeTweet);
 
