@@ -35,6 +35,10 @@ jobs:
         working-directory: ./foodraterts
         run: npx tsc --noEmit
 
+      - name: Run tests
+        working-directory: ./foodraterts
+        run: npm test
+
       # npm audit fails on known advisories in transitive deps of
       # react-native/expo that we can't patch without a framework upgrade,
       # so it reports but does not block the build.
