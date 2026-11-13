@@ -96,6 +96,16 @@ export const getMessages = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
 
+    // Only the two participants may read a thread.
+    const conversationId = ctx.db.normalizeId("conversations", args.conversationId);
+    const conversation = conversationId ? await ctx.db.get(conversationId) : null;
+    if (
+      !conversation ||
+      (conversation.participant1Id !== userId && conversation.participant2Id !== userId)
+    ) {
+      return [];
+    }
+
     const messages = await ctx.db
       .query("messages")
       .withIndex("by_conversation_and_created", (q) => q.eq("conversationId", args.conversationId))
