@@ -498,10 +498,11 @@ export const createUserFromUsernamePassword = internalMutation({
   },
 });
 
-// Apple sign-up. Port of the v1 provider logic: relink v1-era users by
-// appleId, link onto an existing account sharing the verified email, else
-// create an Apple-only profile with a generated username. Users who declined
-// the email scope get a stable placeholder (never used for mail).
+// Apple sign-up. Relinks v1-era users by appleId, else creates an Apple-only
+// profile with a generated username. Never links by email: the email column
+// is editable through updateUser and unverified, so it cannot prove an
+// existing row belongs to the person signing in. Users who declined the
+// email scope get a stable placeholder (never used for mail).
 export const createUserFromApple = internalMutation({
   args: {
     method: v.object({
@@ -522,17 +523,6 @@ export const createUserFromApple = internalMutation({
       return existingByAppleId._id;
     }
 
-    if (email) {
-      const byEmail = await ctx.db
-        .query("users")
-        .withIndex("by_email", (q) => q.eq("email", email))
-        .first();
-      if (byEmail && !byEmail.appleId) {
-        await ctx.db.patch(byEmail._id, { appleId });
-        return byEmail._id;
-      }
-    }
-
     const username = await generateUsername(ctx, email ?? appleId, args.method.profile.name);
     return await ctx.db.insert("users", {
       username,
@@ -545,10 +535,9 @@ export const createUserFromApple = internalMutation({
   },
 });
 
-// Google sign-up. Same relink-and-create pattern as Apple: relink v1-era
-// users by googleId, link onto an existing account sharing a *verified*
-// email (Google only sometimes attests verification, so don't trust
-// unverified addresses for linking), else create a Google-only profile.
+// Google sign-up. Same pattern as Apple: relink v1-era users by googleId,
+// else create a Google-only profile. Google's emailVerified speaks for the
+// Google account, not for the existing row, so it is not used for linking.
 export const createUserFromGoogle = internalMutation({
   args: {
     method: v.object({
@@ -567,17 +556,6 @@ export const createUserFromGoogle = internalMutation({
       .first();
     if (existingByGoogleId) {
       return existingByGoogleId._id;
-    }
-
-    if (email && args.method.profile.emailVerified) {
-      const byEmail = await ctx.db
-        .query("users")
-        .withIndex("by_email", (q) => q.eq("email", email))
-        .first();
-      if (byEmail && !byEmail.googleId) {
-        await ctx.db.patch(byEmail._id, { googleId });
-        return byEmail._id;
-      }
     }
 
     const username = await generateUsername(ctx, email ?? googleId, args.method.profile.name);
