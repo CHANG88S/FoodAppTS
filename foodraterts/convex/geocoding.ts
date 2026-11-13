@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requireAdmin } from "./authz";
 
 /**
  * Get comprehensive app statistics for admin dashboard
@@ -7,6 +8,10 @@ import { v } from "convex/values";
 export const getAppStatistics = query({
   args: {},
   handler: async (ctx) => {
+    // Same audience as the screen's guard (owner, developer). This reads ten
+    // whole tables, so it must not be callable by everyone.
+    await requireAdmin(ctx);
+
     // Count total restaurants
     const restaurants = await ctx.db.query("restaurants").collect();
 
