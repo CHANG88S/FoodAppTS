@@ -313,6 +313,31 @@ export const getFollowing = query({
   },
 });
 
+// shortcut: kept for installed app builds whose search tab still calls
+// users.searchUsers({ query }); the app itself uses messaging.searchUsers.
+// Same rules as that query: signed in, 2+ characters, 20 results, public
+// fields only. Delete once no supported build calls it.
+export const searchUsers = query({
+  args: { query: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const term = args.query.toLowerCase().trim();
+    if (term.length < 2) return [];
+
+    const users = await ctx.db.query("users").collect();
+    return users
+      .filter(
+        (u) =>
+          u._id !== userId &&
+          (u.username.toLowerCase().includes(term) || !!u.name?.toLowerCase().includes(term))
+      )
+      .slice(0, 20)
+      .map((u) => publicUser(u));
+  },
+});
+
 export const updatePreferences = mutation({
   args: {
     sweetness: v.optional(v.number()),
